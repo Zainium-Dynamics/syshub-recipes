@@ -1,0 +1,51 @@
+--- a/ldso/dynlink.c	2026-03-20 20:40:00.000000000 +0500
++++ b/ldso/dynlink.c	2026-07-29 21:16:26.784130329 +0500
+@@ -1123,26 +1123,15 @@
+ 		}
+ 		if (fd == -1) {
+ 			if (!sys_path) {
+-				char *prefix = 0;
+-				size_t prefix_len;
+-				if (ldso.name[0]=='/') {
+-					char *s, *t, *z;
+-					for (s=t=z=ldso.name; *s; s++)
+-						if (*s=='/') z=t, t=s;
+-					prefix_len = z-ldso.name;
+-					if (prefix_len < PATH_MAX)
+-						prefix = ldso.name;
+-				}
+-				if (!prefix) {
+-					prefix = "";
+-					prefix_len = 0;
+-				}
+-				char etc_ldso_path[prefix_len + 1
+-					+ sizeof "/etc/ld-musl-" LDSO_ARCH ".path"];
+-				snprintf(etc_ldso_path, sizeof etc_ldso_path,
+-					"%.*s/etc/ld-musl-" LDSO_ARCH ".path",
+-					(int)prefix_len, prefix);
+-				fd = open(etc_ldso_path, O_RDONLY|O_CLOEXEC);
++				/* /etc lives at the fixed top-level syshub/etc
++				 * regardless of where ld.so itself happens to
++				 * reside (inside the musl sysroot subdir) --
++				 * no relocation prefix applies here, unlike
++				 * upstream musl's relative "/etc/ld-musl-*.path"
++				 * scheme. Prepending a computed prefix would
++				 * double the path (e.g. .../x86_64-zainium-
++				 * linux-musl/overlayer/syshub/etc/...). */
++				fd = open("/overlayer/syshub/etc/ld-musl-" LDSO_ARCH ".path", O_RDONLY|O_CLOEXEC);
+ 				if (fd>=0) {
+ 					size_t n = 0;
+ 					if (!fstat(fd, &st)) n = st.st_size;
+@@ -1157,7 +1146,11 @@
+ 					sys_path = "";
+ 				}
+ 			}
+-			if (!sys_path) sys_path = "/lib:/usr/local/lib:/usr/lib";
++			/* Matches GCC's RPATH scheme (see packages/GCC-16/
++			 * CLAUDE.md): generic syshub/lib first (where
++			 * libstdc++/libgcc_s/libatomic live), musl sysroot
++			 * lib as fallback (where libc.so itself lives). */
++			if (!sys_path) sys_path = "/overlayer/syshub/lib:/overlayer/syshub/x86_64-zainium-linux-musl/lib";
+ 			fd = path_open(name, sys_path, buf, sizeof buf);
+ 		}
+ 		pathname = buf;

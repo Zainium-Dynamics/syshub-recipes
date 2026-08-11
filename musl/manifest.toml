@@ -1,0 +1,30 @@
+# manifest.toml — musl
+
+[package]
+name             = "musl"
+version          = "1.2.6"
+description      = "musl libc — Zainium's target libc (musl loader, headers, static + shared libs, crt objects)"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://musl.libc.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libc-musl", "ld-musl-x86_64.so.1"]
+tags             = ["libc", "toolchain", "musl"]
+
+[install]
+x86_64-zainium-linux-musl = "/overlayer/syshub/x86_64-zainium-linux-musl"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

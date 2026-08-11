@@ -1,0 +1,63 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=musl
+pkgver=1.2.6
+pkgrel=0
+# musl.libc.org was unreachable at the time this recipe was written —
+# using the well-known kraj/musl GitHub mirror instead (same one
+# OpenEmbedded/Yocto builds against), which is also more reliably
+# reachable from GitHub Actions runners than musl.libc.org has been.
+source="https://github.com/kraj/musl/archive/refs/tags/v$pkgver.tar.gz
+0001-dynlink.c-overlayer-paths.patch"
+sha256sums="e9db8b70b0cba3db43b27e84ccd8a0c0958b40029a1c36c9f13817b93787b4d6  v$pkgver.tar.gz"
+
+# musl builds itself against the plain host compiler, not the Zainium
+# cross-compiler — x86_64-zainium-linux-musl and the CI host's own
+# x86_64 target the same instruction set, musl's own configure just
+# needs --prefix/--libdir/etc pointed at the right sysroot location.
+# No bootstrap dependency on gcc-musl-cross, unlike binutils/gcc-16.
+#
+# 0001-dynlink.c-overlayer-paths.patch — two independent path fixes,
+# verified as a real diff against the pristine 1.2.6 source (not
+# hand-written):
+#   1. /etc/ld-musl-*.path lookup: upstream musl computes this relative
+#      to wherever ld.so's own binary happens to live (a relocatable-
+#      install scheme). On Zainium, /etc is always the fixed top-level
+#      syshub/etc regardless of where ld.so resides (inside the musl
+#      sysroot subdir) — the relative-prefix scheme would double the
+#      path. Now hardcoded to /overlayer/syshub/etc/ld-musl-*.path.
+#   2. Default library search path (when no ld-musl-*.path file exists):
+#      upstream default "/lib:/usr/local/lib:/usr/lib" doesn't exist on
+#      Zainium at all. Changed to /overlayer/syshub/lib (generic,
+#      matches GCC's own RPATH scheme — see packages/GCC-16/CLAUDE.md)
+#      then /overlayer/syshub/x86_64-zainium-linux-musl/lib as fallback.
+#
+# GNU tar's default extraction dir name from a GitHub tag archive is
+# "musl-$pkgver" already (matches the pkgname-pkgver convention
+# ci/build.sh expects), so no manual cd override needed.
+build() {
+    patch -p1 < ../0001-dynlink.c-overlayer-paths.patch
+
+    ./configure \
+        --target=x86_64-zainium-linux-musl \
+        --prefix=/overlayer/syshub/x86_64-zainium-linux-musl \
+        --libdir=/overlayer/syshub/x86_64-zainium-linux-musl/lib \
+        --syslibdir=/overlayer/syshub/x86_64-zainium-linux-musl/lib \
+        --includedir=/overlayer/syshub/x86_64-zainium-linux-musl/include \
+        --bindir=/overlayer/syshub/x86_64-zainium-linux-musl/bin \
+        --enable-shared \
+        --enable-static \
+        --disable-wrapper \
+        CC=gcc \
+        AR=ar \
+        RANLIB=ranlib
+    make -j"$(nproc)"
+}
+
+package() {
+    make DESTDIR="$PAYLOAD_DIR" install
+    # musl's loader already detects argv[0]=="ldd" internally
+    # (ldso/dynlink.c) — just need the symlink to exist.
+    mkdir -p "$PAYLOAD_DIR/overlayer/syshub/x86_64-zainium-linux-musl/bin"
+    ln -snf ../lib/ld-musl-x86_64.so.1 \
+        "$PAYLOAD_DIR/overlayer/syshub/x86_64-zainium-linux-musl/bin/ldd"
+}
