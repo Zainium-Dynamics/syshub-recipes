@@ -49,6 +49,25 @@ mkdir -p "$SRCDIR"
 
 echo "== $pkgname $pkgver-$pkgrel =="
 
+# Self-hosting toolchain packages (gcc-16, binutils, ...) need an
+# already-published Zainium toolchain installed into /overlayer/syshub
+# before they can build at all — set needs_toolchain="pkg1 pkg2 ..." in
+# ZEXBUILD (package NAMES, not filenames/versions) to have this fetched
+# automatically from the live syshub ledger. New recipes needing this
+# just declare it — no CI changes required.
+install_toolchain_deps() {
+    for pkg in ${needs_toolchain:-}; do
+        echo "-- installing toolchain dependency: $pkg --"
+        ledger="$(curl -sSL https://archive.zainiumdynamics.tech/core/syshub/x86_64/syshub.toml)"
+        file="$(printf '%s\n' "$ledger" | sed -n "/^\[packages.$pkg\]\$/,/^\$/p" | sed -n 's/^file *= *"\(.*\)"/\1/p')"
+        [ -n "$file" ] || { echo "toolchain dep $pkg: not found in syshub ledger" >&2; exit 1; }
+        echo "  -> $file"
+        curl -sSL -o "/tmp/$file" "https://archive.zainiumdynamics.tech/core/syshub/x86_64/packages/$file"
+        "$SUBSTRATE" unpack "/tmp/$file" --output /overlayer/syshub
+    done
+}
+install_toolchain_deps
+
 # `--prefix=/overlayer/syshub` is the runtime-visible merged path for
 # EVERY package, syshub or userland (see userland-recipes' README's "Why
 # --prefix=/overlayer/syshub even for userland packages") — DESTDIR
