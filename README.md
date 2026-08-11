@@ -28,16 +28,3 @@ Driver/firmware packages typically carry patches too, same flat-file-next-to-`ZE
 ## CI
 
 Runs on GitHub Actions (`.github/workflows/ci.yml`), branch `master` — direct port of `userland-recipes`' pipeline (Alpine container for real musl builds, `ci/changed-packages.sh` + `ci/build.sh` unchanged from that repo verbatim). `check` on every PR (build-only), `release` on every push to `master` (build, verify musl/interpreter, pack, publish).
-
-### Repository secrets / variables (repo settings → Secrets and variables → Actions)
-
-Same as `userland-recipes`:
-
-| Name | Kind | Meaning |
-|---|---|---|
-| `R2_ENDPOINT` | secret | `https://<account_id>.r2.cloudflarestorage.com` |
-| `R2_BUCKET` | secret | The R2 bucket packages publish to. |
-| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | secret | R2 API token (S3-compatible credentials) — publish-only scope. |
-| `REQUIRES_SYSHUB` | variable | Passed straight to `substrate pack --requires-syshub`. |
-
-These need to be set on **this** repo separately — GitHub Actions secrets don't carry over from `userland-recipes`.
