@@ -78,8 +78,14 @@ build() {
     local musl_ldflags="-Wl,-dynamic-linker=${ldso} -Wl,-rpath=/overlayer/syshub/lib:${sysroot}/lib"
 
     mkdir -p build && cd build
+    # --build deliberately omitted — autoconf's own config.guess
+    # auto-detects the actual CI host correctly (Alpine/musl). CHOST
+    # (in ci/build.sh) is the ZAINIUM target triple, not the build
+    # host's — passing --build="$CHOST" here would have wrongly told
+    # configure BUILD==HOST==TARGET==zainium, collapsing this into a
+    # (broken) plain native build instead of the real
+    # BUILD=CI-host/HOST=TARGET=zainium bootstrap this recipe needs.
     ../configure \
-        --build="$CHOST" \
         --host="$target" \
         --target="$target" \
         --prefix=/overlayer/syshub \
