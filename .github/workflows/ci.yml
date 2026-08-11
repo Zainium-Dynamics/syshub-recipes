@@ -54,7 +54,13 @@ jobs:
 
       - name: Install build deps
         run: |
-          apk add --no-cache build-base texinfo xz zlib-dev curl-dev expat-dev linux-headers rust cargo
+          apk add --no-cache build-base texinfo xz zlib-dev curl-dev expat-dev linux-headers rust cargo \
+            gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
+            cmake samurai python3 libxml2-dev ncurses-dev zstd-dev libedit-dev
+          # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
+          # by name, this is the actual ninja-build implementation there.
+          # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
+          # python3/libxml2/ncurses/zstd/libedit cover LLVM's CMake build.
           # `cargo install` puts binaries in ~/.cargo/bin — nothing on
           # Alpine's own apk rust/cargo adds that to PATH for you.
           # GITHUB_PATH persists for every later step in this job.
@@ -138,7 +144,13 @@ jobs:
 
       - name: Install build deps
         run: |
-          apk add --no-cache build-base texinfo xz zlib-dev curl-dev expat-dev linux-headers rust cargo
+          apk add --no-cache build-base texinfo xz zlib-dev curl-dev expat-dev linux-headers rust cargo \
+            gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
+            cmake samurai python3 libxml2-dev ncurses-dev zstd-dev libedit-dev
+          # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
+          # by name, this is the actual ninja-build implementation there.
+          # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
+          # python3/libxml2/ncurses/zstd/libedit cover LLVM's CMake build.
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
 
       - name: Cache cargo (registry + installed binaries + zex-ports build)
