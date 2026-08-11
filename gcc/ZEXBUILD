@@ -1,0 +1,136 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=gcc
+pkgver=16.1.0
+pkgrel=0
+source="https://ftp.gnu.org/gnu/gcc/gcc-$pkgver/gcc-$pkgver.tar.xz
+0001-linux64.h-zainium-musl.patch
+0002-t-linux64-no-lib64.patch
+0003-gcc.cc-startfile-prefix-no-lib64.patch
+0004-base-ver-16.patch"
+# sha256 verified 2026-08-11 directly against the pristine tarball
+# already on disk at /run/media/alizain/ZAINIUM_DRIVE/syshub-Packages/
+# (matches its accompanying .sig).
+sha256sums="50efb4d94c3397aff3b0d61a5abd748b4dd31d9d3f2ab7be05b171d36a510f79  gcc-$pkgver.tar.xz"
+
+# Native, self-hosting GCC 16 for ZainiumOS: HOST == TARGET ==
+# x86_64-zainium-linux-musl, BUILD == the CI host's own triple. Every
+# runtime path below is /overlayer/syshub/... — same convention as
+# every other recipe (interpreter, RPATH, prefix all agree). Full
+# derivation/history of *why* each patch exists:
+# /run/media/alizain/ZAINIUM_DRIVE/packages/GCC-16/CLAUDE.md (hard-won
+# across a long debugging session — read that first if anything here
+# ever needs re-deriving). Patches are real unified diffs generated
+# against the actual pristine gcc-16.1.0 tarball (not hand-written) and
+# verified to reproduce the known-working patched source byte-for-byte
+# before being added here:
+#
+# 0001-linux64.h-zainium-musl.patch — GLIBC_DYNAMIC_LINKER32/64/X32 and
+#   MUSL_DYNAMIC_LINKER32/64/X32 all point at the real musl loader:
+#   /overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1
+#   (GLIBC_* must still be defined — CHOOSE_DYNAMIC_LINKER() in
+#   gcc/config/linux.h requires all four present even though glibc
+#   itself doesn't exist here). MD_STARTFILE_PREFIX = "/lib/" (sysroot
+#   IS the triple tree itself: $sysroot/lib/crt1.o).
+#
+# 0002-t-linux64-no-lib64.patch — MULTILIB_OSDIRNAMES' `m64=` mapping is
+#   `../lib64` in every stock x86_64-*-linux* target, hardcoded
+#   independent of --disable-multilib. libatomic's and libstdc++-v3's
+#   own subconfigure scripts compute toolexeclibdir from this directly
+#   and ignore --with-toolexeclibdir entirely — so this is the one
+#   actual fix that keeps libgcc_s.so/libstdc++.so/libatomic.so out of
+#   a lib64 that doesn't exist. Changed `m64=../lib64` to `m64=../lib`.
+#
+# 0003-gcc.cc-startfile-prefix-no-lib64.patch — STANDARD_STARTFILE_PREFIX_2
+#   stock default is "/usr/lib/"; changed to "/lib/" — no /usr prefix,
+#   no lib64, anywhere on ZainiumOS (syshub/lib64 is a symlink to
+#   syshub/lib).
+#
+# 0004-base-ver-16.patch — gcc/BASE-VER: "16.1.0" -> "16". Version label
+#   this build reports (gcc -dumpversion) and the subdir its own
+#   internals install under (lib/gcc/<triple>/16/, not .../16.1.0/).
+#
+# NOT buildable in a plain Alpine container the way every other recipe
+# in this repo is: this is a genuine bootstrap — it needs an EXISTING
+# Zainium musl cross-compiler already installed and on PATH to compile
+# GCC 16's own sources (the previous gcc-musl-cross syshub package,
+# e.g. at $SYSHUB/bin/x86_64-zainium-linux-musl-gcc). CI must install
+# that package first (once it's published) before this recipe's build()
+# can run for real — see build-native-gcc-zainium-v2.sh for the exact
+# configure/build sequence this mirrors (staged install, install-gcc
+# before target libs, explicit libatomic-before-libstdc++ ordering,
+# etc. — all hard-won, see CLAUDE.md points 1-11).
+build() {
+    patch -p1 < ../0001-linux64.h-zainium-musl.patch
+    patch -p1 < ../0002-t-linux64-no-lib64.patch
+    patch -p1 < ../0003-gcc.cc-startfile-prefix-no-lib64.patch
+    patch -p1 < ../0004-base-ver-16.patch
+
+    local target="x86_64-zainium-linux-musl"
+    local sysroot="/overlayer/syshub/${target}"
+    local ldso="${sysroot}/lib/ld-musl-x86_64.so.1"
+    # Runtime prefix: /overlayer/syshub, same as every other recipe.
+    # RPATH lists the generic syshub/lib first (libstdc++/libgcc_s/
+    # libatomic resolve from there with no extra -L/-B flag needed),
+    # then the musl sysroot lib as fallback (liblto_plugin.so, loaded
+    # internally by ar/ld --plugin, is itself linked against musl's
+    # libc.so and must find the real one here, not fall through to the
+    # build host's own /lib64/libc.so).
+    local musl_ldflags="-Wl,-dynamic-linker=${ldso} -Wl,-rpath=/overlayer/syshub/lib:${sysroot}/lib"
+
+    mkdir -p build && cd build
+    ../configure \
+        --build="$CHOST" \
+        --host="$target" \
+        --target="$target" \
+        --prefix=/overlayer/syshub \
+        --bindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/lib \
+        --includedir="${sysroot}/include" \
+        --with-sysroot="$sysroot" \
+        --with-native-system-header-dir=/include \
+        --with-local-prefix=/overlayer/syshub \
+        --with-toolexeclibdir=/overlayer/syshub/lib \
+        --with-pkgversion="GCC 16 (Zainium Dynamics)" \
+        --with-bugurl="https://zainiumdynamics.tech" \
+        --enable-languages=c,c++ \
+        --enable-lto \
+        --enable-threads=posix \
+        --enable-tls \
+        --enable-shared \
+        --enable-default-pie \
+        --enable-default-ssp \
+        --disable-bootstrap \
+        --disable-multilib \
+        --disable-multiarch \
+        --disable-nls \
+        --disable-libsanitizer \
+        --disable-libquadmath \
+        --disable-libquadmath-support \
+        --disable-libgomp \
+        --disable-libitm \
+        --disable-libssp \
+        --disable-libstdcxx-pch \
+        --disable-werror \
+        CFLAGS="-O2 -pipe" \
+        CXXFLAGS="-O2 -pipe" \
+        CFLAGS_FOR_TARGET="-O2 -pipe" \
+        CXXFLAGS_FOR_TARGET="-O2 -pipe" \
+        LDFLAGS="$musl_ldflags" \
+        LDFLAGS_FOR_TARGET="$musl_ldflags"
+
+    make -j"$(nproc)" all-gcc
+    make install-gcc DESTDIR="$PAYLOAD_DIR"
+    make -j"$(nproc)" all-target-libgcc
+    make install-target-libgcc DESTDIR="$PAYLOAD_DIR"
+    make -j"$(nproc)" all-target-libatomic
+    make install-target-libatomic DESTDIR="$PAYLOAD_DIR"
+    make -j"$(nproc)" all-target-libbacktrace
+    make install-target-libbacktrace DESTDIR="$PAYLOAD_DIR"
+    make -j"$(nproc)" all-target-libstdc++-v3
+    make install-target-libstdc++-v3 DESTDIR="$PAYLOAD_DIR"
+}
+
+package() {
+    :  # everything already installed straight into $PAYLOAD_DIR by build()
+}

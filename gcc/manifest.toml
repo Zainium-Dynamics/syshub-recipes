@@ -1,0 +1,38 @@
+# manifest.toml — gcc
+
+[package]
+name             = "gcc"
+version          = "16.1.0"
+description      = "GNU Compiler Collection — native musl-targeting toolchain (self-hosting: HOST == TARGET == x86_64-zainium-linux-musl)"
+license          = "GPL-3.0-or-later WITH GCC-exception-3.1"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://gcc.gnu.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+# Self-hosting toolchain, already correctly linked (real PT_INTERP +
+# RPATH baked in at GCC's own build time via LDFLAGS in ZEXBUILD, not
+# something substrate's generic elfpatch pass should touch).
+native           = true
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "binutils"]
+provides         = ["gcc", "g++", "x86_64-zainium-linux-musl-gcc", "cc"]
+tags             = ["compiler", "toolchain", "gcc"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+include = "/overlayer/syshub/include"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

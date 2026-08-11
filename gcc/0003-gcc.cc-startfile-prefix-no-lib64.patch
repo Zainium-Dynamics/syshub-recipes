@@ -1,0 +1,11 @@
+--- a/gcc/gcc.cc	2026-04-30 13:33:20.000000000 +0500
++++ b/gcc/gcc.cc	2026-07-27 23:06:00.897156498 +0500
+@@ -1645,7 +1645,7 @@
+ #define STANDARD_STARTFILE_PREFIX_1 "/lib/"
+ #endif
+ #ifndef STANDARD_STARTFILE_PREFIX_2
+-#define STANDARD_STARTFILE_PREFIX_2 "/usr/lib/"
++#define STANDARD_STARTFILE_PREFIX_2 "/lib/"
+ #endif
+ 
+ #ifdef CROSS_DIRECTORY_STRUCTURE  /* Don't use these prefixes for a cross compiler.  */
