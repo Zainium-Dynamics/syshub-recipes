@@ -58,11 +58,11 @@ echo "== $pkgname $pkgver-$pkgrel =="
 install_toolchain_deps() {
     for pkg in ${needs_toolchain:-}; do
         echo "-- installing toolchain dependency: $pkg --"
-        ledger="$(curl -sSL https://archive.zainiumdynamics.tech/core/syshub/x86_64/syshub.toml)"
+        ledger="$(wget -qO- https://archive.zainiumdynamics.tech/core/syshub/x86_64/syshub.toml)"
         file="$(printf '%s\n' "$ledger" | sed -n "/^\[packages.$pkg\]\$/,/^\$/p" | sed -n 's/^file *= *"\(.*\)"/\1/p')"
         [ -n "$file" ] || { echo "toolchain dep $pkg: not found in syshub ledger" >&2; exit 1; }
         echo "  -> $file"
-        curl -sSL -o "/tmp/$file" "https://archive.zainiumdynamics.tech/core/syshub/x86_64/packages/$file"
+        wget -qO "/tmp/$file" "https://archive.zainiumdynamics.tech/core/syshub/x86_64/packages/$file"
         "$SUBSTRATE" unpack "/tmp/$file" --output /overlayer/syshub
     done
 }
