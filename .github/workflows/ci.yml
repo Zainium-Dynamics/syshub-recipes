@@ -94,6 +94,19 @@ jobs:
             exit 1
           fi
 
+      # check builds never publish (no PUBLISH=1 here) — this is the
+      # only way to get the actual .zex out of a PR build for local
+      # inspection (`substrate inspect`/`unpack`) before deciding to
+      # merge. ci/build.sh leaves finished .zex files at the repo root.
+      - name: Upload built .zex(es)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-zex
+          path: "*.zex"
+          if-no-files-found: ignore
+          retention-days: 7
+
       - name: Upload staging on failure
         if: failure()
         uses: actions/upload-artifact@v4
