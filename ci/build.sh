@@ -150,7 +150,15 @@ fi
 # root name, git source, etc.) can override by cd-ing themselves inside
 # build() — this is just the common-case default.
 for f in *.tar.*; do
-    [ -e "$f" ] && tar xf "$f"
+    [ -e "$f" ] || continue
+    case "$f" in
+        # Alpine's default `tar` is BusyBox's, not GNU tar — it doesn't
+        # auto-detect/decompress zstd (fails with "invalid tar magic")
+        # even with the zstd CLI on PATH. Pipe through zstd explicitly
+        # instead of relying on tar's own compression-format support.
+        *.tar.zst) zstd -dc "$f" | tar xf - ;;
+        *)         tar xf "$f" ;;
+    esac
 done
 cd "$pkgname-$pkgver" 2>/dev/null || true
 
