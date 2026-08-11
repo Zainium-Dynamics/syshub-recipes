@@ -1,0 +1,201 @@
+# syshub-recipes — GitHub Actions CI/CD
+#
+# Same shape as userland-recipes' pipeline (see that repo for the full
+# history of why each piece is here) — only ever builds packages whose
+# directory actually changed (see ci/changed-packages.sh), runs inside
+# an Alpine container so `--host="$CHOST"` (or an explicit config.mak,
+# for Makefile-only builds) produces genuinely musl-linked binaries
+# instead of glibc ones wearing a musl interpreter string, and verifies
+# that on every ELF before packing. `libc6-compat` goes in first, before
+# anything else — GitHub's runner injects a glibc-built Node binary into
+# every container job to run JS actions (actions/checkout,
+# actions/upload-artifact), which silently fails on bare Alpine without it.
+#
+# Curated, not open-fork: this repo is the base OS (syshub), not the
+# public "anyone can add a package" surface userland-recipes is — the
+# check/release split and CI mechanics are identical anyway, since
+# what's actually different (manifest.toml's `_syshub = true`, install
+# paths under /overlayer/syshub/..., `native = true` for self-hosting
+# toolchain packages) lives entirely in each recipe, not in this pipeline.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    steps:
+      - name: Container prerequisites (glibc shim for actions' Node runtime)
+        run: |
+          apk add --no-cache libc6-compat git bash
+          # actions/checkout sets safe.directory under a *temporary* HOME
+          # that only exists during its own (Node) process — every later
+          # `run:` step uses the container's real HOME, where that trust
+          # entry never landed, so plain `git` calls in later steps
+          # (ci/changed-packages.sh, ci/build.sh) fail with "detected
+          # dubious ownership". Trust it globally, permanently, up front —
+          # this container is single-use/thrown away per job anyway.
+          git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build deps
+        run: |
+          apk add --no-cache build-base texinfo xz zlib-dev curl-dev expat-dev linux-headers rust cargo
+          # `cargo install` puts binaries in ~/.cargo/bin — nothing on
+          # Alpine's own apk rust/cargo adds that to PATH for you.
+          # GITHUB_PATH persists for every later step in this job.
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Cache cargo (registry + installed binaries)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+          key: cargo-check-${{ runner.os }}-v1
+
+      # substrate is published on crates.io (substrate-zainium, binary
+      # name substrate) — install straight from there.
+      - name: Install substrate
+        run: cargo install substrate-zainium --locked
+
+      - name: Build changed packages
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          pkgs_out="$(mktemp)"
+          if ! sh ci/changed-packages.sh > "$pkgs_out"; then
+            echo "changed-packages.sh failed:"
+            cat "$pkgs_out"
+            exit 1
+          fi
+          failed=""
+          for pkg in $(cat "$pkgs_out"); do
+            echo "=== check build: $pkg ==="
+            sh ci/build.sh "$pkg" || failed="$failed $pkg"
+          done
+          if [ -n "$failed" ]; then
+            echo "FAILED:$failed"
+            exit 1
+          fi
+
+      - name: Upload staging on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zexbuild-staging
+          path: .zexbuild-staging/
+          retention-days: 1
+
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    container: alpine:latest
+    env:
+      PUBLISH: "1"
+      REQUIRES_SYSHUB: ${{ vars.REQUIRES_SYSHUB }}
+      R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+      R2_BUCKET: ${{ secrets.R2_BUCKET }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - name: Container prerequisites (glibc shim for actions' Node runtime)
+        run: |
+          apk add --no-cache libc6-compat git bash
+          git config --global --add safe.directory '*'
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build deps
+        run: |
+          apk add --no-cache build-base texinfo xz zlib-dev curl-dev expat-dev linux-headers rust cargo
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: Cache cargo (registry + installed binaries + zex-ports build)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin
+            /tmp/zex-ports-src/target
+          key: cargo-release-${{ runner.os }}-v1
+
+      # zex-ports isn't published to crates.io yet — build from source.
+      # substrate is (substrate-zainium) — install straight from there.
+      - name: Install substrate + zex-ports
+        run: |
+          cargo install substrate-zainium --locked
+          # The cache step above only restores target/ — .git won't be
+          # there on a cache hit (it's not part of the cached path), so
+          # check for that specifically, not just the directory existing.
+          if [ ! -d /tmp/zex-ports-src/.git ]; then
+            cached_target=""
+            [ -d /tmp/zex-ports-src/target ] && mv /tmp/zex-ports-src/target /tmp/zex-ports-target-cache && cached_target=1
+            rm -rf /tmp/zex-ports-src
+            git clone --depth 1 https://gitlab.com/alizain.arch/zex-port.git /tmp/zex-ports-src
+            [ -n "$cached_target" ] && mv /tmp/zex-ports-target-cache /tmp/zex-ports-src/target
+          else
+            (cd /tmp/zex-ports-src && git pull --ff-only)
+          fi
+          (cd /tmp/zex-ports-src && cargo build --release)
+          cp /tmp/zex-ports-src/target/release/zex-ports /usr/local/bin/zex-ports
+
+      - name: Build + publish changed packages
+        env:
+          # github.event.before is the SHA the branch was at right before
+          # this push — covers every commit in the push, not just the
+          # last one. Without this, changed-packages.sh's HEAD~1 fallback
+          # only ever sees the final commit's diff, so pushing several
+          # commits at once (or the very first push of a repo's full
+          # history, where `before` is the all-zero SHA and this env var
+          # ends up empty, falling through to changed-packages.sh's own
+          # HEAD~1 default) silently drops everything else.
+          BASE_SHA: ${{ github.event.before }}
+        run: |
+          pkgs_out="$(mktemp)"
+          if ! sh ci/changed-packages.sh > "$pkgs_out"; then
+            echo "changed-packages.sh failed:"
+            cat "$pkgs_out"
+            exit 1
+          fi
+          failed=""
+          first=1
+          for pkg in $(cat "$pkgs_out"); do
+            if [ "$first" -eq 0 ]; then
+              echo "-- waiting 60s before the next package --"
+              sleep 60
+            fi
+            first=0
+            echo "=== release build: $pkg ==="
+            sh ci/build.sh "$pkg" || failed="$failed $pkg"
+          done
+          if [ -n "$failed" ]; then
+            echo "FAILED:$failed"
+            exit 1
+          fi
+
+      - name: Upload staging on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zexbuild-staging
+          path: .zexbuild-staging/
+          retention-days: 1
