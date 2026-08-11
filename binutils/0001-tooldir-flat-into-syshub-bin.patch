@@ -1,0 +1,11 @@
+--- a/configure	2026-07-26 04:00:00.000000000 +0500
++++ b/configure	2026-08-11 23:16:58.329074969 +0500
+@@ -10942,7 +10942,7 @@
+ 
+ # Some systems (e.g., one of the i386-aix systems the gas testers are
+ # using) don't handle "\$" correctly, so don't use it here.
+-tooldir='${exec_prefix}'/${target_noncanonical}
++tooldir='${exec_prefix}'
+ build_tooldir=${tooldir}
+ 
+ # Create a .gdbinit file which runs the one in srcdir

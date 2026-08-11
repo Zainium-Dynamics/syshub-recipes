@@ -1,0 +1,37 @@
+# manifest.toml — binutils
+
+[package]
+name             = "binutils"
+version          = "2.47"
+description      = "GNU Binutils — native musl-targeting assembler, linker, and binary utilities (self-hosting: HOST == TARGET == x86_64-zainium-linux-musl)"
+license          = "GPL-3.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.gnu.org/software/binutils/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+# Self-hosting toolchain, built with gcc-musl-cross — inherits correct
+# PT_INTERP + RPATH from that compiler's own baked-in defaults, not
+# something substrate's generic elfpatch pass should touch.
+native           = true
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "gcc"]
+provides         = ["as", "ld", "ar", "nm", "objcopy", "objdump", "ranlib", "readelf", "strip", "binutils"]
+tags             = ["toolchain", "binutils", "linker", "assembler"]
+
+[install]
+bin   = "/overlayer/syshub/bin"
+lib   = "/overlayer/syshub/lib"
+share = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

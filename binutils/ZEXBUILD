@@ -1,0 +1,79 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=binutils
+pkgver=2.47
+pkgrel=0
+source="https://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.zst
+0001-tooldir-flat-into-syshub-bin.patch"
+sha256sums="6b65d318b49c3b59c329ba712c3f4f0b0282269ce6dc5a2038a100aaf309059f  binutils-$pkgver.tar.zst"
+
+# Native, self-hosting binutils: HOST == TARGET == x86_64-zainium-linux-musl.
+# CC/CXX/AR/RANLIB/LD are all forced to the already-published gcc-musl-cross
+# toolchain (same bootstrap dependency as the gcc recipe — CI needs that
+# package installed and on PATH first, not buildable in a bare Alpine
+# container the way most recipes in this repo are).
+#
+# Runtime interpreter/RPATH: not set explicitly here (unlike the older
+# reference build script's manual -Wl,-dynamic-linker/-Wl,-rpath) —
+# gcc-musl-cross already bakes the correct
+# /overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1
+# interpreter and syshub/lib RPATH into everything it links by default
+# (see gcc's own linux64.h patch), so anything compiled with it inherits
+# that automatically. verify_musl (in ci/build.sh) still checks this on
+# the actual produced binaries regardless — belt and suspenders, not
+# blind trust.
+#
+# 0001-tooldir-flat-into-syshub-bin.patch — real diff against the
+# pristine 2.47 *generated* configure script (not configure.ac — that's
+# only the autoconf input; the tarball ships a pre-generated configure,
+# which is what actually runs, so patching configure.ac alone would be
+# a no-op without autoreconf). Upstream default:
+#   tooldir='${exec_prefix}'/${target_noncanonical}
+# meaning every as/ld/ar/... binutils installs gets a SECOND, unprefixed
+# copy under $prefix/x86_64-zainium-linux-musl/{bin,lib/ldscripts} in
+# addition to the main $prefix/bin/x86_64-zainium-linux-musl-{as,ld,...}
+# copies. Nothing in this toolchain's build scripts relies on that
+# unprefixed-under-triple-subdir convention (every recipe hardcodes
+# exact CC/AR/LD paths instead of depending on PATH lookups there), so
+# it's dead weight — and x86_64-zainium-linux-musl/ is meant to stay
+# musl's own dedicated sysroot (headers/libc/crt/loader), nothing else.
+# Patched tooldir to just '${exec_prefix}' — the "duplicate" install now
+# lands in the SAME syshub/bin as the main tools, as plain names (as,
+# ld, ar, ...) alongside the prefixed ones (x86_64-zainium-linux-musl-as,
+# ...) — no collision, different filenames, matches gcc-musl's own
+# already-published bin/gcc + bin/x86_64-zainium-linux-musl-gcc-16
+# pattern exactly.
+build() {
+    patch -p1 < ../0001-tooldir-flat-into-syshub-bin.patch
+
+    local sysroot="/overlayer/syshub"
+    local bindir="${sysroot}/bin"
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CXX="${bindir}/x86_64-zainium-linux-musl-g++"
+    export AR="${bindir}/x86_64-zainium-linux-musl-ar"
+    export RANLIB="${bindir}/x86_64-zainium-linux-musl-ranlib"
+    export LD="${bindir}/x86_64-zainium-linux-musl-ld"
+
+    mkdir -p build && cd build
+    # --build deliberately omitted — autoconf's own config.guess
+    # auto-detects the actual CI host correctly (Alpine/musl). CHOST
+    # (in ci/build.sh) is the ZAINIUM target triple, not the build
+    # host's — passing --build="$CHOST" here would have wrongly told
+    # configure BUILD==TARGET==zainium, breaking the actual
+    # native-vs-cross distinction this recipe depends on.
+    ../configure \
+        --target=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --with-sysroot="$sysroot" \
+        --disable-nls \
+        --disable-werror \
+        --disable-multilib \
+        --enable-gold=yes \
+        --enable-plugins \
+        --enable-static \
+        --enable-shared
+    make -j"$(nproc)"
+}
+
+package() {
+    make -C build DESTDIR="$PAYLOAD_DIR" install
+}
