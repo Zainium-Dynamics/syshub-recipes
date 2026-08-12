@@ -8,10 +8,21 @@ source="https://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.zst
 sha256sums="6b65d318b49c3b59c329ba712c3f4f0b0282269ce6dc5a2038a100aaf309059f  binutils-$pkgver.tar.zst"
 
 # Native, self-hosting binutils: HOST == TARGET == x86_64-zainium-linux-musl.
-# CC/CXX/AR/RANLIB/LD are all forced to the already-published gcc-musl-cross
-# toolchain (same bootstrap dependency as the gcc recipe — CI needs that
-# package installed and on PATH first, not buildable in a bare Alpine
-# container the way most recipes in this repo are).
+# CC/CXX are forced to the already-published gcc-musl-cross toolchain
+# (same bootstrap dependency as the gcc recipe — CI needs that package
+# installed and on PATH first, not buildable in a bare Alpine container
+# the way most recipes in this repo are). AR/RANLIB/LD are deliberately
+# LEFT UNSET, using the CI host's own (Alpine build-base) binutils —
+# forcing them to zainium-prefixed paths is wrong here specifically:
+# this recipe is what PRODUCES those exact binaries
+# (x86_64-zainium-linux-musl-ar/-ranlib/-ld), so at build start they
+# don't exist yet. Archiving/indexing/linking intermediate object files
+# during binutils' OWN build doesn't need target-ISA awareness (same
+# reasoning as the zstd/zlib/xz recipes' AR/RANLIB choice) — only actual
+# *compilation* (CC/CXX) needs the real cross compiler. Confirmed the
+# hard way: forcing AR to the not-yet-built path failed libsframe's
+# sub-configure with "could not determine .../x86_64-zainium-linux-musl-ar
+# interface".
 #
 # Runtime interpreter/RPATH: not set explicitly here (unlike the older
 # reference build script's manual -Wl,-dynamic-linker/-Wl,-rpath) —
@@ -50,9 +61,6 @@ build() {
     local bindir="${sysroot}/bin"
     export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
     export CXX="${bindir}/x86_64-zainium-linux-musl-g++"
-    export AR="${bindir}/x86_64-zainium-linux-musl-ar"
-    export RANLIB="${bindir}/x86_64-zainium-linux-musl-ranlib"
-    export LD="${bindir}/x86_64-zainium-linux-musl-ld"
 
     mkdir -p build && cd build
     # --build deliberately omitted — autoconf's own config.guess
