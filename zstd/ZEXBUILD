@@ -1,0 +1,53 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=zstd
+pkgver=1.5.7
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+subpackages="zstd-dev"
+source="https://github.com/facebook/zstd/releases/download/v$pkgver/zstd-$pkgver.tar.gz"
+sha256sums="eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3  zstd-$pkgver.tar.gz"
+
+# zstd doesn't use autoconf — plain `make` builds lib+CLI (top-level
+# default target is `lib-release zstd-release`). Cross-built against the
+# already-published musl + gcc-musl-cross toolchain (needs_toolchain),
+# same convention as binutils. AR/RANLIB deliberately left as the CI
+# host's own (Alpine build-base) binutils — `ar`/`ranlib` just manipulate
+# the .a archive container format, they don't need to understand the
+# target ISA, and Zainium's own binutils isn't published yet: this
+# package exists specifically to unblock that. binutils' CC is gcc-musl,
+# and gcc-musl's own cc1 was built with --enable-lto, which dlopens
+# libzstd.so.1 at *compiler runtime* — a dependency that was never
+# packaged/published on its own before now, so every self-hosting
+# toolchain build (gcc-16, binutils) failed with a generic "C compiler
+# cannot create executables" that was actually cc1 failing to load.
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -fPIC -I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+    export LDFLAGS_DYNLIB="-shared -pthread -L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    make -j"$(nproc)" CC="$CC" CFLAGS="$CFLAGS" LDFLAGS_DYNLIB="$LDFLAGS_DYNLIB"
+}
+
+# syshub tier: runtime only (shared lib + CLI) — the piece gcc-musl/
+# binutils actually need present at runtime. Packaged at the same
+# /overlayer/syshub prefix every recipe uses (see ci/build.sh's
+# flatten_prefix) regardless of manifest.toml's own [install] map.
+package() {
+    make -C lib install-shared DESTDIR="$PAYLOAD_DIR" prefix=/overlayer/syshub
+    make -C programs install DESTDIR="$PAYLOAD_DIR" prefix=/overlayer/syshub
+}
+
+# userland tier: headers + static lib + pkgconfig, for end users linking
+# against zstd in their own builds — zstd-dev.manifest.toml's own
+# [install] map (not this prefix) is what routes these into the
+# userland union tree at runtime.
+dev() {
+    make -C lib install-static install-includes install-pc \
+        DESTDIR="$PAYLOAD_DIR" prefix=/overlayer/syshub
+}

@@ -1,0 +1,32 @@
+# manifest.toml — zstd (syshub runtime tier)
+
+[package]
+name             = "zstd"
+version          = "1.5.7"
+description      = "Zstandard compression — runtime shared library + CLI (musl/Zainium build)"
+license          = "BSD-3-Clause"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/facebook/zstd"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libzstd.so.1"]
+tags             = ["compression", "library"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
