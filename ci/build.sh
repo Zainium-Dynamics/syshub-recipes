@@ -58,11 +58,28 @@ echo "== $pkgname $pkgver-$pkgrel =="
 install_toolchain_deps() {
     for pkg in ${needs_toolchain:-}; do
         echo "-- installing toolchain dependency: $pkg --"
-        ledger="$(wget -qO- https://archive.zainiumdynamics.tech/core/syshub/x86_64/syshub.toml)"
-        file="$(printf '%s\n' "$ledger" | sed -n "/^\[packages.$pkg\]\$/,/^\$/p" | sed -n 's/^file *= *"\(.*\)"/\1/p')"
-        [ -n "$file" ] || { echo "toolchain dep $pkg: not found in syshub ledger" >&2; exit 1; }
+        # Try the syshub ledger first, then userland — a toolchain dep can
+        # be either tier (e.g. binutils needs zstd's *headers*, which live
+        # in zstd-dev, a userland -dev subpackage, not the syshub runtime
+        # package). Package NAME is all a recipe declares; which tier it
+        # actually lives in is this function's problem, not the recipe's.
+        file=""
+        for tier_url in \
+            "https://archive.zainiumdynamics.tech/core/syshub/x86_64/syshub.toml|core/syshub/x86_64/packages" \
+            "https://archive.zainiumdynamics.tech/userland/x86_64/ledger.toml|userland/x86_64/packages"
+        do
+            ledger_url="${tier_url%%|*}"
+            pkgs_path="${tier_url##*|}"
+            ledger="$(wget -qO- "$ledger_url" 2>/dev/null)"
+            file="$(printf '%s\n' "$ledger" | sed -n "/^\[packages.$pkg\]\$/,/^\$/p" | sed -n 's/^file *= *"\(.*\)"/\1/p')"
+            if [ -n "$file" ]; then
+                base_url="https://archive.zainiumdynamics.tech/$pkgs_path"
+                break
+            fi
+        done
+        [ -n "$file" ] || { echo "toolchain dep $pkg: not found in syshub or userland ledger" >&2; exit 1; }
         echo "  -> $file"
-        wget -qO "/tmp/$file" "https://archive.zainiumdynamics.tech/core/syshub/x86_64/packages/$file"
+        wget -qO "/tmp/$file" "$base_url/$file"
         "$SUBSTRATE" unpack "/tmp/$file" --output /overlayer/syshub
     done
 
