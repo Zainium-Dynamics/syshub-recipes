@@ -29,7 +29,11 @@ sha256sums="a4327b1b50aa34deb08e4d170d727e4a7a203b00150561f30626d4c95ccbb661  78
 # disabled for now — zstd/xz/zlib (module compression) all are
 # published and enabled.
 build() {
-    cd 78d1521c6ca3ffaf3b87762ce627f87b765640fc
+    # GitHub's codeload archive prefixes the extracted dir with the repo
+    # name, not just the bare commit hash (confirmed via a local `tar
+    # tzf` check) — pkgname-pkgver ("kmod-34.2") doesn't match either,
+    # so ci/build.sh's own auto-cd silently no-ops and leaves us here.
+    cd kmod-78d1521c6ca3ffaf3b87762ce627f87b765640fc
 
     local sysroot="/overlayer/syshub"
     local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
