@@ -1,0 +1,31 @@
+# manifest.toml — xz (syshub runtime tier)
+
+[package]
+name             = "xz"
+version          = "5.8.3"
+description      = "XZ Utils — runtime shared library (liblzma) + CLI (musl/Zainium build)"
+license          = "0BSD"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://tukaani.org/xz/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["liblzma.so.5"]
+tags             = ["compression", "library"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

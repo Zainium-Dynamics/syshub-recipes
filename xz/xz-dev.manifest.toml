@@ -1,0 +1,33 @@
+# xz-dev.manifest.toml — xz (userland development tier)
+
+[package]
+name             = "xz-dev"
+version          = "5.8.3"
+description      = "XZ Utils — development headers, static library, pkgconfig, man pages"
+license          = "0BSD"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://tukaani.org/xz/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+requires_syshub  = ""
+depends          = ["xz"]
+provides         = ["liblzma.a", "lzma.h"]
+tags             = ["compression", "library", "development"]
+
+[install]
+lib     = "/overlayer/zexlib/union/lib"
+include = "/overlayer/zexlib/union/include"
+share   = "/overlayer/zexlib/union/share"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

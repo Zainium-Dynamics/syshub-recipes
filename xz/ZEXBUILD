@@ -1,0 +1,71 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=xz
+pkgver=5.8.3
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+subpackages="xz-dev"
+source="https://github.com/tukaani-project/xz/releases/download/v$pkgver/xz-$pkgver.tar.gz"
+sha256sums="3d3a1b973af218114f4f889bbaa2f4c037deaae0c8e815eec381c3d546b974a0  xz-$pkgver.tar.gz"
+
+# Real autoconf cross-compile (--host != build) — deliberately NOT the
+# gcc-16/binutils "native self-hosting" shape, so --host="$CHOST" is set
+# explicitly and --build is left for config.guess to auto-detect (the
+# actual CI host, not zainium). Setting --host is what tells configure
+# this is a genuine cross build, so it never tries to *execute* a
+# compiled test program itself — only compile+link it, which is all
+# gcc-musl's cc1 needs to be able to do (see ci/build.sh's libzstd
+# bootstrap for why cc1 can run at all). Same convention as
+# indent/htop elsewhere in this family of recipes.
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -I${musl_sysroot}/include -I${sysroot}/include"
+    export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --mandir="$sysroot/share/man" \
+        --disable-nls \
+        --disable-doc \
+        --enable-shared \
+        --enable-static
+    make -j"$(nproc)"
+
+    # Single shared install tree both package() and dev() slice from —
+    # xz's build (libtool) doesn't expose separate install-shared/
+    # install-static targets the way zstd's plain Makefile does, so
+    # install once and split by copying afterward instead.
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+# syshub tier: runtime only — the xz/xzdec CLI + shared lib + its SONAME
+# symlink. Not the unversioned .so dev symlink, not the static lib, not
+# headers/pkgconfig/man (those are userland/-dev, see dev() below).
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    find "$inst/lib" -maxdepth 1 \( -name 'liblzma.so.*' -o -name 'liblzma.so' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    rm -f "$PAYLOAD_DIR/lib/liblzma.so"
+}
+
+# userland tier: headers, static lib, the unversioned .so dev symlink,
+# pkgconfig, man pages — xz-dev.manifest.toml's own [install] map (not
+# this prefix) is what routes these into the userland union tree.
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp "$inst"/lib/liblzma.a "$PAYLOAD_DIR/lib/"
+    cp -P "$inst"/lib/liblzma.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp -a "$inst"/share/man/. "$PAYLOAD_DIR/share/man/"
+}
