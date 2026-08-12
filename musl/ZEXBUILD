@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=musl
 pkgver=1.2.6
-pkgrel=0
+pkgrel=1
 # musl.libc.org was unreachable at the time this recipe was written —
 # using the well-known kraj/musl GitHub mirror instead (same one
 # OpenEmbedded/Yocto builds against), which is also more reliably
