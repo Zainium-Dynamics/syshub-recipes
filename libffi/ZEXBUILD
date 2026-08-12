@@ -1,0 +1,61 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=libffi
+pkgver=3.7.1
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+subpackages="libffi-dev"
+source="https://github.com/libffi/libffi/releases/download/v$pkgver/libffi-$pkgver.tar.gz"
+sha256sums="d5e9a6638ddbd2513ddb54518eb67e4bbe6fa707bcc01c10f6212f0a088d819d  libffi-$pkgver.tar.gz"
+
+# Real autoconf cross-compile (--host set, --build left for
+# config.guess), same convention as xz/readline/ncurses. Required
+# unconditionally by GLib's meson.build (dependency('libffi', ...), no
+# allow_fallback) — this recipe exists specifically to unblock glib.
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CXX="${bindir}/x86_64-zainium-linux-musl-g++"
+    export CFLAGS="-O2 -pipe -fPIC -I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --enable-shared \
+        --enable-static \
+        --disable-multi-os-directory
+    make -j"$(nproc)"
+
+    # Single shared install tree both package() and dev() slice from —
+    # libffi's plain `make install` (automake-generated, no separate
+    # install-shared/install-static targets) installs everything
+    # together in one pass.
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+# syshub tier: runtime only — libffi.so.8.* + its SONAME symlink. Not
+# the unversioned .so dev symlink, not the static lib, not
+# headers/pkgconfig (userland/-dev, see dev() below).
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libffi.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+# userland tier: headers, static lib, the unversioned .so dev symlink,
+# pkgconfig — libffi-dev.manifest.toml's own [install] map (not this
+# prefix) routes these into the userland union tree at runtime.
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp "$inst"/lib/libffi.a "$PAYLOAD_DIR/lib/"
+    cp -P "$inst"/lib/libffi.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

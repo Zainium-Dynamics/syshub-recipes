@@ -1,0 +1,30 @@
+# manifest.toml — libffi (syshub runtime tier)
+
+[package]
+name             = "libffi"
+version          = "3.7.1"
+description      = "libffi — runtime shared library, foreign function interface (musl/Zainium build)"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/libffi/libffi"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libffi.so.8"]
+tags             = ["library", "ffi"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
