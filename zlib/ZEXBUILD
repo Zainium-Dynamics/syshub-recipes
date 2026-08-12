@@ -1,0 +1,59 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=zlib
+pkgver=1.3.2
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+subpackages="zlib-dev"
+source="https://github.com/madler/zlib/releases/download/v$pkgver/zlib-$pkgver.tar.gz"
+sha256sums="bb329a0a2cd0274d05519d61c667c062e06990d72e125ee2dfa8de64f0119d16  zlib-$pkgver.tar.gz"
+
+# zlib ships its own hand-written configure (not autoconf) — cross-built
+# against the already-published musl + gcc-musl-cross toolchain
+# (needs_toolchain), same convention as zstd/binutils. AR/RANLIB left as
+# the CI host's own (Alpine build-base) binutils, same reasoning as zstd's
+# ZEXBUILD: they only manipulate the .a archive container, no ISA
+# awareness needed, and Zainium's own binutils isn't published yet.
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --prefix="$sysroot" \
+        --libdir="$sysroot/lib" \
+        --sharedlibdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --uname=linux \
+        --64
+    make -j"$(nproc)"
+}
+
+# syshub tier: runtime shared lib only (libz.so.1.3.2 + the libz.so.1
+# SONAME symlink other packages' NEEDED entries resolve against) — not
+# the unversioned libz.so dev symlink, not the static lib, not headers.
+# Built straight from the build tree's own output files rather than
+# through `make install-libs` twice (once per tier) — simpler than
+# threading DESTDIR through the same target twice and deleting what each
+# tier doesn't want afterward.
+package() {
+    mkdir -p "$PAYLOAD_DIR/lib"
+    cp -P libz.so.1.3.2 libz.so.1 "$PAYLOAD_DIR/lib/"
+}
+
+# userland tier: headers, static lib, the unversioned .so dev symlink
+# (for -lz to resolve at link time), pkgconfig, man page —
+# zlib-dev.manifest.toml's own [install] map (not this prefix) is what
+# routes these into the userland union tree at runtime.
+dev() {
+    mkdir -p "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/share/man/man3"
+    cp libz.a "$PAYLOAD_DIR/lib/"
+    cp -P libz.so "$PAYLOAD_DIR/lib/"
+    cp zlib.h zconf.h "$PAYLOAD_DIR/include/"
+    cp zlib.pc "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp zlib.3 "$PAYLOAD_DIR/share/man/man3/"
+}

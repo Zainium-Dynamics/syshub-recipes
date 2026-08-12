@@ -1,0 +1,30 @@
+# manifest.toml — zlib (syshub runtime tier)
+
+[package]
+name             = "zlib"
+version          = "1.3.2"
+description      = "zlib compression — runtime shared library (musl/Zainium build)"
+license          = "Zlib"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://zlib.net"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libz.so.1"]
+tags             = ["compression", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
