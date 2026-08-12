@@ -1,0 +1,31 @@
+# manifest.toml — bash (syshub tier)
+
+[package]
+name             = "bash"
+version          = "5.3"
+description      = "GNU Bourne-Again Shell (musl/Zainium build, readline-enabled)"
+license          = "GPL-3.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.gnu.org/software/bash/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "readline", "ncurses"]
+provides         = ["bash", "sh"]
+tags             = ["shell", "utility"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

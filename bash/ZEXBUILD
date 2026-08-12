@@ -1,0 +1,56 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=bash
+pkgver=5.3
+pkgrel=0
+needs_toolchain="musl gcc-musl ncurses ncurses-dev readline readline-dev"
+source="https://ftp.gnu.org/gnu/bash/bash-$pkgver.tar.gz"
+sha256sums="0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba  bash-$pkgver.tar.gz"
+
+# Real autoconf cross-compile (--host set, --build left for config.guess,
+# same convention as xz/readline/ncurses). --enable-readline pulls in
+# readline+history at both compile time (readline-dev's headers) and
+# link time (readline's .so) — needs_toolchain covers both tiers of
+# both packages. CC_FOR_BUILD stays the CI host's own gcc: bash's build
+# compiles a handful of native helper generators (mksyntax, mksignames,
+# ...) that must run on the BUILD machine, not the target.
+#
+# The autoconf cache vars below are cross-compile answers autoconf can't
+# safely probe by running target-arch test binaries on the build host —
+# verified against a real musl target build already (not guesses).
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC_FOR_BUILD="/usr/bin/gcc"
+    export CFLAGS_FOR_BUILD="-O2 -pipe"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -D_GNU_SOURCE -I${musl_sysroot}/include -I${sysroot}/include -I${sysroot}/include/ncursesw"
+    export CPPFLAGS="-D_GNU_SOURCE -I${musl_sysroot}/include -I${sysroot}/include -I${sysroot}/include/ncursesw"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    export ac_cv_func_mmap_fixed_mapped=yes
+    export ac_cv_func_strcoll_works=yes
+    export bash_cv_func_sigsetjmp=present
+    export bash_cv_getcwd_malloc=yes
+    export bash_cv_job_control_missing=present
+    export bash_cv_sys_named_pipes=present
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --bindir="$sysroot/bin" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --without-bash-malloc \
+        --enable-readline \
+        --enable-history \
+        --disable-nls
+    make -j"$(nproc)"
+}
+
+package() {
+    make DESTDIR="$PAYLOAD_DIR" install
+}
