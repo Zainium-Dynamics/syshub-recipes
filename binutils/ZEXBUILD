@@ -54,6 +54,18 @@ build() {
     export RANLIB="${bindir}/x86_64-zainium-linux-musl-ranlib"
     export LD="${bindir}/x86_64-zainium-linux-musl-ld"
 
+    # Sanity-check the forced compiler directly, before configure ever
+    # runs — if this fails, configure's generic "cannot create
+    # executables" (which hides the real reason behind config.log) never
+    # even gets a chance to obscure it.
+    echo "-- sanity: $CC --version --"
+    "$CC" --version || true
+    echo "-- sanity: $CC -print-prog-name=cc1 --"
+    "$CC" -print-prog-name=cc1 || true
+    echo "-- sanity: trivial compile+link --"
+    echo 'int main(){return 0;}' > /tmp/zexbuild-cctest.c
+    "$CC" -v /tmp/zexbuild-cctest.c -o /tmp/zexbuild-cctest 2>&1 || true
+
     mkdir -p build && cd build
     # --build deliberately omitted — autoconf's own config.guess
     # auto-detects the actual CI host correctly (Alpine/musl). CHOST
@@ -71,7 +83,8 @@ build() {
         --enable-gold=yes \
         --enable-plugins \
         --enable-static \
-        --enable-shared
+        --enable-shared \
+    || { echo "---- config.log tail ----"; tail -100 config.log; exit 1; }
     make -j"$(nproc)"
 }
 
