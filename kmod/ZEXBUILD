@@ -1,0 +1,104 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=kmod
+pkgver=34.2
+pkgrel=0
+needs_toolchain="musl gcc-musl zstd zstd-dev xz xz-dev zlib zlib-dev"
+subpackages="kmod-dev"
+# Real kernel.org dist tarball (the "Signed packages" link in kmod's own
+# README) — NOT a GitHub tag/commit snapshot, which is just a git-tree
+# archive with no pre-generated configure (kmod's own generated files
+# only exist in a proper `make dist` release). Extracts to kmod-34.2/,
+# matching pkgname-pkgver exactly.
+#
+# Patches are real diffs against this pristine tarball, verified against
+# Zainium's own local reference build tree
+# (/run/media/alizain/ZAINIUM_DRIVE/packages/kmod-34.2) — patch, apply
+# to a fresh pristine copy, byte-diff the result, confirmed identical.
+# 0001/0002/0003 below are the actual source-level changes; the
+# moduledir default is NOT patched into configure.ac/configure — that
+# edit was confirmed to never have been regenerated in the reference
+# tree (the generated `configure` there is byte-identical to pristine),
+# so it would be purely cosmetic here too. --with-module-directory
+# passed explicitly at configure time is what actually takes effect,
+# matching the reference build script's own validated approach.
+source="https://www.kernel.org/pub/linux/utils/kernel/kmod/kmod-$pkgver.tar.xz
+0001-macro.h-zainium-paths.patch
+0002-libkmod.c-drop-usr-paths.patch
+0003-depmod.c-drop-usr-paths-and-fix-version-detect.patch"
+sha256sums="5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54  kmod-$pkgver.tar.xz"
+
+# Real, syshub-tier package: kmod is base-OS machinery (modprobe/depmod/
+# insmod/rmmod/lsmod/modinfo) — a modular kernel can't load any driver
+# built as a loadable .ko without it present at boot, same reasoning as
+# musl/gcc-musl/binutils being syshub rather than userland.
+#
+# Autotools build (matches the validated local reference script exactly
+# — kmod's meson build is upstream's *recommended* path going forward,
+# but autotools is what's actually been tested against this target).
+# --build deliberately omitted, same reasoning as every other real
+# cross-compile recipe in this repo — config.guess auto-detects the
+# actual CI host, passing the target triple there would be wrong.
+#
+# --without-openssl: libssl/libcrypto aren't published as a syshub
+# package yet, so PKCS7 module-signature verification (modinfo) is
+# disabled for now — zstd/xz/zlib (module compression) all are
+# published and enabled.
+build() {
+    patch -p1 < ../0001-macro.h-zainium-paths.patch
+    patch -p1 < ../0002-libkmod.c-drop-usr-paths.patch
+    patch -p1 < ../0003-depmod.c-drop-usr-paths-and-fix-version-detect.patch
+
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -D_GNU_SOURCE -I${musl_sysroot}/include -I${sysroot}/include"
+    export CPPFLAGS="-D_GNU_SOURCE -I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --bindir="$sysroot/bin" \
+        --sbindir="$sysroot/bin" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --with-module-directory=/overlayer/syshub/drivers/modules \
+        --with-zstd \
+        --with-xz \
+        --with-zlib \
+        --without-openssl \
+        --disable-manpages
+    make -j"$(nproc)"
+
+    # Single shared install tree both package() and dev() slice from —
+    # kmod's plain `make install` (automake-generated) installs
+    # everything together in one pass.
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+# syshub tier: the CLI toolset (kmod + insmod/rmmod/modprobe/depmod/
+# lsmod/modinfo, all symlinks to the kmod multi-call binary, generated
+# by the install step itself) + libkmod's runtime .so. Not the
+# unversioned .so dev symlink, not headers/pkgconfig (userland/-dev).
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    find "$inst/lib" -maxdepth 1 -name 'libkmod.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+# userland tier: libkmod.h, the unversioned .so dev symlink, pkgconfig
+# — kmod-dev.manifest.toml's own [install] map (not this prefix) routes
+# these into the userland union tree. No static lib — libkmod's only
+# public target is the shared library (its static variant is
+# install:false upstream, internal-linkage-only).
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp "$inst"/include/libkmod.h "$PAYLOAD_DIR/include/"
+    cp -P "$inst"/lib/libkmod.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

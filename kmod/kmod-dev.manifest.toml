@@ -1,0 +1,32 @@
+# kmod-dev.manifest.toml — kmod (userland development tier)
+
+[package]
+name             = "kmod-dev"
+version          = "34.2"
+description      = "libkmod — development headers, pkgconfig"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/alizainx/kmod"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+requires_syshub  = ""
+depends          = ["kmod"]
+provides         = ["libkmod.h"]
+tags             = ["kernel", "modules", "development"]
+
+[install]
+lib     = "/overlayer/zexlib/union/lib"
+include = "/overlayer/zexlib/union/include"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

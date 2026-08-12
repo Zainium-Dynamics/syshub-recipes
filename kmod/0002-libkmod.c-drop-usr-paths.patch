@@ -1,0 +1,13 @@
+--- a/libkmod/libkmod.c	2025-03-28 09:01:47.000000000 +0500
++++ b/libkmod/libkmod.c	2026-08-12 16:50:07.530433920 +0500
+@@ -45,9 +45,8 @@
+ 	// clang-format off
+ 	SYSCONFDIR "/modprobe.d",
+ 	"/run/modprobe.d",
+-	"/usr/local/lib/modprobe.d",
+ 	DISTCONFDIR "/modprobe.d",
+-	"/lib/modprobe.d",
++	"/overlayer/syshub/lib/modprobe.d",
+ 	NULL,
+ 	// clang-format on
+ };
