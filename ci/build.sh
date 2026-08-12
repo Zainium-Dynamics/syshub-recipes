@@ -66,11 +66,15 @@ install_toolchain_deps() {
         file=""
         for tier_url in \
             "https://archive.zainiumdynamics.tech/core/syshub/x86_64/syshub.toml|core/syshub/x86_64/packages" \
-            "https://archive.zainiumdynamics.tech/userland/x86_64/ledger.toml|userland/x86_64/packages"
+            "https://archive.zainiumdynamics.tech/userland/x86_64/zex_ledger-x86_64.toml|userland/x86_64/packages"
         do
             ledger_url="${tier_url%%|*}"
             pkgs_path="${tier_url##*|}"
-            ledger="$(wget -qO- "$ledger_url" 2>/dev/null)"
+            # `|| true` — under `set -e`, a failed fetch (e.g. a syshub-only
+            # pkg 404ing against the userland ledger, or vice versa) would
+            # otherwise abort the whole script right here, silently, before
+            # the loop ever gets to try the other tier or print anything.
+            ledger="$(wget -qO- "$ledger_url" 2>/dev/null || true)"
             file="$(printf '%s\n' "$ledger" | sed -n "/^\[packages.$pkg\]\$/,/^\$/p" | sed -n 's/^file *= *"\(.*\)"/\1/p')"
             if [ -n "$file" ]; then
                 base_url="https://archive.zainiumdynamics.tech/$pkgs_path"
