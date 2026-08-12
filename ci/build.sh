@@ -65,6 +65,31 @@ install_toolchain_deps() {
         wget -qO "/tmp/$file" "https://archive.zainiumdynamics.tech/core/syshub/x86_64/packages/$file"
         "$SUBSTRATE" unpack "/tmp/$file" --output /overlayer/syshub
     done
+
+    # gcc-musl's own cc1 was built with --enable-lto, which links it
+    # against libzstd.so.1 *unconditionally* (GCC's LTO bytecode writer is
+    # compiled into cc1 itself, not a plugin) — cc1 can't run at all,
+    # LTO or not, until that .so exists somewhere on its search path. No
+    # zainium-native libzstd is published yet (this is exactly what the
+    # zstd recipe is for), so borrow Alpine's own musl-linked libzstd.so.1
+    # here just to get cc1 off the ground. musl's ABI is stable across
+    # independent builds of the same libc, so this is safe for a library
+    # that only calls ordinary libc functions (malloc/memcpy/...) — once
+    # cc1 can run, the zstd recipe builds and packages Zainium's own
+    # native libzstd.so.1 for real, which is what actually ships. This
+    # only ever fires when gcc-musl was requested and nothing has already
+    # put a real libzstd.so.1 at this path (i.e. becomes a no-op forever
+    # once the zstd package itself is in needs_toolchain).
+    case " ${needs_toolchain:-} " in
+        *" gcc-musl "*)
+            if [ ! -e /overlayer/syshub/lib/libzstd.so.1 ]; then
+                echo "-- bootstrapping libzstd.so.1 from Alpine (cc1 needs it to run at all) --"
+                apk add --no-cache zstd-libs >/dev/null
+                mkdir -p /overlayer/syshub/lib
+                cp -L /usr/lib/libzstd.so.1 /overlayer/syshub/lib/libzstd.so.1
+            fi
+            ;;
+    esac
 }
 install_toolchain_deps
 
