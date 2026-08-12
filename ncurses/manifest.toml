@@ -1,0 +1,30 @@
+# manifest.toml — ncurses (syshub runtime tier)
+
+[package]
+name             = "ncurses"
+version          = "6.6"
+description      = "ncurses (wide-char) — runtime shared library (musl/Zainium build)"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://invisible-island.net/ncurses"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libncursesw.so.6"]
+tags             = ["terminal", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

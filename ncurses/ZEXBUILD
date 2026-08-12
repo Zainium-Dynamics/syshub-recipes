@@ -1,0 +1,72 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=ncurses
+pkgver=6.6
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+subpackages="ncurses-dev"
+source="https://ftp.gnu.org/gnu/ncurses/ncurses-$pkgver.tar.gz"
+sha256sums="355b4cbbed880b0381a04c46617b7656e362585d52e9cf84a67e2009b749ff11  ncurses-$pkgver.tar.gz"
+
+# Wide-char build (--enable-widec) — confirmed against the real reference
+# syshub tree's own ncursesw.pc (package name "ncursesw", headers under
+# include/ncursesw, -DNCURSES_WIDECHAR). readline (next recipe after this
+# one) links against -lncursesw, not plain -lncurses.
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -fPIC -I${musl_sysroot}/include -I${sysroot}/include -D_GNU_SOURCE"
+    export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --enable-widec \
+        --with-shared \
+        --with-normal \
+        --without-debug \
+        --enable-pc-files \
+        --with-pkg-config-libdir="$sysroot/lib/pkgconfig" \
+        --with-terminfo-dirs="$sysroot/share/terminfo" \
+        --with-default-terminfo-dir="$sysroot/share/terminfo" \
+        --disable-db-install \
+        --without-ada \
+        --without-tests \
+        --without-manpages
+    make -j"$(nproc)"
+
+    # Single shared install tree both package() and dev() slice from —
+    # ncurses' --with-shared --with-normal build installs static+shared
+    # together, no separate install-shared/install-static targets.
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+# syshub tier: runtime only — libncursesw.so.* + its SONAME symlink.
+# Not the unversioned .so dev symlink, not the static lib, not
+# headers/pkgconfig/terminfo database (those are userland/-dev, see
+# dev() below).
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libncursesw.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+# userland tier: headers (include/ncursesw), static lib, the unversioned
+# .so dev symlink, pkgconfig, terminfo database — ncurses-dev.manifest.toml's
+# own [install] map (not this prefix) routes these into the userland
+# union tree at runtime.
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp "$inst"/lib/libncursesw.a "$PAYLOAD_DIR/lib/"
+    cp -P "$inst"/lib/libncursesw.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    [ -d "$inst/share/terminfo" ] && cp -a "$inst/share/terminfo" "$PAYLOAD_DIR/share/"
+}
