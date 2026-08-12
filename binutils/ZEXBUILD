@@ -58,9 +58,18 @@ build() {
     patch -p1 < ../0001-tooldir-flat-into-syshub-bin.patch
 
     local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
     local bindir="${sysroot}/bin"
     export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
     export CXX="${bindir}/x86_64-zainium-linux-musl-g++"
+    # gcc-musl does NOT implicitly search $sysroot/include (confirmed —
+    # bfd's zstd.h detection failed until these were added explicitly,
+    # even with zstd-dev's headers correctly unpacked to
+    # /overlayer/syshub/include). Same -I/-L convention the zstd/zlib/xz
+    # recipes already use for their own builds.
+    export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include"
+    export CFLAGS="-O2 -pipe ${CPPFLAGS}"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib"
 
     mkdir -p build && cd build
     # --build deliberately omitted — autoconf's own config.guess
