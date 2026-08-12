@@ -213,6 +213,11 @@ for sub in ${subpackages:-}; do
     subfn="${sub#"$pkgname"-}"   # "$pkgname-dev" -> "dev"
     SUBPKG_PAYLOAD_DIR="$STAGING_ROOT/subpkg/$sub/payload"
     mkdir -p "$SUBPKG_PAYLOAD_DIR"
+    # Subpackage functions (dev(), etc.) stage into $PAYLOAD_DIR same as
+    # package() does — without repointing it here it would still hold the
+    # main package's (already-finished) payload dir, silently writing the
+    # subpackage's files into the wrong package.
+    PAYLOAD_DIR="$SUBPKG_PAYLOAD_DIR"
     "$subfn"
     flatten_prefix "$SUBPKG_PAYLOAD_DIR"
 
