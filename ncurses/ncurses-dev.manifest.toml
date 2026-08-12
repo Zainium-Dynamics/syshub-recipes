@@ -1,0 +1,33 @@
+# ncurses-dev.manifest.toml — ncurses (userland development tier)
+
+[package]
+name             = "ncurses-dev"
+version          = "6.6"
+description      = "ncurses (wide-char) — development headers, static library, pkgconfig"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://invisible-island.net/ncurses"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+requires_syshub  = ""
+depends          = ["ncurses"]
+provides         = ["libncursesw.a", "ncurses.h"]
+tags             = ["terminal", "library", "development"]
+
+[install]
+lib     = "/overlayer/zexlib/union/lib"
+include = "/overlayer/zexlib/union/include"
+share   = "/overlayer/zexlib/union/share"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
