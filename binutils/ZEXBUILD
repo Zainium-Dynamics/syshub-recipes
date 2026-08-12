@@ -2,7 +2,7 @@ maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=binutils
 pkgver=2.47
 pkgrel=0
-needs_toolchain="musl gcc-musl zstd"
+needs_toolchain="musl gcc-musl zstd zstd-dev"
 source="https://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.zst
 0001-tooldir-flat-into-syshub-bin.patch"
 sha256sums="6b65d318b49c3b59c329ba712c3f4f0b0282269ce6dc5a2038a100aaf309059f  binutils-$pkgver.tar.zst"
