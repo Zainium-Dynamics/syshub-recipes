@@ -2,7 +2,7 @@ maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=binutils
 pkgver=2.47
 pkgrel=0
-needs_toolchain="musl gcc-musl"
+needs_toolchain="musl gcc-musl zstd"
 source="https://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.zst
 0001-tooldir-flat-into-syshub-bin.patch"
 sha256sums="6b65d318b49c3b59c329ba712c3f4f0b0282269ce6dc5a2038a100aaf309059f  binutils-$pkgver.tar.zst"
@@ -53,18 +53,6 @@ build() {
     export AR="${bindir}/x86_64-zainium-linux-musl-ar"
     export RANLIB="${bindir}/x86_64-zainium-linux-musl-ranlib"
     export LD="${bindir}/x86_64-zainium-linux-musl-ld"
-
-    # Sanity-check the forced compiler directly, before configure ever
-    # runs — if this fails, configure's generic "cannot create
-    # executables" (which hides the real reason behind config.log) never
-    # even gets a chance to obscure it.
-    echo "-- sanity: $CC --version --"
-    "$CC" --version || true
-    echo "-- sanity: $CC -print-prog-name=cc1 --"
-    "$CC" -print-prog-name=cc1 || true
-    echo "-- sanity: trivial compile+link --"
-    echo 'int main(){return 0;}' > /tmp/zexbuild-cctest.c
-    "$CC" -v /tmp/zexbuild-cctest.c -o /tmp/zexbuild-cctest 2>&1 || true
 
     mkdir -p build && cd build
     # --build deliberately omitted — autoconf's own config.guess
