@@ -3,7 +3,7 @@
 [package]
 name             = "ncurses-dev"
 version          = "6.6"
-description      = "ncurses (wide-char) — development headers, static library, pkgconfig, terminfo database"
+description      = "ncurses (wide-char) — development headers, static library, pkgconfig"
 license          = "MIT"
 maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
 homepage         = "https://invisible-island.net/ncurses"

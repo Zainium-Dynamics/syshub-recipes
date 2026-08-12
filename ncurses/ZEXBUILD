@@ -63,10 +63,15 @@ package() {
 # union tree at runtime.
 dev() {
     local inst="_zexbuild-install/overlayer/syshub"
-    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     cp "$inst"/lib/libncursesw.a "$PAYLOAD_DIR/lib/"
     cp -P "$inst"/lib/libncursesw.so "$PAYLOAD_DIR/lib/"
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
-    [ -d "$inst/share/terminfo" ] && cp -a "$inst/share/terminfo" "$PAYLOAD_DIR/share/"
+    # --disable-db-install (above) means configure's own installer never
+    # creates share/terminfo at all — nothing to copy. Previously this was
+    # a `[ -d ... ] && cp ...` whose *last command in the function* being
+    # a false test (dir doesn't exist) aborted the whole ci/build.sh run
+    # silently under set -e — the actual root cause of this recipe's first
+    # CI failure, not a real build error.
 }
