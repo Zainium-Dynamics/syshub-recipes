@@ -1,0 +1,32 @@
+# readline-dev.manifest.toml — readline (userland development tier)
+
+[package]
+name             = "readline-dev"
+version          = "8.3"
+description      = "GNU Readline — development headers, static libraries, pkgconfig"
+license          = "GPL-3.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://tiswww.case.edu/php/chet/readline/rltop.html"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+requires_syshub  = ""
+depends          = ["readline", "ncurses-dev"]
+provides         = ["libreadline.a", "libhistory.a", "readline.h"]
+tags             = ["terminal", "library", "development"]
+
+[install]
+lib     = "/overlayer/zexlib/union/lib"
+include = "/overlayer/zexlib/union/include"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

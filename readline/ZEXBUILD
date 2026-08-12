@@ -1,0 +1,67 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=readline
+pkgver=8.3
+pkgrel=0
+needs_toolchain="musl gcc-musl ncurses ncurses-dev"
+subpackages="readline-dev"
+source="https://ftp.gnu.org/gnu/readline/readline-$pkgver.tar.gz"
+sha256sums="fe5383204467828cd495ee8d1d3c037a7eba1389c22bc6a041f627976f9061cc  readline-$pkgver.tar.gz"
+
+# Real autoconf cross-compile, same shape as xz's recipe: --host set
+# explicitly (never --build), CC forced to gcc-musl. readline's shared
+# lib link step pulls in a termcap-providing library at its own
+# configure time (SHLIB_LIBS='$(TERMCAP_LIB)' in support/shobj-conf) —
+# needs_toolchain includes both ncurses (the .so, for the actual link)
+# and ncurses-dev (headers, since configure probes for tgetent() etc.
+# via compile checks before it ever gets to linking).
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -I${musl_sysroot}/include -I${sysroot}/include -I${sysroot}/include/ncursesw"
+    export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include -I${sysroot}/include/ncursesw"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --disable-nls \
+        --enable-shared \
+        --enable-static
+    make -j"$(nproc)"
+
+    # Single shared install tree both package() and dev() slice from —
+    # readline's `install` target runs install-shared + install-static
+    # together (INSTALL_TARGETS in Makefile.in), both of which also drag
+    # in headers/pkgconfig/docs each time — installing once and splitting
+    # by copying afterward avoids ending up with those duplicated into
+    # (or missing from) the wrong tier.
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+# syshub tier: runtime only — libreadline.so.* + libhistory.so.* and
+# their SONAME symlinks. Not the unversioned .so dev symlinks, not the
+# static libs, not headers/pkgconfig/docs (userland/-dev, see dev()).
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 \( -name 'libreadline.so.*' -o -name 'libhistory.so.*' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+# userland tier: headers (include/readline), static libs, the
+# unversioned .so dev symlinks, pkgconfig — readline-dev.manifest.toml's
+# own [install] map (not this prefix) routes these into the userland
+# union tree at runtime.
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/readline "$PAYLOAD_DIR/include/"
+    cp "$inst"/lib/libreadline.a "$inst"/lib/libhistory.a "$PAYLOAD_DIR/lib/"
+    cp -P "$inst"/lib/libreadline.so "$inst"/lib/libhistory.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
