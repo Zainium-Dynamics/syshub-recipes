@@ -1,0 +1,91 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=kmod
+pkgver=34.2
+pkgrel=0
+needs_toolchain="musl gcc-musl zstd zstd-dev xz xz-dev zlib zlib-dev"
+subpackages="kmod-dev"
+# Zainium's own fork (github.com/alizainx/kmod) — the only change from
+# upstream kmod 34.2 is the moduledir default in configure.ac/meson.build
+# (/overlayer/syshub/drivers/modules instead of $prefix/lib/modules), see
+# that repo's README. Pinned to a commit, not a branch, for a
+# reproducible download.
+source="https://github.com/alizainx/kmod/archive/78d1521c6ca3ffaf3b87762ce627f87b765640fc.tar.gz"
+sha256sums="a4327b1b50aa34deb08e4d170d727e4a7a203b00150561f30626d4c95ccbb661  78d1521c6ca3ffaf3b87762ce627f87b765640fc.tar.gz"
+
+# Real, syshub-tier package: kmod is base-OS machinery (modprobe/depmod/
+# insmod/rmmod/lsmod/modinfo) — a modular kernel can't load any driver
+# built as a loadable .ko without it present at boot, same reasoning as
+# musl/gcc-musl/binutils being syshub rather than userland.
+#
+# Autotools build (matches the validated local reference script exactly
+# — kmod's meson build is upstream's *recommended* path going forward,
+# but autotools is what's actually been tested against this target).
+# --build deliberately omitted, same reasoning as every other real
+# cross-compile recipe in this repo — config.guess auto-detects the
+# actual CI host, passing the target triple there would be wrong.
+#
+# --without-openssl: libssl/libcrypto aren't published as a syshub
+# package yet, so PKCS7 module-signature verification (modinfo) is
+# disabled for now — zstd/xz/zlib (module compression) all are
+# published and enabled.
+build() {
+    cd 78d1521c6ca3ffaf3b87762ce627f87b765640fc
+
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local bindir="${sysroot}/bin"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${bindir}/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -D_GNU_SOURCE -I${musl_sysroot}/include -I${sysroot}/include"
+    export CPPFLAGS="-D_GNU_SOURCE -I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --bindir="$sysroot/bin" \
+        --sbindir="$sysroot/bin" \
+        --libdir="$sysroot/lib" \
+        --includedir="$sysroot/include" \
+        --with-module-directory=/overlayer/syshub/drivers/modules \
+        --with-zstd \
+        --with-xz \
+        --with-zlib \
+        --without-openssl \
+        --disable-manpages
+    make -j"$(nproc)"
+
+    # Single shared install tree both package() and dev() slice from —
+    # kmod's plain `make install` (automake-generated) installs
+    # everything together in one pass.
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+# syshub tier: the CLI toolset (kmod + insmod/rmmod/modprobe/depmod/
+# lsmod/modinfo, all symlinks to the kmod multi-call binary, generated
+# by the install step itself) + libkmod's runtime .so. Not the
+# unversioned .so dev symlink, not headers/pkgconfig (userland/-dev).
+package() {
+    # cwd is already inside the extracted commit-dir, left there by
+    # build()'s own `cd` (it's never undone — same shell, same cwd
+    # persists across build()/package()/dev() calls; confirmed the hard
+    # way in binutils' ZEXBUILD, which had this exact bug).
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    find "$inst/lib" -maxdepth 1 -name 'libkmod.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+# userland tier: libkmod.h, the unversioned .so dev symlink, pkgconfig
+# — kmod-dev.manifest.toml's own [install] map (not this prefix) routes
+# these into the userland union tree. No static lib — libkmod's only
+# public target is the shared library (its static variant is
+# install:false upstream, internal-linkage-only).
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp "$inst"/include/libkmod.h "$PAYLOAD_DIR/include/"
+    cp -P "$inst"/lib/libkmod.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

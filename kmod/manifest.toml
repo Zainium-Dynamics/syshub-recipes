@@ -1,0 +1,31 @@
+# manifest.toml — kmod (syshub tier)
+
+[package]
+name             = "kmod"
+version          = "34.2"
+description      = "Linux kernel module tools (modprobe/depmod/insmod/rmmod/lsmod/modinfo) + libkmod runtime (musl/Zainium build)"
+license          = "GPL-2.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/alizainx/kmod"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "zstd", "xz", "zlib"]
+provides         = ["kmod", "modprobe", "depmod", "insmod", "rmmod", "lsmod", "modinfo", "libkmod.so.2"]
+tags             = ["kernel", "modules", "base"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
