@@ -94,5 +94,11 @@ build() {
 }
 
 package() {
-    make -C build DESTDIR="$PAYLOAD_DIR" install
+    # build() already `cd`s into build/ and stays there (ci/build.sh
+    # runs build()/package() as sequential calls in the same shell, cwd
+    # persists) — `-C build` here would look for a nonexistent nested
+    # build/build/. Confirmed the hard way: the actual compile succeeded
+    # fully (ld-new linked), only this final install step's directory
+    # was wrong ("make: *** build: No such file or directory. Stop.").
+    make DESTDIR="$PAYLOAD_DIR" install
 }
