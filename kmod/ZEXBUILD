@@ -4,13 +4,28 @@ pkgver=34.2
 pkgrel=0
 needs_toolchain="musl gcc-musl zstd zstd-dev xz xz-dev zlib zlib-dev"
 subpackages="kmod-dev"
-# Zainium's own fork (github.com/alizainx/kmod) — the only change from
-# upstream kmod 34.2 is the moduledir default in configure.ac/meson.build
-# (/overlayer/syshub/drivers/modules instead of $prefix/lib/modules), see
-# that repo's README. Pinned to a commit, not a branch, for a
-# reproducible download.
-source="https://github.com/alizainx/kmod/archive/78d1521c6ca3ffaf3b87762ce627f87b765640fc.tar.gz"
-sha256sums="a4327b1b50aa34deb08e4d170d727e4a7a203b00150561f30626d4c95ccbb661  78d1521c6ca3ffaf3b87762ce627f87b765640fc.tar.gz"
+# Real kernel.org dist tarball (the "Signed packages" link in kmod's own
+# README) — NOT a GitHub tag/commit snapshot, which is just a git-tree
+# archive with no pre-generated configure (kmod's own generated files
+# only exist in a proper `make dist` release). Extracts to kmod-34.2/,
+# matching pkgname-pkgver exactly.
+#
+# Patches are real diffs against this pristine tarball, verified against
+# Zainium's own local reference build tree
+# (/run/media/alizain/ZAINIUM_DRIVE/packages/kmod-34.2) — patch, apply
+# to a fresh pristine copy, byte-diff the result, confirmed identical.
+# 0001/0002/0003 below are the actual source-level changes; the
+# moduledir default is NOT patched into configure.ac/configure — that
+# edit was confirmed to never have been regenerated in the reference
+# tree (the generated `configure` there is byte-identical to pristine),
+# so it would be purely cosmetic here too. --with-module-directory
+# passed explicitly at configure time is what actually takes effect,
+# matching the reference build script's own validated approach.
+source="https://www.kernel.org/pub/linux/utils/kernel/kmod/kmod-$pkgver.tar.xz
+0001-macro.h-zainium-paths.patch
+0002-libkmod.c-drop-usr-paths.patch
+0003-depmod.c-drop-usr-paths-and-fix-version-detect.patch"
+sha256sums="5a5d5073070cc7e0c7a7a3c6ec2a0e1780850c8b47b3e3892226b93ffcb9cb54  kmod-$pkgver.tar.xz"
 
 # Real, syshub-tier package: kmod is base-OS machinery (modprobe/depmod/
 # insmod/rmmod/lsmod/modinfo) — a modular kernel can't load any driver
@@ -29,11 +44,9 @@ sha256sums="a4327b1b50aa34deb08e4d170d727e4a7a203b00150561f30626d4c95ccbb661  78
 # disabled for now — zstd/xz/zlib (module compression) all are
 # published and enabled.
 build() {
-    # GitHub's codeload archive prefixes the extracted dir with the repo
-    # name, not just the bare commit hash (confirmed via a local `tar
-    # tzf` check) — pkgname-pkgver ("kmod-34.2") doesn't match either,
-    # so ci/build.sh's own auto-cd silently no-ops and leaves us here.
-    cd kmod-78d1521c6ca3ffaf3b87762ce627f87b765640fc
+    patch -p1 < ../0001-macro.h-zainium-paths.patch
+    patch -p1 < ../0002-libkmod.c-drop-usr-paths.patch
+    patch -p1 < ../0003-depmod.c-drop-usr-paths-and-fix-version-detect.patch
 
     local sysroot="/overlayer/syshub"
     local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
@@ -71,10 +84,6 @@ build() {
 # by the install step itself) + libkmod's runtime .so. Not the
 # unversioned .so dev symlink, not headers/pkgconfig (userland/-dev).
 package() {
-    # cwd is already inside the extracted commit-dir, left there by
-    # build()'s own `cd` (it's never undone — same shell, same cwd
-    # persists across build()/package()/dev() calls; confirmed the hard
-    # way in binutils' ZEXBUILD, which had this exact bug).
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
     cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"

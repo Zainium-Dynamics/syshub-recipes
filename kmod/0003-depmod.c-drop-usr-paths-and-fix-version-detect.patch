@@ -1,0 +1,42 @@
+--- a/tools/depmod.c	2025-03-28 09:01:47.000000000 +0500
++++ b/tools/depmod.c	2026-08-12 16:50:48.865718281 +0500
+@@ -42,9 +42,8 @@
+ 	// clang-format off
+ 	SYSCONFDIR "/depmod.d",
+ 	"/run/depmod.d",
+-	"/usr/local/lib/depmod.d",
+ 	DISTCONFDIR "/depmod.d",
+-	"/lib/depmod.d",
++	"/overlayer/syshub/lib/depmod.d",
+ 	NULL,
+ 	// clang-format on
+ };
+@@ -2908,8 +2907,26 @@
+ 
+ static int is_version_number(const char *version)
+ {
+-	unsigned int d1, d2;
+-	return (sscanf(version, "%u.%u", &d1, &d2) == 2);
++	size_t len;
++
++	if (version == NULL || *version == '\0')
++		return 0;
++
++	if (version[0] == '/')
++		return 0;
++
++	len = strlen(version);
++
++	if (len >= 3 && streq(version + len - 3, ".ko"))
++		return 0;
++	if (len >= 6 && streq(version + len - 6, ".ko.gz"))
++		return 0;
++	if (len >= 6 && streq(version + len - 6, ".ko.xz"))
++		return 0;
++	if (len >= 7 && streq(version + len - 7, ".ko.zst"))
++		return 0;
++
++	return 1;
+ }
+ 
+ static int do_depmod(int argc, char *argv[])
