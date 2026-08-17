@@ -56,21 +56,15 @@ jobs:
         run: |
           apk add --no-cache build-base texinfo xz zstd zlib-dev curl-dev expat-dev linux-headers rust cargo rustup \
             gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
-            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils \
-            wayland-dev wayland-protocols libxkbcommon-dev libinput-dev libseat-dev mesa-dev \
-            libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev libdisplay-info-dev pkgconf
+            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils pkgconf
           # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
           # by name, this is the actual ninja-build implementation there.
           # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
           # python3/libxml2/ncurses/zstd/libedit cover LLVM's CMake build.
           # zstd (the CLI, not just zstd-dev) is what GNU tar shells out
           # to for .tar.zst auto-decompression (binutils-2.47.tar.zst).
-          # wayland-dev/libxkbcommon-dev/libinput-dev/libseat-dev/mesa-dev/
-          # libdrm-dev/pixman-dev/fontconfig-dev/freetype-dev/eudev-dev are
-          # smithay's backend_drm+backend_gbm+backend_egl+backend_libinput+
-          # backend_session_libseat+backend_udev+renderer_pixman feature
-          # set's real C deps (eclipse-comp) — Alpine's package names for
-          # libdrm/libgbm+EGL/libinput/libseat/libudev respectively.
+          # Package-specific C deps go in that recipe's own makedepends=,
+          # not here — see ci/build.sh.
           # `cargo install` puts binaries in ~/.cargo/bin — nothing on
           # Alpine's own apk rust/cargo adds that to PATH for you.
           # GITHUB_PATH persists for every later step in this job.
@@ -168,20 +162,9 @@ jobs:
         run: |
           apk add --no-cache build-base texinfo xz zstd zlib-dev curl-dev expat-dev linux-headers rust cargo rustup \
             gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
-            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils \
-            wayland-dev wayland-protocols libxkbcommon-dev libinput-dev libseat-dev mesa-dev \
-            libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev libdisplay-info-dev pkgconf
-          # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
-          # by name, this is the actual ninja-build implementation there.
-          # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
-          # python3/libxml2/ncurses/zstd/libedit cover LLVM's CMake build.
-          # zstd (the CLI, not just zstd-dev) is what GNU tar shells out
-          # to for .tar.zst auto-decompression (binutils-2.47.tar.zst).
-          # wayland-dev/libxkbcommon-dev/libinput-dev/libseat-dev/mesa-dev/
-          # libdrm-dev/pixman-dev/fontconfig-dev/freetype-dev/eudev-dev are
-          # smithay's backend_drm+backend_gbm+backend_egl+backend_libinput+
-          # backend_session_libseat+backend_udev+renderer_pixman feature
-          # set's real C deps (eclipse-comp).
+            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils pkgconf
+          # Package-specific C deps go in that recipe's own makedepends=,
+          # not here — see ci/build.sh.
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           rustup-init -y --default-toolchain stable --profile minimal
           . "$HOME/.cargo/env"

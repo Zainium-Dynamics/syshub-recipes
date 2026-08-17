@@ -49,6 +49,10 @@ mkdir -p "$SRCDIR"
 
 echo "== $pkgname $pkgver-$pkgrel =="
 
+# Alpine-style: each recipe declares its own extra apk deps instead of
+# CI growing a global list.
+[ -n "${makedepends:-}" ] && apk add --no-cache $makedepends
+
 # Self-hosting toolchain packages (gcc-16, binutils, ...) need an
 # already-published Zainium toolchain installed into /overlayer/syshub
 # before they can build at all — set needs_toolchain="pkg1 pkg2 ..." in

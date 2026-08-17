@@ -28,6 +28,7 @@ pkgrel=0
 #     keyboard monitor degrade.
 # No flatpak dependency anywhere in this crate.
 source="https://github.com/Zainium-Dynamics/eclipse-comp/archive/66b58bd1ae3a8f9899aca7e7eb193b4fbe7721ae.tar.gz"
+makedepends="wayland-dev wayland-protocols libxkbcommon-dev libinput-dev libseat-dev mesa-dev libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev libdisplay-info-dev"
 
 build() {
     # GitHub commit-archive extracted-dir name != $pkgname.
