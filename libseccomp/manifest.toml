@@ -1,0 +1,28 @@
+[package]
+name             = "libseccomp"
+version          = "2.6.1"
+description      = "Interface to the Linux kernel's seccomp syscall filtering mechanism"
+license          = "LGPL-2.1-only"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/seccomp/libseccomp"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libseccomp"]
+tags             = ["base", "library", "security"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
