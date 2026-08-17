@@ -1,0 +1,30 @@
+[package]
+name             = "dhcpcd"
+version          = "10.3.2"
+description      = "DHCP client for wired/wireless network configuration"
+license          = "BSD-2-Clause"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://roy.marples.name/projects/dhcpcd"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["dhcpcd"]
+tags             = ["base", "network"]
+
+[install]
+sbin    = "/overlayer/syshub/sbin"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
