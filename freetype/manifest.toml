@@ -1,0 +1,28 @@
+[package]
+name             = "freetype"
+version          = "2.14.3"
+description      = "Freely available software library to render fonts"
+license          = "FTL"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://freetype.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["freetype"]
+tags             = ["base", "library", "fonts"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
