@@ -18,7 +18,7 @@ build() {
     patch -p1 < ../0001-musl-macros.patch
     patch -p1 < ../0002-fix-uninitialized-x86-disasm.patch
 
-    CFLAGS="$CFLAGS -D_GNU_SOURCE -Wno-error -Wno-null-dereference" \
+    CFLAGS="${CFLAGS:-} -D_GNU_SOURCE -Wno-error -Wno-null-dereference" \
     ./configure \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
