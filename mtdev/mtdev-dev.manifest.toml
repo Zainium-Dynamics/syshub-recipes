@@ -1,0 +1,29 @@
+[package]
+name             = "mtdev-dev"
+version          = "1.1.7"
+description      = "mtdev headers, static lib, pkgconfig"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://bitmath.org/code/mtdev/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["mtdev"]
+provides         = ["mtdev-dev"]
+tags             = ["base", "library", "input", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
