@@ -34,9 +34,6 @@ build() {
     # GitHub commit-archive extracted-dir name != $pkgname.
     cd eclipse-comp-66b58bd1ae3a8f9899aca7e7eb193b4fbe7721ae
 
-    # Native Alpine toolchain, but eclipse-comp is a real executable —
-    # pin the interpreter to Zainium's runtime loader, not Alpine's.
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="-C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
     cargo build --release --target x86_64-unknown-linux-musl
 }
 

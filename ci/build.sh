@@ -53,6 +53,14 @@ echo "== $pkgname $pkgver-$pkgrel =="
 # CI growing a global list.
 [ -n "${makedepends:-}" ] && apk add --no-cache $makedepends
 
+# Native Alpine toolchain builds default to Alpine's own musl loader —
+# any recipe producing a real executable needs Zainium's instead so it
+# actually runs on Zainium, not just Alpine. Set once here so recipes
+# don't each have to repeat it; a recipe can still override.
+ZAINIUM_LDSO="/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1"
+export LDFLAGS="${LDFLAGS:-} -Wl,-dynamic-linker=$ZAINIUM_LDSO -Wl,-rpath=/overlayer/syshub/lib"
+export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C link-arg=-Wl,-dynamic-linker=$ZAINIUM_LDSO -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
+
 # Self-hosting toolchain packages (gcc-16, binutils, ...) need an
 # already-published Zainium toolchain installed into /overlayer/syshub
 # before they can build at all — set needs_toolchain="pkg1 pkg2 ..." in
