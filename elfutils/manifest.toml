@@ -1,0 +1,29 @@
+[package]
+name             = "elfutils"
+version          = "0.195"
+description      = "Utilities and libraries to handle ELF files and DWARF data"
+license          = "GPL-2.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://sourceware.org/elfutils/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["elfutils"]
+tags             = ["base", "library", "elf"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
