@@ -84,6 +84,7 @@ jobs:
           # `stable` default here is a superset of Alpine's own musl-host
           # rustc, so this can't regress any already-building package.
           rustup-init -y --default-toolchain stable --profile minimal
+          . "$HOME/.cargo/env"
           rustup target add x86_64-unknown-linux-musl
 
       - name: Cache cargo (registry + installed binaries)
@@ -183,6 +184,7 @@ jobs:
           # set's real C deps (eclipse-comp).
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           rustup-init -y --default-toolchain stable --profile minimal
+          . "$HOME/.cargo/env"
           rustup target add x86_64-unknown-linux-musl
 
       - name: Cache cargo (registry + installed binaries + zex-ports build)
