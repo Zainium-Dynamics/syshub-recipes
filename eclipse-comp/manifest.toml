@@ -1,0 +1,30 @@
+# manifest.toml — eclipse-comp (syshub tier)
+
+[package]
+name             = "eclipse-comp"
+version          = "0.1.0"
+description      = "Eclipse Desktop Wayland compositor -- Zainium's pure-Rust, KMS-only fork of cosmic-comp. No systemd, no flatpak. Uses D-Bus (zbus/logind_zbus) for lid-switch handling via login1 (quantra-logind/oxibus) and optional System76 PowerDaemon hot-plug detection -- both degrade gracefully, not required for the compositor to start"
+license          = "GPL-3.0-only"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://zainiumdynamics.tech"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["eclipse-comp"]
+tags             = ["desktop", "cosmic", "wayland", "compositor"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
