@@ -58,7 +58,7 @@ jobs:
             gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
             cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils \
             wayland-dev wayland-protocols libxkbcommon-dev libinput-dev libseat-dev mesa-dev \
-            libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev pkgconf
+            libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev libdisplay-info-dev pkgconf
           # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
           # by name, this is the actual ninja-build implementation there.
           # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
@@ -170,7 +170,7 @@ jobs:
             gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
             cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils \
             wayland-dev wayland-protocols libxkbcommon-dev libinput-dev libseat-dev mesa-dev \
-            libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev pkgconf
+            libdrm-dev pixman-dev fontconfig-dev freetype-dev eudev-dev libdisplay-info-dev pkgconf
           # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
           # by name, this is the actual ninja-build implementation there.
           # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
