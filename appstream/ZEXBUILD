@@ -1,0 +1,48 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=appstream
+pkgver=1.1.6
+pkgrel=0
+subpackages="appstream-dev"
+source="https://www.freedesktop.org/software/appstream/releases/AppStream-$pkgver.tar.xz"
+sha256sums="e298929f39729e84a70f6be6941f3e7f3fc2ee3c83cb3ea1b1b5b280a8fe3a24  AppStream-$pkgver.tar.xz"
+makedepends="glib-dev libfyaml-dev libxmlb-dev"
+
+# gnome-software's hard AppStream dependency. systemd is a real build
+# option here (unlike gnome-software's own optional flatpak-only use)
+# but gates nothing we need -- disabled. stemming/gir also disabled to
+# avoid needing snowball/gobject-introspection for a first pass.
+build() {
+    cd AppStream-$pkgver
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dsystemd=false \
+        -Dstemming=false \
+        -Dgir=false \
+        -Dvapi=false \
+        -Dqt=false \
+        -Dcompose=false \
+        -Ddisplay-detection=wayland \
+        -Ddocs=false \
+        -Dapidocs=false \
+        -Dman=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libappstream.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/appstreamcli" "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/share/appstream" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
