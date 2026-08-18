@@ -1,0 +1,29 @@
+[package]
+name             = "pipewire-dev"
+version          = "1.6.8"
+description      = "pipewire headers, pkgconfig"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://pipewire.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["pipewire"]
+provides         = ["pipewire-dev"]
+tags             = ["base", "audio", "multimedia", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

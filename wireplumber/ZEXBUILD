@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=wireplumber
+pkgver=0.5.15
+pkgrel=0
+source="https://gitlab.freedesktop.org/pipewire/wireplumber/-/archive/$pkgver/wireplumber-$pkgver.tar.gz"
+sha256sums="baa121bc918df5fa0e0e70755bb1c99ffab0ab107225ecf99aa470e2c6ba5e7b  wireplumber-$pkgver.tar.gz"
+# pipewire-dev here is Alpine's own apk package (build-time only,
+# native-Alpine convention) -- not the Zainium pipewire recipe, so this
+# doesn't need to wait on that one being merged/published first.
+makedepends="glib-dev pipewire-dev"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Ddoc=disabled \
+        -Dtests=false \
+        -Ddbus-tests=false \
+        -Dsystemd=disabled \
+        -Delogind=disabled \
+        -Dintrospection=disabled
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libwireplumber*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/lib/wireplumber-0.5" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    cp -a "$inst/share/wireplumber" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
