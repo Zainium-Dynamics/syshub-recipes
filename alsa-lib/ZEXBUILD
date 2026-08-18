@@ -1,0 +1,46 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=alsa-lib
+pkgver=1.2.16.1
+pkgrel=0
+subpackages="alsa-lib-dev"
+# Real alsa-project.org release, not GitHub's tag archive -- GitHub's
+# is a raw git snapshot with no pre-generated ./configure (autotools
+# output isn't committed to the repo).
+source="https://www.alsa-project.org/files/pub/lib/alsa-lib-$pkgver.tar.bz2"
+sha256sums="f740db7f488255944ffd4428416ee3390a96742856916433df468c281436480e  alsa-lib-$pkgver.tar.bz2"
+
+build() {
+    # src/conf/alsa.conf hardcodes /usr/etc fallback paths (FHS
+    # "vendor config" convention) -- Zainium has no /usr at all. One
+    # line is purely a /usr/etc entry (drop it); the other pairs a
+    # real /etc path with a |||-separated /usr/etc fallback (strip
+    # just the fallback, keep the real /etc entry).
+    sed -i '/^\s*"\/usr\/etc\/alsa\/conf\.d"\s*$/d' src/conf/alsa.conf
+    sed -i 's#|||/usr/etc/asound.conf##' src/conf/alsa.conf
+
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --enable-shared \
+        --disable-static \
+        --disable-python \
+        --disable-alisp
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libasound.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/lib/alsa-lib" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst/share/alsa" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
