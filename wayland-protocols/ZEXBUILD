@@ -1,0 +1,21 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=wayland-protocols
+pkgver=1.49
+pkgrel=0
+source="https://gitlab.freedesktop.org/wayland/wayland-protocols/-/releases/$pkgver/downloads/wayland-protocols-$pkgver.tar.xz"
+sha256sums="ec4c8f74942d6dff7ace8b4ce4764f0ef9ff618a935d974ea77edee2ad240b14  wayland-protocols-$pkgver.tar.xz"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        -Dtests=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/share" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/share/. "$PAYLOAD_DIR/share/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

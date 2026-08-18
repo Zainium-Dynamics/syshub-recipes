@@ -1,0 +1,30 @@
+[package]
+name             = "wayland-dev"
+version          = "1.26.0"
+description      = "wayland headers, protocol XML, pkgconfig"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/wayland/wayland"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["wayland"]
+provides         = ["wayland-dev"]
+tags             = ["base", "library", "wayland", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+share   = "/overlayer/zexlib/union/share"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

@@ -1,0 +1,29 @@
+[package]
+name             = "wayland"
+version          = "1.26.0"
+description      = "Wayland compositor infrastructure — core protocol libraries"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/wayland/wayland"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["wayland"]
+tags             = ["base", "library", "wayland"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
