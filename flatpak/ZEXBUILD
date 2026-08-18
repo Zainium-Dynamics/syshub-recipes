@@ -36,7 +36,6 @@ build() {
         -Dwayland_security_context=disabled \
         -Ddconf=disabled \
         -Dxauth=disabled \
-        -Dsystem_helper=disabled \
         -Ddbus_config_dir=/overlayer/syshub/share/dbus-1/system.d \
         -Ddbus_service_dir=/overlayer/syshub/share/dbus-1/services \
         -Dprivileged_group=wheel
