@@ -1,0 +1,37 @@
+[package]
+name             = "flatpak"
+version          = "1.18.1"
+description      = "Application deployment framework for desktop apps"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://flatpak.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+# curl, ostree, json-glib, libarchive, libcap, gpgme, gdk-pixbuf, fuse3
+# aren't published Zainium packages yet -- built against Alpine's own
+# -dev libs for now (same borrow-at-build-time approach as appstream's
+# libxmlb/libfyaml), so this won't actually run on a real Zainium
+# install until those are packaged too.
+depends          = ["appstream", "glib", "libseccomp", "zstd"]
+provides         = ["flatpak"]
+tags             = ["base", "gnome", "sandboxing"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+etc     = "/overlayer/syshub/etc"
+var     = "/overlayer/syshub/var"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
