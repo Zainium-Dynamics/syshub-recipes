@@ -5,7 +5,12 @@ pkgrel=0
 subpackages="pipewire-dev"
 source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
-makedepends="alsa-lib-dev eudev-dev musl-libintl"
+# gettext-dev, not bare musl-libintl -- installing musl-libintl
+# directly conflicts with gettext-dev (which other recipes in the same
+# CI container pull in transitively via glib-dev): "breaks:
+# gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
+# itself, so this still gets libintl.h without the conflict.
+makedepends="alsa-lib-dev eudev-dev gettext-dev"
 
 # Minimal first pass: core pipewire daemon + client library + ALSA
 # backend + udev device detection only. session-managers=[] -- the
@@ -80,6 +85,12 @@ package() {
     cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
     cp -a "$inst/share/pipewire" "$PAYLOAD_DIR/share/" 2>/dev/null || true
     cp -a "$inst"/share/alsa* "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    # Both are commented-out example lines referencing /usr paths, not
+    # functionally needed (pulseaudio compat and the filter-chain
+    # rnnoise example are both features we didn't even build) -- but
+    # substrate's layout policy scans file *content*, not just paths.
+    rm -f "$PAYLOAD_DIR/share/pipewire/pipewire-pulse.conf"
+    rm -f "$PAYLOAD_DIR/share/pipewire/filter-chain/source-rnnoise.conf"
 }
 
 dev() {
