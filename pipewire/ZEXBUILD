@@ -5,7 +5,7 @@ pkgrel=0
 subpackages="pipewire-dev"
 source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
-makedepends="alsa-lib-dev eudev-dev"
+makedepends="alsa-lib-dev eudev-dev musl-libintl"
 
 # Minimal first pass: core pipewire daemon + client library + ALSA
 # backend + udev device detection only. session-managers=[] -- the
