@@ -5,13 +5,19 @@ pkgrel=0
 subpackages="appstream-dev"
 source="https://www.freedesktop.org/software/appstream/releases/AppStream-$pkgver.tar.xz"
 sha256sums="e298929f39729e84a70f6be6941f3e7f3fc2ee3c83cb3ea1b1b5b280a8fe3a24  AppStream-$pkgver.tar.xz"
-makedepends="glib-dev libfyaml-dev libxmlb-dev wayland-dev gperf itstool gobject-introspection-dev"
+makedepends="glib-dev libfyaml-dev libxmlb-dev wayland-dev gperf itstool"
 
 # gnome-software's hard AppStream dependency. systemd is a real build
 # option here (unlike gnome-software's own optional flatpak-only use)
 # but gates nothing we need -- disabled. stemming stays off, matching
 # Alpine's own APKBUILD (-Dstemming=false there too, not a shortcut).
-# gir enabled -- matches Alpine's -Dgir=true.
+#
+# gir tried and reverted: Alpine builds with -Dgir=true, but g-ir-scanner
+# dlopens the freshly-built libappstream.so mid-build, which cascades
+# into curl's OWN deps (c-ares, nghttp2, idn2, psl, openssl, brotli) plus
+# libmount (gio) and libwayland-client/girepository themselves -- a much
+# deeper bootstrap than appstreamcli needed. Revisit once those are real
+# Zainium packages instead of borrowed Alpine libs.
 build() {
     cd AppStream-$pkgver
     patch -p1 < "$RECIPE_DIR/0001-skip-news-to-metainfo.patch"
@@ -22,7 +28,7 @@ build() {
         --sysconfdir=/overlayer/syshub/etc \
         -Dsystemd=false \
         -Dstemming=false \
-        -Dgir=true \
+        -Dgir=false \
         -Dvapi=false \
         -Dqt=false \
         -Dcompose=false \
@@ -41,13 +47,11 @@ package() {
     find "$inst/lib" -maxdepth 1 -name 'libappstream.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
     cp -a "$inst/bin/appstreamcli" "$PAYLOAD_DIR/bin/" 2>/dev/null || true
     cp -a "$inst/share/appstream" "$PAYLOAD_DIR/share/" 2>/dev/null || true
-    cp -a "$inst/lib/girepository-1.0" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
 }
 
 dev() {
     local inst="_zexbuild-install/overlayer/syshub"
-    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/gir-1.0"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
-    cp -a "$inst"/share/gir-1.0/. "$PAYLOAD_DIR/share/gir-1.0/" 2>/dev/null || true
 }
