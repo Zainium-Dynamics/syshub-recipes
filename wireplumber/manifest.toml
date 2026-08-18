@@ -1,0 +1,30 @@
+[package]
+name             = "wireplumber"
+version          = "0.5.15"
+description      = "Session and policy manager for PipeWire"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://pipewire.pages.freedesktop.org/wireplumber/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["pipewire", "glib"]
+provides         = ["wireplumber"]
+tags             = ["base", "audio", "multimedia"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
