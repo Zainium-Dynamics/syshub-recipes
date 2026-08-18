@@ -15,7 +15,8 @@ build() {
 
 package() {
     local inst="_zexbuild-install/overlayer/syshub"
-    mkdir -p "$PAYLOAD_DIR/share" "$PAYLOAD_DIR/lib/pkgconfig"
+    mkdir -p "$PAYLOAD_DIR/share"
+    # .pc file lands under share/pkgconfig -- no compiled library, so
+    # meson's pkgconfig module skips libdir/pkgconfig entirely.
     cp -a "$inst"/share/. "$PAYLOAD_DIR/share/"
-    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
 }
