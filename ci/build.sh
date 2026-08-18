@@ -146,7 +146,10 @@ export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_U
 # independent builds of the same libc, so borrowing Alpine's own copy
 # of a plain C library is safe. Extend this list as new build-time
 # tools surface a new missing one.
-for lib in libz.so.1 liblzma.so.5 libexpat.so.1 libxml2.so.2; do
+for lib in libz.so.1 liblzma.so.5 libexpat.so.1 libxml2.so.2 \
+    libglib-2.0.so.0 libgobject-2.0.so.0 libgio-2.0.so.0 libgmodule-2.0.so.0 \
+    libintl.so.8 libcurl.so.4 libxmlb.so.2 libfyaml.so.0 libzstd.so.1 \
+    libpcre2-8.so.0 libffi.so.8; do
     [ -e "/overlayer/syshub/lib/$lib" ] && continue
     src="$(find /usr/lib /lib -maxdepth 1 -name "$lib" 2>/dev/null | head -1)"
     [ -n "$src" ] || continue
