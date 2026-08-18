@@ -1,0 +1,32 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=pkgconf
+pkgver=3.0.5
+pkgrel=0
+subpackages="pkgconf-dev"
+source="https://github.com/pkgconf/pkgconf/archive/refs/tags/pkgconf-$pkgver.tar.gz"
+sha256sums="245d441b9d8f7b74390e060cb9db1a326c26f1b96b1a6c3216b54a5d5439367a  pkgconf-$pkgver.tar.gz"
+
+build() {
+    cd "pkgconf-pkgconf-$pkgver"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libpkgconf*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp "$inst/bin/pkgconf" "$PAYLOAD_DIR/bin/"
+    ln -s pkgconf "$PAYLOAD_DIR/bin/pkg-config"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
