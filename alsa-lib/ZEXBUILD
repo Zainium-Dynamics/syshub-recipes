@@ -3,8 +3,11 @@ pkgname=alsa-lib
 pkgver=1.2.16.1
 pkgrel=0
 subpackages="alsa-lib-dev"
-source="https://github.com/alsa-project/alsa-lib/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="8df8253c6349cf309903c1dd7752efe783c1f456913c9d722bdb5731271c0988  v$pkgver.tar.gz"
+# Real alsa-project.org release, not GitHub's tag archive -- GitHub's
+# is a raw git snapshot with no pre-generated ./configure (autotools
+# output isn't committed to the repo).
+source="https://www.alsa-project.org/files/pub/lib/alsa-lib-$pkgver.tar.bz2"
+sha256sums="f740db7f488255944ffd4428416ee3390a96742856916433df468c281436480e  alsa-lib-$pkgver.tar.bz2"
 
 build() {
     ./configure \
