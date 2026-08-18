@@ -57,6 +57,13 @@ package() {
 [Installation "default"]
 Path=/overlayer/zexlib/union/var/lib/flatpak
 EOF
+
+    sed -i 's#/usr/local/share:/usr/share#/overlayer/syshub/share#' \
+        "$PAYLOAD_DIR/etc/profile.d/flatpak.sh"
+    sed -i 's#/usr/local/share /usr/share#/overlayer/syshub/share#' \
+        "$PAYLOAD_DIR/etc/profile.d/flatpak.fish"
+    sed -i 's#/usr/local/share:/usr/share#/overlayer/syshub/share#g' \
+        "$PAYLOAD_DIR/etc/profile.d/flatpak.csh"
 }
 
 dev() {
