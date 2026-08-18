@@ -27,7 +27,8 @@ build() {
         -Ddisplay-detection=wayland \
         -Ddocs=false \
         -Dapidocs=false \
-        -Dman=false
+        -Dman=false \
+        -Dbash-completion=false
     ninja -C builddir
     DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
 }
