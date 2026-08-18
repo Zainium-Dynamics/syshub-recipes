@@ -1,0 +1,29 @@
+[package]
+name             = "wayland-protocols"
+version          = "1.49"
+description      = "Wayland protocol XML specifications (stable, staging, experimental)"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/wayland/wayland-protocols"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["wayland-protocols"]
+tags             = ["base", "data", "wayland"]
+
+[install]
+share   = "/overlayer/syshub/share"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

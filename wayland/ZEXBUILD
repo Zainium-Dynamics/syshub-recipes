@@ -1,0 +1,34 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=wayland
+pkgver=1.26.0
+pkgrel=0
+subpackages="wayland-dev"
+source="https://gitlab.freedesktop.org/wayland/wayland/-/releases/$pkgver/downloads/wayland-$pkgver.tar.xz"
+sha256sums="64176eaa46e4969903e286f8e5ef8331affc17fdf03ac9b58381d2b23162b7a3  wayland-$pkgver.tar.xz"
+makedepends="expat-dev libffi-dev"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        -Dtests=false \
+        -Ddocumentation=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libwayland-*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp "$inst/bin/wayland-scanner" "$PAYLOAD_DIR/bin/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp -a "$inst"/share/. "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
