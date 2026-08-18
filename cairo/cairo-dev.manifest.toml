@@ -1,0 +1,29 @@
+[package]
+name             = "cairo-dev"
+version          = "1.18.4"
+description      = "cairo headers, pkgconfig"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.cairographics.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cairo"]
+provides         = ["cairo-dev"]
+tags             = ["base", "library", "graphics", "gnome", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
