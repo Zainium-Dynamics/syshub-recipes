@@ -5,6 +5,7 @@ pkgrel=0
 subpackages="libseccomp-dev"
 source="https://github.com/seccomp/libseccomp/releases/download/v$pkgver/libseccomp-$pkgver.tar.gz"
 sha256sums="501f66c667225d53791b97e1d7cf85ab764c297d04881f60f38f451c4b0ee1be  libseccomp-$pkgver.tar.gz"
+makedepends="gperf"
 
 build() {
     ./configure \
