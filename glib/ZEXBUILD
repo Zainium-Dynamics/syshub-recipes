@@ -1,0 +1,74 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=glib
+pkgver=2.89.3
+pkgrel=0
+subpackages="glib-dev"
+# 2.89.x is upstream's unstable series (odd minor) leading to the next
+# stable 2.90 (paired with GNOME 50) — 2.90.0 isn't cut yet as of this
+# recipe. No patches needed: verified against the real extracted 2.89.3
+# source (not assumed from an older release) that (a) meson.build
+# autodetects musl natively via a compile-only __GLIBC__/__UCLIBC__
+# check (no execute needed, so this is safe even before Zainium's
+# loader exists) and (b) there is zero build/link dependency on
+# libsystemd anywhere in the tree (gio/gio-launch-desktop.c mentions
+# systemd only in comments/an optional journal socket path, not a link
+# dependency). Alpine's own aports/main/glib patches were checked too
+# — all three (flaky-tests, projectsdir, tests-machine-id) are
+# test-only or unrelated feature patches, none are musl-compat fixes,
+# and we build with -Dtests=false anyway.
+source="https://download.gnome.org/sources/glib/2.89/glib-$pkgver.tar.xz"
+sha256sums="09fd1e99f991067749ad66090e482ec4bd6514ad53abb4e9fbbdc2a4d2753532  glib-$pkgver.tar.xz"
+makedepends="libffi-dev pcre2-dev zlib-dev"
+
+# -Dnls=disabled: no gettext recipe published yet -- no translated
+# message catalogs, functionality unaffected.
+# -Dintrospection=disabled: needs g-ir-scanner to execute freshly-built
+# binaries during the build; not wired up yet. Needed later for GNOME
+# Shell/gjs typelibs -- tracked as a follow-up, not silently faked.
+# -Dlibmount=disabled, -Delf=disabled: no util-linux recipe published
+# yet, and elf gresource embedding is optional -- safe to drop for now.
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        -Ddefault_library=shared \
+        -Dman-pages=disabled \
+        -Ddocumentation=false \
+        -Dtests=false \
+        -Dinstalled_tests=false \
+        -Dintrospection=disabled \
+        -Dnls=disabled \
+        -Dlibmount=disabled \
+        -Dselinux=disabled \
+        -Dxattr=false \
+        -Delf=disabled \
+        -Dsysprof=disabled \
+        -Ddtrace=disabled \
+        -Dsystemtap=disabled \
+        -Doss_fuzz=disabled \
+        -Dmultiarch=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name '*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst"/lib/gio "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    cp -a "$inst/share/glib-2.0" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    # glib-genmarshal/glib-mkenums/gtester-report are dev tools, not runtime.
+    rm -f "$PAYLOAD_DIR"/bin/glib-genmarshal "$PAYLOAD_DIR"/bin/glib-mkenums "$PAYLOAD_DIR"/bin/gtester-report
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/bin"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    for tool in glib-genmarshal glib-mkenums gtester-report; do
+        cp "$inst/bin/$tool" "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    done
+}

@@ -1,0 +1,30 @@
+[package]
+name             = "glib-dev"
+version          = "2.89.3"
+description      = "GLib development headers, pkgconfig, and build-time tools"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.gtk.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib", "libffi-dev", "pcre2-dev", "zlib-dev"]
+provides         = ["glib-dev"]
+tags             = ["base", "library", "gnome", "cosmic", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+bin     = "/overlayer/zexlib/union/bin"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
