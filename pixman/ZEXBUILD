@@ -1,0 +1,33 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=pixman
+pkgver=0.46.4
+pkgrel=0
+subpackages="pixman-dev"
+source="https://cairographics.org/releases/pixman-$pkgver.tar.xz"
+sha256sums="a098c33924754ad43f981b740f6d576c70f9ed1006e12221b1845431ebce1239  pixman-$pkgver.tar.xz"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        -Dgtk=disabled \
+        -Ddemos=disabled \
+        -Dtests=disabled \
+        -Dopenmp=disabled
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libpixman-1.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
