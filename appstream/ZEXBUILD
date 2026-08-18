@@ -13,6 +13,7 @@ makedepends="glib-dev libfyaml-dev libxmlb-dev wayland-dev gperf itstool"
 # avoid needing snowball/gobject-introspection for a first pass.
 build() {
     cd AppStream-$pkgver
+    patch -p1 < "$RECIPE_DIR/0001-skip-news-to-metainfo.patch"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
