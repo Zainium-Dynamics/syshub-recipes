@@ -60,10 +60,15 @@ EOF
 
     sed -i 's#/usr/local/share:/usr/share#/overlayer/syshub/share#' \
         "$PAYLOAD_DIR/etc/profile.d/flatpak.sh"
-    sed -i 's#/usr/local/share /usr/share#/overlayer/syshub/share#' \
-        "$PAYLOAD_DIR/etc/profile.d/flatpak.fish"
     sed -i 's#/usr/local/share:/usr/share#/overlayer/syshub/share#g' \
         "$PAYLOAD_DIR/etc/profile.d/flatpak.csh"
+    sed -i 's#/usr/local/share /usr/share#/overlayer/syshub/share#' \
+        "$PAYLOAD_DIR/share/fish/vendor_conf.d/flatpak.fish"
+    sed -i 's#/usr/share/icons#/overlayer/syshub/share/icons#' \
+        "$PAYLOAD_DIR/share/flatpak/triggers/gtk-icon-cache.trigger"
+    sed -i 's#/usr#(host root)#g' \
+        "$PAYLOAD_DIR/share/dbus-1/interfaces/org.freedesktop.portal.Flatpak.xml"
+    rm -f "$PAYLOAD_DIR/bin/flatpak-bisect" "$PAYLOAD_DIR/bin/flatpak-coredumpctl"
 }
 
 dev() {
