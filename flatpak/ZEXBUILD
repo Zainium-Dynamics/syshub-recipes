@@ -14,7 +14,6 @@ makedepends="libcap-dev libarchive-dev glib-dev curl-dev libxml2-dev fuse3-dev o
 # (subprojects/bubblewrap.wrap, subprojects/dbus-proxy.wrap) instead of
 # needing separate Zainium packages for a first pass.
 build() {
-    cd flatpak-$pkgver
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
@@ -44,7 +43,6 @@ build() {
 }
 
 package() {
-    cd flatpak-$pkgver
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR"
     cp -a "$inst"/. "$PAYLOAD_DIR/"
@@ -61,7 +59,6 @@ EOF
 }
 
 dev() {
-    cd flatpak-$pkgver
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
