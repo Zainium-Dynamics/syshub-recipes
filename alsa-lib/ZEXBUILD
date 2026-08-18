@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=alsa-lib
+pkgver=1.2.16.1
+pkgrel=0
+subpackages="alsa-lib-dev"
+source="https://github.com/alsa-project/alsa-lib/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="8df8253c6349cf309903c1dd7752efe783c1f456913c9d722bdb5731271c0988  v$pkgver.tar.gz"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --enable-shared \
+        --disable-static \
+        --disable-python \
+        --disable-alisp
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libasound.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/lib/alsa-lib" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst/share/alsa" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
