@@ -1,0 +1,29 @@
+[package]
+name             = "pcre2"
+version          = "10.47"
+description      = "Perl Compatible Regular Expressions (v2 API)"
+license          = "BSD-3-Clause"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.pcre.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["pcre2"]
+tags             = ["base", "library", "regex"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

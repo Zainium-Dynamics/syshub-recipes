@@ -1,0 +1,28 @@
+[package]
+name             = "libdrm"
+version          = "2.4.134"
+description      = "Direct Rendering Manager userspace library"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/mesa/drm"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libdrm"]
+tags             = ["base", "library", "graphics"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

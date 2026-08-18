@@ -1,0 +1,29 @@
+[package]
+name             = "libinput-dev"
+version          = "1.31.3"
+description      = "libinput headers, pkgconfig"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/libinput/libinput"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libinput"]
+provides         = ["libinput-dev"]
+tags             = ["base", "library", "input", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

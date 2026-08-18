@@ -1,0 +1,28 @@
+[package]
+name             = "mtdev"
+version          = "1.1.7"
+description      = "Multitouch Protocol Translation Library"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://bitmath.org/code/mtdev/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["mtdev"]
+tags             = ["base", "library", "input"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

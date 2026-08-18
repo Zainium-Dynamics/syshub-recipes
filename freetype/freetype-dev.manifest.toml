@@ -1,0 +1,30 @@
+[package]
+name             = "freetype-dev"
+version          = "2.14.3"
+description      = "freetype headers, static lib, pkgconfig"
+license          = "FTL"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://freetype.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["freetype"]
+provides         = ["freetype-dev"]
+tags             = ["base", "library", "fonts", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+bin     = "/overlayer/zexlib/union/bin"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

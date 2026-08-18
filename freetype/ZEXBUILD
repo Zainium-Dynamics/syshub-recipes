@@ -1,0 +1,36 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=freetype
+pkgver=2.14.3
+pkgrel=0
+subpackages="freetype-dev"
+source="https://download.savannah.gnu.org/releases/freetype/freetype-$pkgver.tar.xz"
+sha256sums="36bc4f1cc413335368ee656c42afca65c5a3987e8768cc28cf11ba775e785a5f  freetype-$pkgver.tar.xz"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --enable-shared \
+        --enable-static \
+        --without-harfbuzz \
+        --without-png \
+        --without-brotli
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libfreetype.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/bin"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp "$inst/lib/libfreetype.a" "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp "$inst/bin/freetype-config" "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+}

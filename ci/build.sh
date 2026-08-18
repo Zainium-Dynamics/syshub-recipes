@@ -49,6 +49,24 @@ mkdir -p "$SRCDIR"
 
 echo "== $pkgname $pkgver-$pkgrel =="
 
+# Alpine-style: each recipe declares its own extra apk deps instead of
+# CI growing a global list.
+[ -n "${makedepends:-}" ] && apk add --no-cache $makedepends
+
+# Zainium's own musl loader has to actually exist on this Alpine host
+# before LDFLAGS points -Wl,-dynamic-linker at it — otherwise every
+# ./configure's own "can I run a compiled test program" self-check
+# fails ("cannot run C compiled programs"), since autoconf executes
+# what it just compiled right here on the build host. Force musl into
+# needs_toolchain unconditionally (install_toolchain_deps below) so
+# every recipe gets a real, working loader at that path, not just the
+# ones that already declared musl as a toolchain dep.
+ZAINIUM_LDSO="/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1"
+case " ${needs_toolchain:-} " in
+    *" musl "*) ;;
+    *) needs_toolchain="musl ${needs_toolchain:-}" ;;
+esac
+
 # Self-hosting toolchain packages (gcc-16, binutils, ...) need an
 # already-published Zainium toolchain installed into /overlayer/syshub
 # before they can build at all — set needs_toolchain="pkg1 pkg2 ..." in
@@ -113,6 +131,11 @@ install_toolchain_deps() {
     esac
 }
 install_toolchain_deps
+
+# musl is real now (just unpacked above) — safe to point every
+# recipe's LDFLAGS/RUSTFLAGS at Zainium's actual loader.
+export LDFLAGS="${LDFLAGS:-} -Wl,-dynamic-linker=$ZAINIUM_LDSO -Wl,-rpath=/overlayer/syshub/lib"
+export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C link-arg=-Wl,-dynamic-linker=$ZAINIUM_LDSO -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
 
 # `--prefix=/overlayer/syshub` is the runtime-visible merged path for
 # EVERY package, syshub or userland (see userland-recipes' README's "Why

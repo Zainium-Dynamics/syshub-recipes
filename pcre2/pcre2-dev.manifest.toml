@@ -1,0 +1,30 @@
+[package]
+name             = "pcre2-dev"
+version          = "10.47"
+description      = "PCRE2 headers, static libs, pkgconfig"
+license          = "BSD-3-Clause"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.pcre.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["pcre2"]
+provides         = ["pcre2-dev"]
+tags             = ["base", "library", "regex", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+bin     = "/overlayer/zexlib/union/bin"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

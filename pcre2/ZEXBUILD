@@ -1,0 +1,38 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=pcre2
+pkgver=10.47
+pkgrel=0
+subpackages="pcre2-dev"
+source="https://github.com/PCRE2Project/pcre2/releases/download/pcre2-$pkgver/pcre2-$pkgver.tar.bz2"
+sha256sums="47fe8c99461250d42f89e6e8fdaeba9da057855d06eb7fc08d9ca03fd08d7bc7  pcre2-$pkgver.tar.bz2"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --enable-shared \
+        --enable-static \
+        --enable-pcre2-8 \
+        --enable-pcre2-16 \
+        --enable-pcre2-32 \
+        --enable-jit
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libpcre2-*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp "$inst/bin/pcre2grep" "$PAYLOAD_DIR/bin/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/bin"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    find "$inst/lib" -maxdepth 1 -name 'libpcre2-*.a' -exec cp {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp "$inst/bin/pcre2test" "$PAYLOAD_DIR/bin/"
+}

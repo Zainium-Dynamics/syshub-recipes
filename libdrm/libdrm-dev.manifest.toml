@@ -1,0 +1,29 @@
+[package]
+name             = "libdrm-dev"
+version          = "2.4.134"
+description      = "libdrm headers, pkgconfig"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/mesa/drm"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libdrm"]
+provides         = ["libdrm-dev"]
+tags             = ["base", "library", "graphics", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

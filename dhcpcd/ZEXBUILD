@@ -1,0 +1,26 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=dhcpcd
+pkgver=10.3.2
+pkgrel=0
+source="https://github.com/NetworkConfiguration/dhcpcd/releases/download/v$pkgver/dhcpcd-$pkgver.tar.xz"
+sha256sums="b6aa46932074906a9badef1bfe142b8aff9d041c2689e1ef8b74c12e9fd942bd  dhcpcd-$pkgver.tar.xz"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sbindir=/overlayer/syshub/sbin \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --dbdir=/overlayer/syshub/var/db/dhcpcd \
+        --rundir=/overlayer/syshub/var/run
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/sbin" "$PAYLOAD_DIR/etc" "$PAYLOAD_DIR/share"
+    cp -a "$inst"/sbin/. "$PAYLOAD_DIR/sbin/"
+    cp -a "$inst"/etc/. "$PAYLOAD_DIR/etc/"
+    cp -a "$inst"/share/. "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
