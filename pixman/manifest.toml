@@ -1,0 +1,28 @@
+[package]
+name             = "pixman"
+version          = "0.46.4"
+description      = "Low-level pixel manipulation library"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.cairographics.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["pixman"]
+tags             = ["base", "library", "graphics"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
