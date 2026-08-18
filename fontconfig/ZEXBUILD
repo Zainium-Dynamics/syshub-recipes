@@ -1,0 +1,42 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=fontconfig
+pkgver=2.18.3
+pkgrel=0
+subpackages="fontconfig-dev"
+source="https://gitlab.freedesktop.org/api/v4/projects/890/packages/generic/fontconfig/$pkgver/fontconfig-$pkgver.tar.xz"
+sha256sums="4f7b554a38cdf78c033f666c8871f3749e14a094f65a07f630c91ed0b43d35e3  fontconfig-$pkgver.tar.xz"
+makedepends="gperf"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        -Ddoc=disabled \
+        -Dtests=disabled \
+        -Ddefault_library=shared \
+        -Ddefault-fonts-dirs=/overlayer/syshub/share/fonts \
+        -Dadditional-fonts-dirs=/overlayer/zexlib/union/share/fonts \
+        -Dcache-dir=/overlayer/syshub/var/cache/fontconfig
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/etc" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libfontconfig.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst"/etc/. "$PAYLOAD_DIR/etc/"
+    cp "$inst/bin/fc-cache" "$PAYLOAD_DIR/bin/"
+    cp "$inst/bin/fc-list" "$PAYLOAD_DIR/bin/"
+    cp "$inst/bin/fc-match" "$PAYLOAD_DIR/bin/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
