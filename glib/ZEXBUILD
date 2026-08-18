@@ -25,7 +25,7 @@ makedepends="libffi-dev pcre2-dev zlib-dev"
 # -Dintrospection=disabled: needs g-ir-scanner to execute freshly-built
 # binaries during the build; not wired up yet. Needed later for GNOME
 # Shell/gjs typelibs -- tracked as a follow-up, not silently faked.
-# -Dlibmount=disabled, -Delf=disabled: no util-linux recipe published
+# -Dlibmount=disabled, -Dlibelf=disabled: no util-linux recipe published
 # yet, and elf gresource embedding is optional -- safe to drop for now.
 build() {
     meson setup builddir \
@@ -42,7 +42,7 @@ build() {
         -Dlibmount=disabled \
         -Dselinux=disabled \
         -Dxattr=false \
-        -Delf=disabled \
+        -Dlibelf=disabled \
         -Dsysprof=disabled \
         -Ddtrace=disabled \
         -Dsystemtap=disabled \
