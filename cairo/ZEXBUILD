@@ -1,0 +1,41 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cairo
+pkgver=1.18.4
+pkgrel=0
+subpackages="cairo-dev"
+source="https://cairographics.org/releases/cairo-$pkgver.tar.xz"
+sha256sums="445ed8208a6e4823de1226a74ca319d3600e83f6369f99b14265006599c32ccb  cairo-$pkgver.tar.xz"
+# pixman-dev/fontconfig-dev/freetype-dev here are Alpine's own apk
+# packages (build-time only, native-Alpine convention) -- not the
+# Zainium pixman/fontconfig/freetype recipes, so this doesn't need to
+# wait on those being published first.
+makedepends="pixman-dev fontconfig-dev freetype-dev libpng-dev glib-dev"
+
+# Wayland-only -- no X11 (xlib/xcb) support needed.
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        -Dxlib=disabled \
+        -Dxcb=disabled \
+        -Dxlib-xcb=disabled \
+        -Dtests=disabled \
+        -Dspectre=disabled \
+        -Dgtk_doc=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libcairo*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
