@@ -1,0 +1,28 @@
+[package]
+name             = "libinput"
+version          = "1.31.3"
+description      = "Input device handling library for Wayland compositors"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/libinput/libinput"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["mtdev"]
+provides         = ["libinput"]
+tags             = ["base", "library", "input"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

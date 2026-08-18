@@ -1,0 +1,41 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=libinput
+pkgver=1.31.3
+pkgrel=0
+subpackages="libinput-dev"
+source="https://gitlab.freedesktop.org/libinput/libinput/-/archive/$pkgver/libinput-$pkgver.tar.gz"
+sha256sums="b6749bf6f1890f6631c0a70a027c35fec9d2e096a39f720548896e41474a9854  libinput-$pkgver.tar.gz"
+# eudev-dev/libevdev-dev/mtdev-dev are libinput's real build deps
+# (libudev, libevdev, mtdev). Using Alpine's own mtdev-dev at build
+# time here (not our own syshub mtdev package) -- same ABI, and pulling
+# our own not-yet-apk-published package in as a build dep would need
+# the toolchain-ledger mechanism for no real benefit.
+makedepends="eudev-dev libevdev-dev mtdev-dev"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        -Dudev-dir=/overlayer/syshub/lib/udev \
+        -Dlibwacom=false \
+        -Ddebug-gui=false \
+        -Ddocumentation=false \
+        -Dtests=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libinput.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/lib/udev" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
