@@ -37,7 +37,7 @@ build() {
         -Dapidocs=false \
         -Dman=false \
         -Dbash-completion=false
-    ninja -C builddir
+    LD_LIBRARY_PATH=/usr/lib:/lib ninja -C builddir
     DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
 }
 
