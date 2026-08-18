@@ -10,6 +10,14 @@ source="https://www.alsa-project.org/files/pub/lib/alsa-lib-$pkgver.tar.bz2"
 sha256sums="f740db7f488255944ffd4428416ee3390a96742856916433df468c281436480e  alsa-lib-$pkgver.tar.bz2"
 
 build() {
+    # src/conf/alsa.conf hardcodes /usr/etc fallback paths (FHS
+    # "vendor config" convention) -- Zainium has no /usr at all. One
+    # line is purely a /usr/etc entry (drop it); the other pairs a
+    # real /etc path with a |||-separated /usr/etc fallback (strip
+    # just the fallback, keep the real /etc entry).
+    sed -i '/^\s*"\/usr\/etc\/alsa\/conf\.d"\s*$/d' src/conf/alsa.conf
+    sed -i 's#|||/usr/etc/asound.conf##' src/conf/alsa.conf
+
     ./configure \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
