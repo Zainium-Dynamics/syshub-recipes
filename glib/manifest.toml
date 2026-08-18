@@ -1,0 +1,30 @@
+[package]
+name             = "glib"
+version          = "2.89.3"
+description      = "GLib core C utility library — GNOME/COSMIC base runtime"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.gtk.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libffi", "pcre2", "zlib"]
+provides         = ["glib"]
+tags             = ["base", "library", "gnome", "cosmic"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
