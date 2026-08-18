@@ -137,6 +137,24 @@ install_toolchain_deps
 export LDFLAGS="${LDFLAGS:-} -Wl,-dynamic-linker=$ZAINIUM_LDSO -Wl,-rpath=/overlayer/syshub/lib"
 export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C link-arg=-Wl,-dynamic-linker=$ZAINIUM_LDSO -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
 
+# Some builds run their own just-compiled tool mid-build (wayland's
+# wayland-scanner generating protocol headers, e.g.) — that tool now
+# carries Zainium's interpreter/rpath too, so it needs its *other*
+# runtime libs (not just musl) to already exist under
+# /overlayer/syshub/lib, same problem the gcc-musl/libzstd bootstrap
+# above solves. Same justification: musl's ABI is stable across
+# independent builds of the same libc, so borrowing Alpine's own copy
+# of a plain C library is safe. Extend this list as new build-time
+# tools surface a new missing one.
+for lib in libexpat.so.1 libxml2.so.2; do
+    [ -e "/overlayer/syshub/lib/$lib" ] && continue
+    src="$(find /usr/lib /lib -maxdepth 1 -name "$lib" 2>/dev/null | head -1)"
+    [ -n "$src" ] || continue
+    echo "-- bootstrapping $lib from Alpine (a build-time tool needs it to run) --"
+    mkdir -p /overlayer/syshub/lib
+    cp -L "$src" "/overlayer/syshub/lib/$lib"
+done
+
 # `--prefix=/overlayer/syshub` is the runtime-visible merged path for
 # EVERY package, syshub or userland (see userland-recipes' README's "Why
 # --prefix=/overlayer/syshub even for userland packages") — DESTDIR
