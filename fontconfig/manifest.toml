@@ -1,0 +1,30 @@
+[package]
+name             = "fontconfig"
+version          = "2.18.3"
+description      = "Font configuration and customization library"
+license          = "MIT"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.freedesktop.org/wiki/Software/fontconfig/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["freetype"]
+provides         = ["fontconfig"]
+tags             = ["base", "library", "fonts"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
