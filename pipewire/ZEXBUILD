@@ -1,0 +1,90 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=pipewire
+pkgver=1.6.8
+pkgrel=0
+subpackages="pipewire-dev"
+source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
+sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
+makedepends="alsa-lib-dev eudev-dev"
+
+# Minimal first pass: core pipewire daemon + client library + ALSA
+# backend + udev device detection only. session-managers=[] -- the
+# wireplumber recipe (next) is the real session manager, not the
+# deprecated built-in media-session. Everything else (bluetooth,
+# video/v4l2, jack compat, pulseaudio compat, gstreamer, ffmpeg,
+# systemd, dbus, x11, vulkan, codecs...) disabled -- optional, no
+# recipes published for their own deps yet, follow-up work.
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        -Ddocs=disabled \
+        -Dman=disabled \
+        -Dexamples=disabled \
+        -Dtests=disabled \
+        -Dinstalled_tests=disabled \
+        -Dsession-managers=[] \
+        -Dalsa=enabled \
+        -Dpipewire-alsa=enabled \
+        -Dudev=enabled \
+        -Dcontrol=enabled \
+        -Daudiomixer=enabled \
+        -Daudioconvert=enabled \
+        -Dsupport=enabled \
+        -Dlibsystemd=disabled \
+        -Dlogind=disabled \
+        -Dselinux=disabled \
+        -Dpipewire-jack=disabled \
+        -Djack=disabled \
+        -Dpipewire-v4l2=disabled \
+        -Dv4l2=disabled \
+        -Dbluez5=disabled \
+        -Dffmpeg=disabled \
+        -Ddbus=disabled \
+        -Dsdl2=disabled \
+        -Dsndfile=disabled \
+        -Dlibpulse=disabled \
+        -Droc=disabled \
+        -Davahi=disabled \
+        -Decho-cancel-webrtc=disabled \
+        -Dlibusb=disabled \
+        -Draop=disabled \
+        -Dlv2=disabled \
+        -Dx11=disabled \
+        -Dx11-xfixes=disabled \
+        -Dlibcanberra=disabled \
+        -Davb=disabled \
+        -Dflatpak=disabled \
+        -Dreadline=disabled \
+        -Dgsettings=disabled \
+        -Dopus=disabled \
+        -Dlibffado=disabled \
+        -Dfftw=disabled \
+        -Donnxruntime=disabled \
+        -Dvulkan=disabled \
+        -Dgstreamer=disabled \
+        -Dlibcamera=disabled
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libpipewire*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/lib/pipewire-0.3" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst/lib/spa-0.2" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    cp -a "$inst/share/pipewire" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    cp -a "$inst"/share/alsa* "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
