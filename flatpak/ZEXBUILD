@@ -5,13 +5,14 @@ pkgrel=0
 subpackages="flatpak-dev"
 source="https://github.com/flatpak/flatpak/releases/download/$pkgver/flatpak-$pkgver.tar.xz"
 sha256sums="bc683fc916ed21c0524bb064f358c2ac18586b8ec88c76f2f7f289877521631c  flatpak-$pkgver.tar.xz"
-makedepends="libcap-dev libarchive-dev glib-dev curl-dev libxml2-dev fuse3-dev fuse3 ostree-dev json-glib-dev appstream-dev gdk-pixbuf-dev gpgme-dev libseccomp-dev zstd-dev bison git"
+makedepends="libcap-dev libarchive-dev glib-dev curl-dev libxml2-dev fuse3-dev fuse3 ostree-dev json-glib-dev appstream-dev gdk-pixbuf-dev gpgme-dev libseccomp-dev zstd-dev bison git dconf-dev malcontent-dev libxau-dev polkit-dev"
 
 # systemd/selinux_module disabled permanently -- Zainium doesn't run
-# systemd or SELinux. docs/gir/dconf/malcontent/xauth disabled for now
-# (their own dependency chains not built yet). system_bubblewrap/
-# system_dbus_proxy left at their default empty string -- meson vendors
-# both as subprojects (subprojects/bubblewrap.wrap, dbus-proxy.wrap).
+# systemd or SELinux. docs/gir disabled for now. dconf/malcontent/xauth/
+# system_helper enabled -- their Zainium packages are built separately
+# (GNOME repo). system_bubblewrap/system_dbus_proxy left at their
+# default empty string -- meson vendors both as subprojects
+# (subprojects/bubblewrap.wrap, dbus-proxy.wrap).
 build() {
     patch -p1 < "$RECIPE_DIR/tzdir.patch"
     meson setup builddir \
@@ -29,13 +30,13 @@ build() {
         -Ddocbook_docs=disabled \
         -Dgtkdoc=disabled \
         -Dgir=disabled \
-        -Dmalcontent=disabled \
+        -Dmalcontent=enabled \
         -Dsystemd=disabled \
         -Dselinux_module=disabled \
         -Dwayland_security_context=disabled \
-        -Ddconf=disabled \
-        -Dxauth=disabled \
-        -Dsystem_helper=disabled \
+        -Ddconf=enabled \
+        -Dxauth=enabled \
+        -Dsystem_helper=enabled \
         -Ddbus_config_dir=/overlayer/syshub/share/dbus-1/system.d \
         -Ddbus_service_dir=/overlayer/syshub/share/dbus-1/services \
         -Dprivileged_group=wheel
