@@ -1,0 +1,47 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=curl
+pkgver=8.21.0
+pkgrel=0
+subpackages="curl-dev"
+source="https://github.com/curl/curl/archive/refs/tags/curl-8_21_0.tar.gz"
+sha256sums="ec753aa6f408a3ca9f0d6d5f7a77417aecd1544db13c03ae5d443612bf367364  curl-8_21_0.tar.gz"
+makedepends="brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev openssl-dev zlib-dev zstd-dev cmake"
+
+# GitHub tag archive has no pre-generated ./configure -- CMakeLists.txt
+# is real and shipped, use that instead of pulling in autoreconf.
+build() {
+    cd curl-curl-8_21_0
+    cmake -B builddir -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_CURL_EXE=ON \
+        -DCURL_USE_OPENSSL=ON \
+        -DCURL_ZLIB=ON \
+        -DCURL_BROTLI=ON \
+        -DCURL_ZSTD=ON \
+        -DUSE_NGHTTP2=ON \
+        -DCURL_USE_LIBPSL=ON \
+        -DCURL_USE_LIBIDN2=ON \
+        -DENABLE_ARES=ON \
+        -DCURL_DISABLE_LDAP=ON \
+        -DCURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
+        -DCURL_CA_PATH=/etc/ssl/certs
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libcurl.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/curl" "$PAYLOAD_DIR/bin/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+    cp -a "$inst"/lib/cmake "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+}
