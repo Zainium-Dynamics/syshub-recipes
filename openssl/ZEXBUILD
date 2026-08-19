@@ -1,0 +1,49 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=openssl
+pkgver=4.0.1
+pkgrel=0
+subpackages="openssl-dev"
+source="https://github.com/openssl/openssl/archive/refs/tags/openssl-$pkgver.tar.gz"
+sha256sums="d8dee4712f66b113ab2060ca693febcfbf81edb08c323c1a87e7526364d0fef8  openssl-$pkgver.tar.gz"
+makedepends="perl linux-headers"
+
+build() {
+    cd openssl-openssl-$pkgver
+    perl ./Configure \
+        linux-x86_64 \
+        --prefix=/overlayer/syshub \
+        --libdir=lib \
+        --openssldir=/overlayer/syshub/etc/ssl \
+        enable-ktls \
+        shared \
+        no-zlib \
+        no-async \
+        no-comp \
+        no-idea \
+        no-mdc2 \
+        no-rc5 \
+        no-ec2m \
+        no-ssl3 \
+        no-seed \
+        no-weak-ssl-ciphers \
+        enable-ec_nistp_64_gcc_128
+    make -j"$(nproc)"
+    make install_sw install_ssldirs
+}
+
+package() {
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc"
+    cp -P /overlayer/syshub/lib/libcrypto.so* "$PAYLOAD_DIR/lib/"
+    cp -P /overlayer/syshub/lib/libssl.so* "$PAYLOAD_DIR/lib/"
+    cp -a /overlayer/syshub/lib/ossl-modules "$PAYLOAD_DIR/lib/"
+    cp -a /overlayer/syshub/bin/openssl "$PAYLOAD_DIR/bin/"
+    cp -a /overlayer/syshub/etc/ssl "$PAYLOAD_DIR/etc/"
+    sed -i '1s#.*#\#!/overlayer/syshub/bin/perl#' \
+        "$PAYLOAD_DIR/etc/ssl/misc/CA.pl" "$PAYLOAD_DIR/etc/ssl/misc/tsget.pl"
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a /overlayer/syshub/include/. "$PAYLOAD_DIR/include/"
+    cp -a /overlayer/syshub/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
