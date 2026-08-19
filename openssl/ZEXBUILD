@@ -13,6 +13,7 @@ makedepends="perl linux-headers"
 # crypto/ppccap.c -- ARM/PPC only, irrelevant on x86_64.
 build() {
     cd openssl-openssl-$pkgver
+    _inst="$(pwd)/_zexbuild-install/overlayer/syshub"
     perl ./Configure \
         linux-x86_64 \
         --prefix=/overlayer/syshub \
@@ -32,23 +33,19 @@ build() {
         no-weak-ssl-ciphers \
         enable-ec_nistp_64_gcc_128
     make -j"$(nproc)"
-    DESTDIR="$(pwd)/_zexbuild-install" make install_sw install_ssldirs
+    DESTDIR="$(dirname "$(dirname "$_inst")")" make install_sw install_ssldirs
 }
 
 package() {
-    cd openssl-openssl-$pkgver 2>/dev/null || true
-    local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc"
-    find "$inst/lib" -maxdepth 1 -name 'lib*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
-    cp -a "$inst/lib/ossl-modules" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
-    cp -a "$inst/bin/openssl" "$PAYLOAD_DIR/bin/"
-    cp -a "$inst/etc/ssl" "$PAYLOAD_DIR/etc/"
+    find "$_inst/lib" -maxdepth 1 -name 'lib*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$_inst/lib/ossl-modules" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$_inst/bin/openssl" "$PAYLOAD_DIR/bin/"
+    cp -a "$_inst/etc/ssl" "$PAYLOAD_DIR/etc/"
 }
 
 dev() {
-    cd openssl-openssl-$pkgver 2>/dev/null || true
-    local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
-    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
-    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp -a "$_inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$_inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
 }
