@@ -1,0 +1,52 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=openssl
+pkgver=4.0.1
+pkgrel=0
+subpackages="openssl-dev"
+source="https://github.com/openssl/openssl/archive/refs/tags/openssl-$pkgver.tar.gz"
+sha256sums="d8dee4712f66b113ab2060ca693febcfbf81edb08c323c1a87e7526364d0fef8  openssl-$pkgver.tar.gz"
+makedepends="perl linux-headers"
+
+# enable-fips dropped for a first pass -- separate fipsmodule.cnf
+# activation/packaging step, not needed for a base TLS build.
+# auxv.patch (Alpine carries it) only touches crypto/armcap.c and
+# crypto/ppccap.c -- ARM/PPC only, irrelevant on x86_64.
+build() {
+    cd openssl-openssl-$pkgver
+    perl ./Configure \
+        linux-x86_64 \
+        --prefix=/overlayer/syshub \
+        --libdir=lib \
+        --openssldir=/overlayer/syshub/etc/ssl \
+        enable-ktls \
+        shared \
+        no-zlib \
+        no-async \
+        no-comp \
+        no-idea \
+        no-mdc2 \
+        no-rc5 \
+        no-ec2m \
+        no-ssl3 \
+        no-seed \
+        no-weak-ssl-ciphers \
+        enable-ec_nistp_64_gcc_128
+    make -j"$(nproc)"
+    DESTDIR="$(pwd)/_zexbuild-install" make install_sw install_ssldirs
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc"
+    find "$inst/lib" -maxdepth 1 -name 'lib*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/lib/ossl-modules" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst/bin/openssl" "$PAYLOAD_DIR/bin/"
+    cp -a "$inst/etc/ssl" "$PAYLOAD_DIR/etc/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

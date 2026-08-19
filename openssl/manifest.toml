@@ -1,0 +1,30 @@
+[package]
+name             = "openssl"
+version          = "4.0.1"
+description      = "Toolkit for Transport Layer Security (TLS)"
+license          = "Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.openssl.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["openssl", "libssl", "libcrypto"]
+tags             = ["base", "crypto"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+etc     = "/overlayer/syshub/etc"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
