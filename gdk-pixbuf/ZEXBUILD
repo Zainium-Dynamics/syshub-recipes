@@ -5,7 +5,7 @@ pkgrel=0
 subpackages="gdk-pixbuf-dev"
 source="https://gitlab.gnome.org/GNOME/gdk-pixbuf/-/archive/$pkgver/gdk-pixbuf-$pkgver.tar.gz"
 sha256sums="115046cd8f84b703da9d20f1527a8d21685c17090eae0afb6bf25ca1ccd4e430  gdk-pixbuf-$pkgver.tar.gz"
-makedepends="glib-dev libpng-dev libjpeg-turbo-dev giflib-dev tiff-dev"
+makedepends="glib-dev shared-mime-info libpng-dev libjpeg-turbo-dev giflib-dev tiff-dev"
 
 # glycin (Alpine's newer sandboxed loader backend) skipped -- own
 # dependency chain not built yet. Built-in loaders used instead
