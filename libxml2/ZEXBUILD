@@ -18,8 +18,7 @@ build() {
         -Dpython=disabled \
         -Dicu=disabled \
         -Dreadline=disabled \
-        -Dhistory=disabled \
-        -Dtests=false
+        -Dhistory=disabled
     ninja -C builddir
     DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
 }
