@@ -7,13 +7,8 @@ source="https://github.com/openssl/openssl/archive/refs/tags/openssl-$pkgver.tar
 sha256sums="d8dee4712f66b113ab2060ca693febcfbf81edb08c323c1a87e7526364d0fef8  openssl-$pkgver.tar.gz"
 makedepends="perl linux-headers"
 
-# enable-fips dropped for a first pass -- separate fipsmodule.cnf
-# activation/packaging step, not needed for a base TLS build.
-# auxv.patch (Alpine carries it) only touches crypto/armcap.c and
-# crypto/ppccap.c -- ARM/PPC only, irrelevant on x86_64.
 build() {
     cd openssl-openssl-$pkgver
-    _instroot="$(pwd)/_zexbuild-install"
     perl ./Configure \
         linux-x86_64 \
         --prefix=/overlayer/syshub \
@@ -33,22 +28,20 @@ build() {
         no-weak-ssl-ciphers \
         enable-ec_nistp_64_gcc_128
     make -j"$(nproc)"
-    DESTDIR="$_instroot" make install_sw install_ssldirs
+    make install_sw install_ssldirs
 }
 
 package() {
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc"
-    find "$_instroot" -name 'libcrypto.so*' -o -name 'libssl.so*' | while IFS= read -r f; do
-        cp -P "$f" "$PAYLOAD_DIR/lib/"
-    done
-    find "$_instroot" -type d -name ossl-modules -exec cp -a {} "$PAYLOAD_DIR/lib/" \;
-    find "$_instroot" -type f -name openssl -perm -u+x -exec cp -a {} "$PAYLOAD_DIR/bin/" \;
-    find "$_instroot" -type d -path '*etc/ssl' -exec cp -a {} "$PAYLOAD_DIR/etc/" \;
+    cp -P /overlayer/syshub/lib/libcrypto.so* "$PAYLOAD_DIR/lib/"
+    cp -P /overlayer/syshub/lib/libssl.so* "$PAYLOAD_DIR/lib/"
+    cp -a /overlayer/syshub/lib/ossl-modules "$PAYLOAD_DIR/lib/"
+    cp -a /overlayer/syshub/bin/openssl "$PAYLOAD_DIR/bin/"
+    cp -a /overlayer/syshub/etc/ssl "$PAYLOAD_DIR/etc/"
 }
 
 dev() {
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
-    _incdir="$(find "$_instroot" -type d -name include | head -1)"
-    [ -n "$_incdir" ] && cp -a "$_incdir"/. "$PAYLOAD_DIR/include/"
-    find "$_instroot" -name '*.pc' -exec cp -a {} "$PAYLOAD_DIR/lib/pkgconfig/" \;
+    cp -a /overlayer/syshub/include/. "$PAYLOAD_DIR/include/"
+    cp -a /overlayer/syshub/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
 }
