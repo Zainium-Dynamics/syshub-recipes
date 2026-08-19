@@ -12,7 +12,6 @@ makedepends="glib-dev libpng-dev libjpeg-turbo-dev giflib-dev tiff-dev"
 # (png/jpeg/gif/tiff), matching gdk-pixbuf's classic convention.
 # gir disabled, same reasoning as appstream/pango.
 build() {
-    cd gdk-pixbuf-$pkgver
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
