@@ -1,0 +1,29 @@
+[package]
+name             = "gdk-pixbuf"
+version          = "2.44.8"
+description      = "GTK+ image loading library"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.gnome.org/GNOME/gdk-pixbuf"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib"]
+provides         = ["gdk-pixbuf"]
+tags             = ["base", "library", "gnome", "graphics"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
