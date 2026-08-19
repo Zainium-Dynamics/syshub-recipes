@@ -38,6 +38,8 @@ package() {
     cp -a /overlayer/syshub/lib/ossl-modules "$PAYLOAD_DIR/lib/"
     cp -a /overlayer/syshub/bin/openssl "$PAYLOAD_DIR/bin/"
     cp -a /overlayer/syshub/etc/ssl "$PAYLOAD_DIR/etc/"
+    sed -i '1s#.*#\#!/overlayer/syshub/bin/perl#' \
+        "$PAYLOAD_DIR/etc/ssl/misc/CA.pl" "$PAYLOAD_DIR/etc/ssl/misc/tsget.pl"
 }
 
 dev() {
