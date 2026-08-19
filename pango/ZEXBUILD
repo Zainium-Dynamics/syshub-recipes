@@ -10,7 +10,6 @@ makedepends="cairo-dev expat-dev fontconfig-dev fribidi-dev glib-dev harfbuzz-de
 # gir/xft disabled -- gir needs gobject-introspection (own dependency
 # chain, see appstream), xft is X11-only and Zainium is wayland-first.
 build() {
-    cd pango-$pkgver
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
