@@ -5,7 +5,7 @@ pkgrel=0
 subpackages="libxml2-dev"
 source="https://gitlab.gnome.org/GNOME/libxml2/-/archive/v$pkgver/libxml2-v$pkgver.tar.gz"
 sha256sums="0da50c1415f4ec0364569d2119b1436ba837b31df44af28569d234272c23cf1f  libxml2-v$pkgver.tar.gz"
-makedepends="zlib-dev xz-dev"
+makedepends="zlib-dev"
 
 build() {
     cd libxml2-v$pkgver
@@ -15,7 +15,6 @@ build() {
         --includedir=/overlayer/syshub/include \
         --sysconfdir=/overlayer/syshub/etc \
         -Dzlib=enabled \
-        -Dlzma=enabled \
         -Dpython=disabled \
         -Dicu=disabled \
         -Dreadline=disabled \
