@@ -13,6 +13,7 @@ makedepends="libcap-dev libarchive-dev glib-dev curl-dev libxml2-dev fuse3-dev f
 # system_dbus_proxy left at their default empty string -- meson vendors
 # both as subprojects (subprojects/bubblewrap.wrap, dbus-proxy.wrap).
 build() {
+    patch -p1 < "$RECIPE_DIR/tzdir.patch"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
