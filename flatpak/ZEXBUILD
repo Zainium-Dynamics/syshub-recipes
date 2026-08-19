@@ -70,6 +70,11 @@ EOF
     sed -i 's#/usr#(host root)#g' \
         "$PAYLOAD_DIR/share/dbus-1/interfaces/org.freedesktop.portal.Flatpak.xml"
     rm -f "$PAYLOAD_DIR/bin/flatpak-bisect" "$PAYLOAD_DIR/bin/flatpak-coredumpctl"
+
+    sed -i 's#/usr/share/zoneinfo#/overlayer/syshub/share/zoneinfo#' \
+        "$PAYLOAD_DIR/etc/profile.d/flatpak.sh"
+    sed -i 's#/usr/local/share/:/usr/share/#/overlayer/syshub/share/#' \
+        "$PAYLOAD_DIR/lib/systemd/system/flatpak-system-helper.service"
 }
 
 dev() {
