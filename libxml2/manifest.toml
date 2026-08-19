@@ -1,0 +1,29 @@
+[package]
+name             = "libxml2"
+version          = "2.15.3"
+description      = "XML parsing library, version 2"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.gnome.org/GNOME/libxml2"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["zlib", "xz"]
+provides         = ["libxml2"]
+tags             = ["base", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
