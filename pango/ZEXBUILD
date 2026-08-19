@@ -1,0 +1,42 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=pango
+pkgver=1.58.2
+pkgrel=0
+subpackages="pango-dev"
+source="https://download.gnome.org/sources/pango/${pkgver%.*}/pango-$pkgver.tar.xz"
+sha256sums="342385b6ca3b7c73455d7c80a13b7dbe4489e00bc3bd4c5bd6ed4dce421e374a  pango-$pkgver.tar.xz"
+makedepends="cairo-dev expat-dev fontconfig-dev fribidi-dev glib-dev harfbuzz-dev"
+
+# gir/xft disabled -- gir needs gobject-introspection (own dependency
+# chain, see appstream), xft is X11-only and Zainium is wayland-first.
+build() {
+    cd pango-$pkgver
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dintrospection=disabled \
+        -Dfontconfig=enabled \
+        -Dfreetype=enabled \
+        -Dxft=disabled \
+        -Ddocumentation=false \
+        -Dman-pages=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libpango*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/share/locale" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
