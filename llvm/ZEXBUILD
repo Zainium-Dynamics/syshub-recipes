@@ -40,8 +40,8 @@ build() {
         -DLLVM_INCLUDE_EXAMPLES=OFF \
         -DLLVM_INSTALL_UTILS=ON \
         -DLLVM_LINK_LLVM_DYLIB=ON
-    cmake --build build
-    DESTDIR="$(pwd)/_zexbuild-install" cmake --install build
+    LD_LIBRARY_PATH=/usr/lib:/lib cmake --build build
+    LD_LIBRARY_PATH=/usr/lib:/lib DESTDIR="$(pwd)/_zexbuild-install" cmake --install build
 }
 
 package() {
