@@ -1,0 +1,29 @@
+[package]
+name             = "libarchive-dev"
+version          = "3.8.9"
+description      = "libarchive headers, pkgconfig"
+license          = "BSD-2-Clause AND BSD-3-Clause AND Public-Domain"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://libarchive.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libarchive"]
+provides         = ["libarchive-dev"]
+tags             = ["base", "library", "archive", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
