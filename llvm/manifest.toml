@@ -1,0 +1,29 @@
+[package]
+name             = "llvm"
+version          = "22.1.8"
+description      = "Low Level Virtual Machine compiler system"
+license          = "Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://llvm.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libffi", "zlib", "zstd"]
+provides         = ["llvm"]
+tags             = ["base", "toolchain", "compiler"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
