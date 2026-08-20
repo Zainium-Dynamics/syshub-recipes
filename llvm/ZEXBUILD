@@ -1,0 +1,59 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=llvm
+pkgver=22.1.8
+pkgrel=0
+subpackages="llvm-dev"
+source="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-$pkgver.tar.gz"
+sha256sums="ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace  llvmorg-$pkgver.tar.gz"
+makedepends="libffi-dev zlib-dev zstd-dev binutils-dev curl-dev libxml2-dev cmake python3 samurai"
+
+# install-prefix.patch / llvm-stack-size.patch: real, from Alpine's own
+# llvm22 APKBUILD (musl stack-size tuning + a real cmake install-prefix
+# bug). A third patch (SDAG select-of-load fold) skipped -- correctness
+# fix for a rare miscompile, not needed to build. Assertions/tests off,
+# same as Alpine. Native build (no cross-compile options).
+build() {
+    cd llvm-project-llvmorg-$pkgver
+    cd llvm
+    patch -p2 < "$RECIPE_DIR/install-prefix.patch"
+    patch -p2 < "$RECIPE_DIR/llvm-stack-size.patch"
+    cd ..
+
+    cmake -B build -G Ninja -S llvm \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DLLVM_APPEND_VC_REV=OFF \
+        -DLLVM_BUILD_DOCS=OFF \
+        -DLLVM_BUILD_EXAMPLES=OFF \
+        -DLLVM_BUILD_LLVM_DYLIB=ON \
+        -DLLVM_BUILD_TESTS=OFF \
+        -DLLVM_ENABLE_ASSERTIONS=OFF \
+        -DLLVM_ENABLE_EH=ON \
+        -DLLVM_ENABLE_FFI=FORCE_ON \
+        -DLLVM_ENABLE_LIBEDIT=OFF \
+        -DLLVM_ENABLE_PIC=ON \
+        -DLLVM_ENABLE_RTTI=ON \
+        -DLLVM_ENABLE_SPHINX=OFF \
+        -DLLVM_ENABLE_ZLIB=FORCE_ON \
+        -DLLVM_ENABLE_ZSTD=FORCE_ON \
+        -DLLVM_INCLUDE_BENCHMARKS=OFF \
+        -DLLVM_INCLUDE_EXAMPLES=OFF \
+        -DLLVM_INSTALL_UTILS=ON \
+        -DLLVM_LINK_LLVM_DYLIB=ON
+    cmake --build build
+    DESTDIR="$(pwd)/_zexbuild-install" cmake --install build
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libLLVM*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/cmake"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/cmake/. "$PAYLOAD_DIR/lib/cmake/" 2>/dev/null || true
+}
