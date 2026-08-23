@@ -1,0 +1,38 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=harfbuzz
+pkgver=14.3.1
+pkgrel=0
+subpackages="harfbuzz-dev"
+source="https://github.com/harfbuzz/harfbuzz/archive/refs/tags/${pkgver}.tar.gz"
+sha256sums="05e602daf0846d7497d842807766ea32ca270f3e2c9284ce03811a2a1ed669c9  ${pkgver}.tar.gz"
+makedepends="glib-dev freetype-dev meson ninja"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dglib=enabled \
+        -Dfreetype=enabled \
+        -Dtests=disabled \
+        -Ddocs=disabled
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libharfbuzz*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/share/." "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/lib/cmake"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp -a "$inst"/lib/cmake/. "$PAYLOAD_DIR/lib/cmake/" 2>/dev/null || true
+}

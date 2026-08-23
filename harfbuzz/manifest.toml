@@ -1,0 +1,28 @@
+[package]
+name             = "harfbuzz"
+version          = "14.3.1"
+description      = "Text shaping engine"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://harfbuzz.github.io/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib", "freetype"]
+provides         = ["harfbuzz"]
+tags             = ["base", "library", "text", "shaping"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
