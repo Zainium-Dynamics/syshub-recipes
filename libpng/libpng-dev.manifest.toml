@@ -1,0 +1,27 @@
+[package]
+name             = "libpng-dev"
+version          = "1.6.58"
+description      = "libpng headers, pkgconfig"
+license          = "Libpng"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "http://www.libpng.org/pub/png/libpng.html"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libpng"]
+provides         = ["libpng-dev"]
+tags             = ["base", "library", "image", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
