@@ -1,0 +1,28 @@
+[package]
+name             = "libwebp"
+version          = "1.6.0"
+description      = "WebP image codec library"
+license          = "BSD-3-Clause"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://developers.google.com/speed/webp"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libpng", "libjpeg-turbo"]
+provides         = ["libwebp"]
+tags             = ["base", "library", "image", "webp"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

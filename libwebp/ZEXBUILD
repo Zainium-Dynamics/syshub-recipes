@@ -1,0 +1,44 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libwebp
+pkgver=1.6.0
+pkgrel=0
+subpackages="libwebp-dev"
+source="https://github.com/webmproject/libwebp/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="93a852c2b3efafee3723efd4636de855b46f9fe1efddd607e1f42f60fc8f2136  v$pkgver.tar.gz"
+makedepends="cmake libpng-dev libjpeg-turbo-dev zlib-dev"
+
+build() {
+    cmake -B builddir \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_INSTALL_LIBDIR=/overlayer/syshub/lib \
+        -DCMAKE_INSTALL_INCLUDEDIR=/overlayer/syshub/include \
+        -DENABLE_SHARED=ON \
+        -DENABLE_STATIC=OFF \
+        -DWEBP_BUILD_ANIM_UTILS=ON \
+        -DWEBP_BUILD_CWEBP=ON \
+        -DWEBP_BUILD_DWEBP=ON \
+        -DWEBP_BUILD_GIF2WEBP=ON \
+        -DWEBP_BUILD_IMG2WEBP=ON \
+        -DWEBP_BUILD_VWEBP=ON \
+        -DWEBP_BUILD_WEBPINFO=ON \
+        -DWEBP_BUILD_WEBPMUX=ON \
+        -DWEBP_BUILD_EXTRAS=ON
+    cmake --build builddir
+    DESTDIR="$(pwd)/_zexbuild-install" cmake --install builddir
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libwebp*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/share/." "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/lib/cmake"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+    cp -a "$inst"/lib/cmake/. "$PAYLOAD_DIR/lib/cmake/" 2>/dev/null || true
+}
