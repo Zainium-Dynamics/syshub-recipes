@@ -1,0 +1,28 @@
+[package]
+name             = "libostree"
+version          = "2026.4"
+description      = "Operating system and container binary deployment and upgrades"
+license          = "LGPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://ostreedev.github.io/ostree/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib", "curl", "libarchive", "e2fsprogs", "gpgme"]
+provides         = ["libostree", "ostree"]
+tags             = ["base", "library", "system"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
