@@ -8,26 +8,10 @@ sha256sums="47d057dd1a6f226f8c48612e371c69c3c17ea1f3a97a7d674f786e0c84c8bb5a  me
 makedepends="meson ninja llvm-dev libdrm-dev wayland-dev wayland-protocols zlib-dev zstd-dev elfutils-dev python3 rust cargo bison flex"
 needs_toolchain="llvm llvm-dev libdrm libdrm-dev wayland wayland-dev wayland-protocols zlib zlib-dev zstd zstd-dev elfutils elfutils-dev spirv-llvm-translator spirv-llvm-translator-dev"
 
-# Driver list matches the x86_64-relevant reference (mesa-26.1.5's
-# build-mesa-zainium.sh) plus everything else in-tree that targets real
-# x86_64 desktop/gaming hardware -- ARM SoC (etnaviv/freedreno/lima/
-# panfrost/v3d/vc4/tegra/rocket/ethosu), Apple Silicon (asahi/kosmickrisp)
-# and Windows (d3d12/microsoft-experimental) drivers excluded, they can't
-# run here. xmlconfig/expat disabled outright -- driconf's optional
-# per-app override file, and expat isn't a published Zainium package yet;
-# hardcoding the default driconf avoids linking a runtime dep we can't
-# ship. vulkan nouveau (NVK) pulls in Mesa's Rust toolchain (Alpine's own
-# rust/cargo, already on this image) -- if that's the thing that breaks
-# first, dropping it from -Dvulkan-drivers is the fallback, everything
-# else here is plain C/C++.
+# x86_64-relevant drivers only, ARM/Apple/Windows excluded.
 build() {
     cd mesa-mesa-$pkgver
-    # Alpine's own rust/cargo pulls in llvm22 as a system dep, which puts
-    # its llvm-config on PATH too -- without this, meson finds Alpine's
-    # /usr/bin/llvm-config first and links mesa against Alpine's system
-    # libLLVM instead of our own published one, which won't exist at
-    # actual Zainium runtime (only /overlayer/syshub does there).
-    export PATH="/overlayer/syshub/bin:$PATH"
+    export PATH="/overlayer/syshub/bin:$PATH"   # our llvm-config, not Alpine's
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
