@@ -11,7 +11,9 @@ needs_toolchain="llvm llvm-dev libdrm libdrm-dev wayland wayland-dev wayland-pro
 # x86_64-relevant drivers only, ARM/Apple/Windows excluded.
 build() {
     cd mesa-mesa-$pkgver
+    ln -sf /overlayer/syshub/bin/llvm-config /overlayer/syshub/bin/llvm-config-22
     export PATH="/overlayer/syshub/bin:$PATH"   # our llvm-config, not Alpine's
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/zexlib/union/lib/pkgconfig"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
