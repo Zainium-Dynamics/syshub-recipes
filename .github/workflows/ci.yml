@@ -71,6 +71,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.cargo/bin:$PATH"
           command -v bindgen >/dev/null 2>&1 || cargo install bindgen-cli --locked
+          command -v cbindgen >/dev/null 2>&1 || cargo install cbindgen --locked
 
       - name: Cache cargo (registry + installed binaries)
         uses: actions/cache@v4
@@ -165,6 +166,7 @@ jobs:
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           export PATH="$HOME/.cargo/bin:$PATH"
           command -v bindgen >/dev/null 2>&1 || cargo install bindgen-cli --locked
+          command -v cbindgen >/dev/null 2>&1 || cargo install cbindgen --locked
 
       - name: Cache cargo (registry + installed binaries + zex-ports build)
         uses: actions/cache@v4
