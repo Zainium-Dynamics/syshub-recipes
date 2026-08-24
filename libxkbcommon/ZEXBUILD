@@ -9,10 +9,14 @@ makedepends="meson ninja bison wayland-dev wayland-protocols"
 
 # x11/xkbcommon-x11 disabled -- no libxcb package yet and Zainium is
 # wayland-first (same call as pango's xft). docs disabled -- doxygen/
-# graphviz aren't build deps we carry. xkb-config-root left at its
-# meson default (xkeyboard-config isn't published yet either; the
-# dependency() lookup is required:false upstream, so this just falls
-# back to a hardcoded path -- no build-time failure either way).
+# graphviz aren't build deps we carry. xkb-config-* paths set explicitly
+# -- xkeyboard-config isn't published yet, so meson's own dependency()
+# lookup for it comes back empty and leaves the versioned/unversioned
+# path options unset, which meson.build only #defines when non-empty;
+# tools/info.c references both macros unconditionally, so an unset
+# path is a hard compile error, not just a runtime no-data situation.
+# Pointing them at where a future xkeyboard-config package will land
+# keeps the macros defined either way.
 build() {
     cd libxkbcommon-xkbcommon-$pkgver
     meson setup builddir \
@@ -23,7 +27,11 @@ build() {
         -Denable-docs=false \
         -Denable-xkbregistry=true \
         -Denable-tools=true \
-        -Denable-bash-completion=false
+        -Denable-bash-completion=false \
+        -Dxkb-config-root=/overlayer/syshub/share/X11/xkb \
+        -Dxkb-config-versioned-extensions-path=/overlayer/syshub/share/xkeyboard-config-2 \
+        -Dxkb-config-unversioned-extensions-path=/overlayer/syshub/share/xkeyboard-config \
+        -Dxkb-config-extra-path=/overlayer/syshub/etc/xkb
     ninja -C builddir
     DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
 }
