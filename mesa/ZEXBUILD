@@ -6,7 +6,7 @@ subpackages="mesa-dev"
 source="https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-$pkgver/mesa-mesa-$pkgver.tar.gz"
 sha256sums="47d057dd1a6f226f8c48612e371c69c3c17ea1f3a97a7d674f786e0c84c8bb5a  mesa-mesa-$pkgver.tar.gz"
 makedepends="meson ninja llvm-dev libdrm-dev wayland-dev wayland-protocols zlib-dev zstd-dev elfutils-dev python3 rust cargo bison flex"
-needs_toolchain="llvm llvm-dev libdrm libdrm-dev wayland wayland-dev wayland-protocols zlib zlib-dev zstd zstd-dev elfutils elfutils-dev"
+needs_toolchain="llvm llvm-dev libdrm libdrm-dev wayland wayland-dev wayland-protocols zlib zlib-dev zstd zstd-dev elfutils elfutils-dev spirv-llvm-translator spirv-llvm-translator-dev"
 
 # Driver list matches the x86_64-relevant reference (mesa-26.1.5's
 # build-mesa-zainium.sh) plus everything else in-tree that targets real
@@ -22,6 +22,12 @@ needs_toolchain="llvm llvm-dev libdrm libdrm-dev wayland wayland-dev wayland-pro
 # else here is plain C/C++.
 build() {
     cd mesa-mesa-$pkgver
+    # Alpine's own rust/cargo pulls in llvm22 as a system dep, which puts
+    # its llvm-config on PATH too -- without this, meson finds Alpine's
+    # /usr/bin/llvm-config first and links mesa against Alpine's system
+    # libLLVM instead of our own published one, which won't exist at
+    # actual Zainium runtime (only /overlayer/syshub does there).
+    export PATH="/overlayer/syshub/bin:$PATH"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
