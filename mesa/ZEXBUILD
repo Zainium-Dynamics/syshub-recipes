@@ -5,7 +5,7 @@ pkgrel=0
 subpackages="mesa-dev"
 source="https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-$pkgver/mesa-mesa-$pkgver.tar.gz"
 sha256sums="47d057dd1a6f226f8c48612e371c69c3c17ea1f3a97a7d674f786e0c84c8bb5a  mesa-mesa-$pkgver.tar.gz"
-makedepends="meson ninja llvm22-dev llvm22-static spirv-tools-dev libdrm-dev wayland-dev wayland-protocols zlib-dev zstd-dev elfutils-dev python3 rust cargo bison flex"
+makedepends="meson ninja llvm22-dev llvm22-static spirv-tools-dev clang22-dev clang22-static libdrm-dev wayland-dev wayland-protocols zlib-dev zstd-dev elfutils-dev python3 rust cargo bison flex"
 needs_toolchain="libdrm libdrm-dev wayland wayland-dev wayland-protocols zlib zlib-dev zstd zstd-dev elfutils elfutils-dev spirv-llvm-translator spirv-llvm-translator-dev"
 
 # x86_64-relevant drivers only.
