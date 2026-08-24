@@ -1,0 +1,27 @@
+[package]
+name             = "e2fsprogs-dev"
+version          = "1.47.4"
+description      = "e2fsprogs headers, pkgconfig"
+license          = "GPL-2.0-only AND LGPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "http://e2fsprogs.sourceforge.net"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["e2fsprogs"]
+provides         = ["e2fsprogs-dev"]
+tags             = ["base", "system", "filesystem", "ext4", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
