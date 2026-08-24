@@ -1,0 +1,28 @@
+[package]
+name             = "libjpeg-turbo"
+version          = "3.2.0"
+description      = "JPEG image codec that uses SIMD instructions to accelerate baseline JPEG compression and decompression"
+license          = "IJG AND BSD-3-Clause AND Zlib"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://libjpeg-turbo.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libjpeg-turbo", "libjpeg"]
+tags             = ["base", "library", "image", "jpeg"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

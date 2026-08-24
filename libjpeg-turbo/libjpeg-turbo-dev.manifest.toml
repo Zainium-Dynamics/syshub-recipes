@@ -1,0 +1,27 @@
+[package]
+name             = "libjpeg-turbo-dev"
+version          = "3.2.0"
+description      = "libjpeg-turbo headers, pkgconfig"
+license          = "IJG AND BSD-3-Clause AND Zlib"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://libjpeg-turbo.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libjpeg-turbo"]
+provides         = ["libjpeg-turbo-dev", "libjpeg-dev"]
+tags             = ["base", "library", "image", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
