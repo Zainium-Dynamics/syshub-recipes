@@ -1,0 +1,27 @@
+[package]
+name             = "cmake"
+version          = "4.4.2"
+description      = "Cross-platform, open-source make system"
+license          = "BSD-3-Clause"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://cmake.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["curl", "libarchive", "zlib", "xz"]
+provides         = ["cmake"]
+tags             = ["base", "build", "tool"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
