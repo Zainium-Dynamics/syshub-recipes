@@ -1,0 +1,28 @@
+[package]
+name             = "e2fsprogs"
+version          = "1.47.4"
+description      = "Standard EXT2/EXT3/EXT4 filesystem utilities"
+license          = "GPL-2.0-only AND LGPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "http://e2fsprogs.sourceforge.net"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["util-linux"]
+provides         = ["e2fsprogs"]
+tags             = ["base", "system", "filesystem", "ext4"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
