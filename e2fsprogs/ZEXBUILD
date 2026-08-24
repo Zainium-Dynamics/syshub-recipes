@@ -3,8 +3,8 @@ pkgname=e2fsprogs
 pkgver=1.47.4
 pkgrel=0
 subpackages="e2fsprogs-dev"
-source="e2fsprogs-$pkgver.tar.gz::https://github.com/tytso/e2fsprogs/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="9f82eaa7002673291629077b80ee005cadfcd49854907a22007fed70b0ef596e  e2fsprogs-$pkgver.tar.gz"
+source="https://github.com/tytso/e2fsprogs/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="9f82eaa7002673291629077b80ee005cadfcd49854907a22007fed70b0ef596e  v$pkgver.tar.gz"
 makedepends="util-linux-dev pkgconf"
 
 build() {
