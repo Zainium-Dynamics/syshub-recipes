@@ -1,0 +1,28 @@
+[package]
+name             = "libpng"
+version          = "1.6.58"
+description      = "Portable Network Graphics library"
+license          = "Libpng"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "http://www.libpng.org/pub/png/libpng.html"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["zlib"]
+provides         = ["libpng"]
+tags             = ["base", "library", "image", "png"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
