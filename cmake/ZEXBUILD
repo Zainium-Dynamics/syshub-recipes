@@ -8,6 +8,7 @@ sha256sums="1db9e61e60b6e0874c86386340b910382f3c5e75b9fbfb44d122063129a2789d  cm
 makedepends="curl-dev libarchive-dev zlib-dev xz-dev ncurses-dev g++ bzip2-dev make"
 
 build() {
+    export LD_LIBRARY_PATH=/usr/lib:/lib
     CC=gcc CXX=g++ ./bootstrap \
         --prefix=/overlayer/syshub \
         --system-curl \
