@@ -22,6 +22,7 @@ build() {
     cmake -B build -G Ninja -S llvm \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DLLVM_ENABLE_PROJECTS=clang \
         -DLLVM_APPEND_VC_REV=OFF \
         -DLLVM_BUILD_DOCS=OFF \
         -DLLVM_BUILD_EXAMPLES=OFF \
@@ -39,7 +40,8 @@ build() {
         -DLLVM_INCLUDE_BENCHMARKS=OFF \
         -DLLVM_INCLUDE_EXAMPLES=OFF \
         -DLLVM_INSTALL_UTILS=ON \
-        -DLLVM_LINK_LLVM_DYLIB=ON
+        -DLLVM_LINK_LLVM_DYLIB=ON \
+        -DCLANG_LINK_CLANG_DYLIB=ON
     LD_LIBRARY_PATH=/usr/lib:/lib cmake --build build
     LD_LIBRARY_PATH=/usr/lib:/lib DESTDIR="$(pwd)/_zexbuild-install" cmake --install build
 }
@@ -47,7 +49,7 @@ build() {
 package() {
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
-    find "$inst/lib" -maxdepth 1 -name 'libLLVM*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    find "$inst/lib" -maxdepth 1 \( -name 'libLLVM*.so*' -o -name 'libclang*.so*' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
     cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/"
 }
 
