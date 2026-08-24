@@ -1,0 +1,51 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libxkbcommon
+pkgver=1.13.2
+pkgrel=0
+subpackages="libxkbcommon-dev"
+source="https://github.com/xkbcommon/libxkbcommon/archive/refs/tags/xkbcommon-$pkgver.tar.gz"
+sha256sums="acc4d5f7c3cbba5f9f8d08d8bdbeede84ecede46792f47929aa9321873385528  xkbcommon-$pkgver.tar.gz"
+makedepends="meson ninja bison wayland-dev wayland-protocols"
+
+# x11/xkbcommon-x11 disabled -- no libxcb package yet and Zainium is
+# wayland-first (same call as pango's xft). docs disabled -- doxygen/
+# graphviz aren't build deps we carry. xkb-config-* paths set explicitly
+# -- xkeyboard-config isn't published yet, so meson's own dependency()
+# lookup for it comes back empty and leaves the versioned/unversioned
+# path options unset, which meson.build only #defines when non-empty;
+# tools/info.c references both macros unconditionally, so an unset
+# path is a hard compile error, not just a runtime no-data situation.
+# Pointing them at where a future xkeyboard-config package will land
+# keeps the macros defined either way.
+build() {
+    cd libxkbcommon-xkbcommon-$pkgver
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        -Denable-wayland=true \
+        -Denable-x11=false \
+        -Denable-docs=false \
+        -Denable-xkbregistry=true \
+        -Denable-tools=true \
+        -Denable-bash-completion=false \
+        -Dxkb-config-root=/overlayer/syshub/share/X11/xkb \
+        -Dxkb-config-versioned-extensions-path=/overlayer/syshub/share/xkeyboard-config-2 \
+        -Dxkb-config-unversioned-extensions-path=/overlayer/syshub/share/xkeyboard-config \
+        -Dxkb-config-extra-path=/overlayer/syshub/etc/xkb
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libxkbcommon*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

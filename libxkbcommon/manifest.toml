@@ -1,0 +1,29 @@
+[package]
+name             = "libxkbcommon"
+version          = "1.13.2"
+description      = "Keyboard handling library"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://xkbcommon.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["wayland"]
+provides         = ["libxkbcommon"]
+tags             = ["base", "input", "keyboard"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
