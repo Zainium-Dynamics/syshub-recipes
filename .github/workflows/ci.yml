@@ -56,7 +56,7 @@ jobs:
         run: |
           apk add --no-cache build-base texinfo xz zstd zlib-dev curl-dev expat-dev linux-headers rust cargo \
             gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
-            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils pkgconf glslang py3-mako py3-packaging py3-yaml llvm22-dev llvm22-static
+            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils pkgconf glslang py3-mako py3-packaging py3-yaml llvm22-dev llvm22-static spirv-tools-dev
           # samurai provides /usr/bin/ninja — Alpine has no "ninja" package
           # by name, this is the actual ninja-build implementation there.
           # gmp/mpfr/mpc/isl are gcc's own hard build deps; cmake/samurai/
@@ -159,7 +159,7 @@ jobs:
         run: |
           apk add --no-cache build-base texinfo xz zstd zlib-dev curl-dev expat-dev linux-headers rust cargo \
             gmp-dev mpfr-dev mpc1-dev isl-dev bison flex m4 perl \
-            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils pkgconf glslang py3-mako py3-packaging py3-yaml llvm22-dev llvm22-static
+            cmake samurai meson python3 libxml2-dev ncurses-dev zstd-dev libedit-dev coreutils pkgconf glslang py3-mako py3-packaging py3-yaml llvm22-dev llvm22-static spirv-tools-dev
           # Package-specific C deps go in that recipe's own makedepends=,
           # not here — see ci/build.sh.
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
