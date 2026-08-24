@@ -8,10 +8,7 @@ sha256sums="47d057dd1a6f226f8c48612e371c69c3c17ea1f3a97a7d674f786e0c84c8bb5a  me
 makedepends="meson ninja llvm22-dev llvm22-static libdrm-dev wayland-dev wayland-protocols zlib-dev zstd-dev elfutils-dev python3 rust cargo bison flex"
 needs_toolchain="libdrm libdrm-dev wayland wayland-dev wayland-protocols zlib zlib-dev zstd zstd-dev elfutils elfutils-dev spirv-llvm-translator spirv-llvm-translator-dev"
 
-# x86_64-relevant drivers only, ARM/Apple/Windows excluded.
-# LLVM comes from Alpine (llvm22-dev/-static), not our own llvm-dev --
-# same reasoning as spirv-llvm-translator, ours doesn't ship the static
-# component libs its cmake exports need.
+# x86_64-relevant drivers only.
 build() {
     cd mesa-mesa-$pkgver
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/zexlib/union/lib/pkgconfig"
