@@ -1,0 +1,27 @@
+[package]
+name             = "harfbuzz-dev"
+version          = "14.3.1"
+description      = "harfbuzz headers, pkgconfig"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://harfbuzz.github.io/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["harfbuzz"]
+provides         = ["harfbuzz-dev"]
+tags             = ["base", "library", "text", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
