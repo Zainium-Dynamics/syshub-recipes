@@ -1,0 +1,29 @@
+[package]
+name             = "mesa"
+version          = "26.2.1"
+description      = "OpenGL/Vulkan/EGL graphics drivers"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.mesa3d.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["llvm", "libdrm", "wayland", "zlib", "zstd", "elfutils"]
+provides         = ["mesa"]
+tags             = ["base", "graphics", "gpu", "opengl", "vulkan"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

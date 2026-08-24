@@ -1,0 +1,65 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=mesa
+pkgver=26.2.1
+pkgrel=0
+subpackages="mesa-dev"
+source="https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-$pkgver/mesa-mesa-$pkgver.tar.gz"
+sha256sums="47d057dd1a6f226f8c48612e371c69c3c17ea1f3a97a7d674f786e0c84c8bb5a  mesa-mesa-$pkgver.tar.gz"
+makedepends="meson ninja llvm-dev libdrm-dev wayland-dev wayland-protocols zlib-dev zstd-dev elfutils-dev python3 rust cargo bison flex"
+needs_toolchain="llvm llvm-dev libdrm libdrm-dev wayland wayland-dev wayland-protocols zlib zlib-dev zstd zstd-dev elfutils elfutils-dev"
+
+# Driver list matches the x86_64-relevant reference (mesa-26.1.5's
+# build-mesa-zainium.sh) plus everything else in-tree that targets real
+# x86_64 desktop/gaming hardware -- ARM SoC (etnaviv/freedreno/lima/
+# panfrost/v3d/vc4/tegra/rocket/ethosu), Apple Silicon (asahi/kosmickrisp)
+# and Windows (d3d12/microsoft-experimental) drivers excluded, they can't
+# run here. xmlconfig/expat disabled outright -- driconf's optional
+# per-app override file, and expat isn't a published Zainium package yet;
+# hardcoding the default driconf avoids linking a runtime dep we can't
+# ship. vulkan nouveau (NVK) pulls in Mesa's Rust toolchain (Alpine's own
+# rust/cargo, already on this image) -- if that's the thing that breaks
+# first, dropping it from -Dvulkan-drivers is the fallback, everything
+# else here is plain C/C++.
+build() {
+    cd mesa-mesa-$pkgver
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dplatforms=wayland \
+        -Degl=enabled \
+        -Dgbm=enabled \
+        -Dgles1=disabled \
+        -Dgles2=enabled \
+        -Dopengl=true \
+        -Dglx=disabled \
+        -Dllvm=enabled \
+        -Dgallium-drivers=crocus,i915,iris,llvmpipe,nouveau,r300,r600,radeonsi,softpipe,svga,virgl,zink \
+        -Dvulkan-drivers=amd,intel,intel_hasvk,nouveau,swrast,virtio \
+        -Dgallium-rusticl=false \
+        -Dspirv-to-dxil=false \
+        -Dspirv-tools=disabled \
+        -Dmesa-clc=enabled \
+        -Dxmlconfig=disabled \
+        -Dexpat=disabled \
+        -Dtools= \
+        -Dbuildtype=release
+    LD_LIBRARY_PATH=/usr/lib:/lib ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/share"
+    cp -a "$inst/lib/." "$PAYLOAD_DIR/lib/"
+    rm -rf "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst/share/." "$PAYLOAD_DIR/share/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}
