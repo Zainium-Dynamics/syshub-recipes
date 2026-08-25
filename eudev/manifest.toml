@@ -1,0 +1,31 @@
+[package]
+name             = "eudev"
+version          = "4.0.0"
+description      = "Linux dynamic and persistent device naming (udev fork)"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/Zainium-Dynamics/eudev"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["kmod"]
+provides         = ["eudev", "libudev"]
+tags             = ["base", "device", "udev"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
