@@ -5,6 +5,7 @@ pkgrel=0
 subpackages="eudev-dev"
 source="https://github.com/Zainium-Dynamics/eudev/releases/download/v$pkgver/eudev-$pkgver.tar.gz"
 sha256sums="715e23f2156cceb180edb954a23370a3729605c6f5b414432ba422d617f80146  eudev-$pkgver.tar.gz"
+makedepends="gperf"
 needs_toolchain="kmod kmod-dev"
 
 build() {
