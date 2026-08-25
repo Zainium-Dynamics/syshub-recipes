@@ -1,0 +1,74 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=elevate-privilege
+pkgver=1.0.1
+pkgrel=0
+_nightly=nightly-2026-05-24
+source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="a270e0279bca1f81ec519b491af76e8e1ff72cdf675f9643a4ec22adec0ed2c9  v$pkgver.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+# sudo/su + shadow-utils replacement, pure Rust, PAM-backed (elevate,
+# elev, vielev, elevate-umbra's user/group/passwd tools, elevate-pam's
+# ~26 modules, libelevate_pam.so, libelevate_crypto.so). Whole workspace
+# builds as ONE dynamic-musl artifact set against our own toolchain --
+# the custom x86_64-zainium-linux-musl target (crt-static-default=false,
+# see targets/x86_64-zainium-linux-musl.json) is what makes the PAM .so
+# modules possible at all; nightly + -Z build-std is required since no
+# prebuilt std ships for a custom target triple.
+build() {
+    export PATH="/overlayer/syshub/bin:$PATH"
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+
+    # Alpine's rustup apk only ships rustup-init, not the rustup/cargo/
+    # rustc shims -- those only exist after the init run installs them
+    # into $HOME/.cargo/bin.
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    rustup toolchain install "$_nightly" --profile minimal --component rust-src
+    cargo "+$_nightly" build --release --workspace \
+        -Z json-target-spec \
+        --target targets/x86_64-zainium-linux-musl.json \
+        -Z build-std=core,alloc,std,panic_abort \
+        --config 'target.x86_64-zainium-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
+}
+
+package() {
+    local out="target/x86_64-zainium-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/sbin" "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/etc"
+
+    # Every top-level executable cargo produced -- no hand-maintained
+    # allowlist, so nothing built ever silently goes missing. vielev and
+    # the PAM helper get their own destinations; everything else -> bin/.
+    find "$out" -maxdepth 1 -type f -executable ! -name '*.so' ! -name '*.d' -print0 |
+    while IFS= read -r -d '' f; do
+        b="$(basename "$f")"
+        case "$b" in
+            vielev)       cp "$f" "$PAYLOAD_DIR/sbin/$b" ;;
+            unix_chkpwd)  cp "$f" "$PAYLOAD_DIR/lib/security/$b" ;;
+            *)            cp "$f" "$PAYLOAD_DIR/bin/$b" ;;
+        esac
+    done
+    chmod 4755 "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/bin/elevate" 2>/dev/null || true
+
+    # Every cdylib cargo produced. PAM modules (libpam_*.so) go to
+    # lib/security/ under the bare pam_*.so name modules are dlopen()'d
+    # by; the two library .so's stay under lib/.
+    find "$out" -maxdepth 1 -name '*.so' -print0 |
+    while IFS= read -r -d '' f; do
+        b="$(basename "$f")"
+        case "$b" in
+            libpam_*.so) cp "$f" "$PAYLOAD_DIR/lib/security/${b#lib}" ;;
+            libelevate_pam.so) cp "$f" "$PAYLOAD_DIR/lib/libelevate_pam.so.0" ;;
+            *) cp "$f" "$PAYLOAD_DIR/lib/$b" ;;
+        esac
+    done
+
+    cp -a etc/. "$PAYLOAD_DIR/etc/"
+    cp elevate_privilege.toml "$PAYLOAD_DIR/etc/"
+    mkdir -p "$PAYLOAD_DIR/etc/pam.d"
+    cp elevate/pam.d/elev elevate/pam.d/elev-l elevate/pam.d/elevate "$PAYLOAD_DIR/etc/pam.d/"
+
+    strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/sbin/"* "$PAYLOAD_DIR/lib/"*.so* "$PAYLOAD_DIR/lib/security/"* 2>/dev/null || true
+}
