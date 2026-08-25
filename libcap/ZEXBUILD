@@ -1,0 +1,28 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libcap
+pkgver=2.78
+pkgrel=0
+subpackages="libcap-dev"
+source="https://kernel.org/pub/linux/libs/security/linux-privs/libcap2/libcap-$pkgver.tar.xz"
+sha256sums="0d621e562fd932ccf67b9660fb018e468a683d7b827541df27813228c996bb11  libcap-$pkgver.tar.xz"
+makedepends="linux-headers perl"
+
+build() {
+    make BUILD_CC=gcc CC="${CC:-gcc}" lib=lib prefix=/overlayer/syshub GOLANG=no
+}
+
+package() {
+    make lib=lib prefix=/overlayer/syshub GOLANG=no DESTDIR="$(pwd)/_zexbuild-install" install
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libcap*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/sbin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    find "$inst/lib" -maxdepth 1 -name 'libcap*.a' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}

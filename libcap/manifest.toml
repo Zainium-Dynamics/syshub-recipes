@@ -1,0 +1,29 @@
+[package]
+name             = "libcap"
+version          = "2.78"
+description      = "POSIX 1003.1e capabilities"
+license          = "BSD-3-Clause OR GPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://sites.google.com/site/fullycapable/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libcap"]
+tags             = ["base", "library", "security"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
