@@ -1,0 +1,38 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=dav1d
+pkgver=1.5.4
+pkgrel=0
+subpackages="dav1d-dev"
+source="https://code.videolan.org/videolan/dav1d/-/archive/$pkgver/dav1d-$pkgver.tar.gz"
+sha256sums="a1d5b63d2d38ec9bd03acf643caa51fa22edd1e89c5a109c4807717216bbec07  dav1d-$pkgver.tar.gz"
+makedepends="meson ninja nasm"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        -Db_lto=true \
+        -Denable_asm=true \
+        -Denable_tools=true \
+        -Denable_examples=false \
+        -Denable_tests=false \
+        -Denable_docs=false \
+        -Dtestdata_tests=false \
+        -Dfuzzing_engine=none
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libdav1d*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

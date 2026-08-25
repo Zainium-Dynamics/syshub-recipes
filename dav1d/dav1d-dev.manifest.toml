@@ -1,0 +1,29 @@
+[package]
+name             = "dav1d-dev"
+version          = "1.5.4"
+description      = "dav1d headers, pkgconfig"
+license          = "BSD-2-Clause"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://code.videolan.org/videolan/dav1d"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["dav1d"]
+provides         = ["dav1d-dev"]
+tags             = ["base", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
