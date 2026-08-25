@@ -1,0 +1,29 @@
+[package]
+name             = "dav1d"
+version          = "1.5.4"
+description      = "Small and fast AV1 decoder"
+license          = "BSD-2-Clause"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://code.videolan.org/videolan/dav1d"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["dav1d"]
+tags             = ["base", "library", "video", "codec"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
