@@ -12,7 +12,7 @@ build() {
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
         --localstatedir=/overlayer/syshub/var \
-        --enable-kmod \
+        --disable-kmod \
         --enable-hwdb \
         --disable-blkid \
         --disable-selinux \
