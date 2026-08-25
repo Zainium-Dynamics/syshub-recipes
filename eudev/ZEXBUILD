@@ -5,11 +5,9 @@ pkgrel=0
 subpackages="eudev-dev"
 source="https://github.com/Zainium-Dynamics/eudev/releases/download/v$pkgver/eudev-$pkgver.tar.gz"
 sha256sums="715e23f2156cceb180edb954a23370a3729605c6f5b414432ba422d617f80146  eudev-$pkgver.tar.gz"
-makedepends="gperf kmod-dev"
-needs_toolchain="kmod"
+makedepends="gperf kmod-dev kmod"
 
 build() {
-    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/zexlib/union/lib/pkgconfig"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
