@@ -1,0 +1,46 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=eudev
+pkgver=4.0.0
+pkgrel=0
+subpackages="eudev-dev"
+source="https://github.com/Zainium-Dynamics/eudev/releases/download/v$pkgver/eudev-$pkgver.tar.gz"
+sha256sums="715e23f2156cceb180edb954a23370a3729605c6f5b414432ba422d617f80146  eudev-$pkgver.tar.gz"
+makedepends="gperf kmod-dev kmod"
+
+build() {
+    sed -i '/"\/usr\/lib\/udev\/rules.d",/d; /"\/usr\/local\/lib\/udev\/rules.d",/d' src/udev/udev-rules.c
+    sed -i '/legacy FHS fallback for off-target/,+4d' src/udev/udev-event.c
+    sed -i 's#/usr/include/linux/input.h#linux/input.h#' hwdb/60-keyboard.hwdb hwdb/70-pointingstick.hwdb
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --disable-kmod \
+        --enable-hwdb \
+        --disable-blkid \
+        --disable-selinux \
+        --disable-manpages \
+        --disable-rule-generator \
+        --disable-mtd_probe \
+        --disable-uaccess
+    make -j"$(nproc)"
+}
+
+package() {
+    make DESTDIR="$(pwd)/_zexbuild-install" install
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc" "$PAYLOAD_DIR/share"
+    find "$inst/lib" -maxdepth 1 -name 'libudev*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/sbin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/etc/." "$PAYLOAD_DIR/etc/" 2>/dev/null || true
+    cp -a "$inst/share/." "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/lib/"*.so* 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
