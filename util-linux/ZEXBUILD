@@ -1,0 +1,63 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=util-linux
+pkgver=2.42-rc2
+pkgrel=0
+source="https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-$pkgver.tar.gz"
+sha256sums="a14cea0b33cef163544696309d5b684844a9568c4ed6179cc140c94e567d2174  util-linux-$pkgver.tar.gz"
+makedepends="ncurses-dev linux-headers"
+
+# Real C util-linux, built only for the ~80 tools userutiles (Rust) does
+# not reimplement yet -- see userutiles' MISSING.md. package() cherry-picks
+# just that list; login/account tools already covered by elevate-umbra
+# (vipw, chsh, su-adjacent account mgmt) are deliberately left out here.
+#
+# Native build (Alpine's own gcc/musl) -- plain C, no reason for our own
+# cross toolchain. Only the final interpreter/rpath gets pinned to
+# Zainium's real musl so the binaries actually run there.
+build() {
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+
+    # AT_HANDLE_FID is a newer kernel UAPI constant (name_to_handle_at
+    # extension) some linux-headers versions don't ship yet -- nsenter.c
+    # uses it raw with no fallback. Same defensive-compat pattern the
+    # file already uses for NS_GET_USERNS a few lines below.
+    sed -i '/#include <linux\/sockios.h>/a\
+#ifndef AT_HANDLE_FID\
+#define AT_HANDLE_FID 0x200\
+#endif' sys-utils/nsenter.c
+
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --disable-nls \
+        --disable-static \
+        --without-systemd \
+        --without-python \
+        --without-selinux \
+        --with-ncursesw \
+        --enable-write
+    make -j"$(nproc)"
+}
+
+package() {
+    local stage="$(pwd)/_instroot"
+    make install DESTDIR="$stage"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
+
+    for b in cfdisk blkdiscard blkzone blkpr fallocate fincore isosize wipefs mkfs swaplabel fstrim zramctl \
+        nsenter unshare namei exch \
+        hwclock eject rfkill rtcwake wdctl chmem setterm setarch setpriv \
+        chrt taskset ionice uclampset choom prlimit flock \
+        ipcmk ipcrm ipcs lsfd lsirq \
+        su newgrp lslogins utmpdump wall write logger runuser \
+        uuidd uuidparse \
+        column col colcrt colrm look ul pg hardlink rename getopt whereis; do
+        for d in bin sbin; do
+            f="$stage/overlayer/syshub/$d/$b"
+            [ -f "$f" ] && cp "$f" "$PAYLOAD_DIR/bin/$b" && break
+        done
+    done
+
+    find "$stage/overlayer/syshub/lib" -maxdepth 1 -name '*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+
+    strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/lib/"*.so* 2>/dev/null || true
+}

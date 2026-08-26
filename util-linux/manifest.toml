@@ -1,0 +1,41 @@
+# manifest.toml — util-linux (syshub tier)
+
+[package]
+name             = "util-linux"
+version          = "2.42-rc2"
+description      = "Real C util-linux, tools not yet covered by userutiles"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/util-linux/util-linux"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "ncurses"]
+provides         = [
+    "cfdisk", "blkdiscard", "blkzone", "blkpr", "fallocate", "fincore", "isosize",
+    "wipefs", "mkfs", "swaplabel", "fstrim", "zramctl",
+    "nsenter", "unshare", "namei", "exch",
+    "hwclock", "eject", "rfkill", "rtcwake", "wdctl", "chmem", "setterm", "setarch", "setpriv",
+    "chrt", "taskset", "ionice", "uclampset", "choom", "prlimit", "flock",
+    "ipcmk", "ipcrm", "ipcs", "lsfd", "lsirq",
+    "su", "newgrp", "lslogins", "utmpdump", "wall", "write", "logger", "runuser",
+    "uuidd", "uuidparse",
+    "column", "col", "colcrt", "colrm", "look", "ul", "pg", "hardlink", "rename", "getopt", "whereis"
+]
+tags             = ["base", "util-linux"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
