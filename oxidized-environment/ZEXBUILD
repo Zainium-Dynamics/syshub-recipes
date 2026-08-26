@@ -1,0 +1,29 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=oxidized-environment
+pkgver=1.0.0
+pkgrel=0
+source="https://github.com/Zainium-Dynamics/oxidized-environment/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="b1dcaf175b0575b3952395ecb2acacd18ed0c996b9fbe828ef6d1dfd60df9216  v$pkgver.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+# Zainium OS environment resolver CLI (oxienv.toml). Single binary, no
+# cdylib -- same pattern as oxibus: stock rustup musl target, dynamic
+# linking against our own toolchain instead of upstream's default.
+build() {
+    export PATH="/overlayer/syshub/bin:$PATH"
+    rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib" \
+        cargo build --release --workspace --target x86_64-unknown-linux-musl \
+        --config 'target.x86_64-unknown-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
+}
+
+package() {
+    local out="target/x86_64-unknown-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc/oxidized-environment"
+    cp "$out/oxidized-environment" "$PAYLOAD_DIR/bin/oxidized-environment"
+    cp etc/oxidized-environment/oxienv.toml "$PAYLOAD_DIR/etc/oxidized-environment/oxienv.toml"
+    strip "$PAYLOAD_DIR/bin/oxidized-environment" 2>/dev/null || true
+}
