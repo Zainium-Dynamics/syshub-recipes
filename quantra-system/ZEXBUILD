@@ -1,0 +1,47 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=quantra-system
+pkgver=6.0.1
+pkgrel=0
+source="https://github.com/Zainium-Dynamics/Quantra-System/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="43953d387cb55826a6bfaaae7e0f55ca221a435f837d56f5ec6527e5aaf49e64  v$pkgver.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+# Zainium OS's own init/service-manager + network stack, pure Rust
+# workspace (quantra, quantra-ctl, quantra-net(d), quantra-logind,
+# quantra-ramfs). Everything builds dynamic-musl against our own
+# toolchain -- the stock rustup musl target defaults to crt-static
+# (drops quantra-logind's libqlogind.so cdylib output), so RUSTFLAGS
+# turns that back off same as upstream's own Makefile does.
+build() {
+    export PATH="/overlayer/syshub/bin:$PATH"
+    rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    RUSTFLAGS="-C target-feature=-crt-static -C linker=x86_64-zainium-linux-musl-gcc -L/overlayer/syshub/lib" \
+        cargo build --workspace --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+    local out="target/x86_64-unknown-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/engine" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc" \
+        "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/include/qlogind" "$PAYLOAD_DIR/include/elogind"
+
+    # "quantra" is the engine (PID1) -- lives under engine/, not bin/.
+    [ -f "$out/quantra" ] && cp "$out/quantra" "$PAYLOAD_DIR/engine/quantra"
+
+    # quantra-ramfs is deliberately excluded here -- initramfs-only tool,
+    # never shipped in the main payload even though it's built as part
+    # of the workspace.
+    for b in quantra-ctl systemctl quantra-net quantra-netd quantra-logind quantra-logindctl; do
+        [ -f "$out/$b" ] && cp "$out/$b" "$PAYLOAD_DIR/bin/$b"
+    done
+
+    [ -f "$out/libqlogind.so" ] && cp "$out/libqlogind.so" "$PAYLOAD_DIR/lib/libqlogind.so"
+    cp pkgconfig/*.pc "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp include/qlogind/*.h "$PAYLOAD_DIR/include/qlogind/"
+    cp include/elogind/*.h "$PAYLOAD_DIR/include/elogind/"
+    cp -a etc/. "$PAYLOAD_DIR/etc/"
+
+    strip "$PAYLOAD_DIR/engine/"* "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/lib/"*.so 2>/dev/null || true
+}
