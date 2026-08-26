@@ -1,0 +1,44 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=oxibus
+pkgver=0.1.0
+pkgrel=0
+source="https://github.com/Zainium-Dynamics/oxibus/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="9d297861669581e50b468d92bbc51d3b49a503782ca7ceb9b8781b546e6a0e25  v$pkgver.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+# Zainium OS's own D-Bus reimplementation (oxibus-daemon + tools), pure
+# Rust workspace, no cdylib output anywhere -- stock rustup musl target
+# is enough, just override crt-static off (fully dynamic, our own
+# toolchain as linker) so it matches the rest of syshub.
+build() {
+    export PATH="/overlayer/syshub/bin:$PATH"
+    rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    RUSTFLAGS="-C target-feature=-crt-static -C linker=x86_64-zainium-linux-musl-gcc -L/overlayer/syshub/lib" \
+        cargo build --release --workspace --target x86_64-unknown-linux-musl
+}
+
+package() {
+    local out="target/x86_64-unknown-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/libexec" "$PAYLOAD_DIR/etc/oxibus/policy.d" \
+        "$PAYLOAD_DIR/etc/oxibus/services" "$PAYLOAD_DIR/lib/oxibus/services" "$PAYLOAD_DIR/engine/services"
+
+    for b in oxibus-daemon oxibus-send oxibus-monitor oxibus-launch oxibus-uuidgen \
+        oxibus-cleanup-sockets oxibus-run-session oxibus-update-activation-environment; do
+        [ -f "$out/$b" ] && cp "$out/$b" "$PAYLOAD_DIR/bin/$b"
+    done
+    [ -f "$out/oxibus-daemon-launch-helper" ] && \
+        cp "$out/oxibus-daemon-launch-helper" "$PAYLOAD_DIR/libexec/oxibus-daemon-launch-helper"
+
+    cp oxibus.toml "$PAYLOAD_DIR/etc/oxibus/oxibus.toml"
+    cp etc/oxibus/policy.d/00-default.toml "$PAYLOAD_DIR/etc/oxibus/policy.d/"
+    cp quantra/oxibus.toml "$PAYLOAD_DIR/engine/services/oxibus.toml"
+
+    strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/libexec/"* 2>/dev/null || true
+
+    # launch helper needs setuid-root to preserve its privilege-drop
+    # behavior (activated for real once messagebus exists on-system).
+    chmod 4750 "$PAYLOAD_DIR/libexec/oxibus-daemon-launch-helper" 2>/dev/null || true
+}
