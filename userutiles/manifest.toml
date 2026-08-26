@@ -1,0 +1,53 @@
+# manifest.toml — userutiles (syshub tier)
+
+[package]
+name             = "userutiles"
+version          = "1.0.0"
+description      = "coreutils/util-linux-style base utility suite for Zainium OS"
+license          = "GPL-3.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/Zainium-Dynamics/userutiles"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = [
+    "arch", "addpart", "agetty", "b2sum", "base32", "base64", "basename", "basenc",
+    "blkid", "blockdev", "blueprint", "cal", "cat", "chattr", "chcpu", "chgrp",
+    "chmod", "chown", "chroot", "cksum", "clear", "cmp", "comm", "cp",
+    "csplit", "ctrlaltdel", "cut", "date", "dd", "delpart", "df", "diff",
+    "diffutils", "dir", "dircolors", "dirname", "dmesg", "drive", "du", "echo",
+    "env", "expand", "expr", "factor", "false", "fdisk", "find", "findfs",
+    "findmnt", "fmt", "fold", "free", "fsck", "fsfreeze", "grep", "groups",
+    "head", "hexdump", "hostid", "hostname", "id", "install", "join", "kill",
+    "last", "link", "ln", "locate", "login", "logname", "losetup", "ls",
+    "lsblk", "lsattr", "lscpu", "lsipc", "lslocks", "lsmem", "lsns", "mcookie",
+    "md5sum", "mesg", "mkdir", "mkfifo", "mknod", "mktemp", "mkswap", "more",
+    "mount", "mountpoint", "mv", "nice", "nl", "nohup", "nologin", "nproc",
+    "numfmt", "od", "partx", "paste", "pathchk", "pgrep", "pinky", "pivot_root",
+    "pkill", "pr", "printenv", "printf", "prio", "ps", "ptx", "pwd",
+    "readlink", "realpath", "renice", "resizepart", "rev", "rm", "rmdir", "sed",
+    "seq", "setpgid", "setsid", "sfdisk", "sha1sum", "sha224sum", "sha256sum", "sha384sum",
+    "sha512sum", "shred", "shuf", "sleep", "sort", "split", "stat", "stdbuf",
+    "struct", "stty", "sum", "swapoff", "swapon", "switch_root", "sync", "sys",
+    "tac", "tail", "tar", "tee", "test", "timeout", "touch", "tr",
+    "trace", "tree", "trigger", "true", "truncate", "tsort", "tty", "umount",
+    "uname", "unexpand", "uniq", "unlink", "updatedb", "uptime", "users", "uuidgen",
+    "vdir", "wc", "which", "who", "whoami", "xargs", "yes", "user-seccomp"
+]
+tags             = ["base", "coreutils", "util-linux"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
