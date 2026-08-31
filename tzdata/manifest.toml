@@ -1,0 +1,30 @@
+# manifest.toml — tzdata (syshub tier)
+
+[package]
+name             = "tzdata"
+version          = "2026c"
+description      = "IANA time zone database (compiled zoneinfo)"
+license          = "Public-Domain"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.iana.org/time-zones"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["tzdata"]
+tags             = ["base", "timezone"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
