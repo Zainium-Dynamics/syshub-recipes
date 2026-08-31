@@ -1,0 +1,30 @@
+# manifest.toml — tzcode (syshub tier)
+
+[package]
+name             = "tzcode"
+version          = "2026c"
+description      = "IANA tz database tools -- zic, zdump"
+license          = "BSD-3-Clause"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.iana.org/time-zones"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["zic", "zdump"]
+tags             = ["base", "timezone"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
