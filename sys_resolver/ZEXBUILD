@@ -24,7 +24,6 @@ build() {
 }
 
 package() {
-    cd "sys_resolver-$_commit"
     local out="target/x86_64-unknown-linux-musl/release"
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
     cp "$out/libsys_resolver.so" "$PAYLOAD_DIR/lib/"
