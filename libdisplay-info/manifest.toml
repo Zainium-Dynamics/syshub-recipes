@@ -1,0 +1,29 @@
+[package]
+name             = "libdisplay-info"
+version          = "0.4.0"
+description      = "EDID and DisplayID library"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/emersion/libdisplay-info"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libdisplay-info", "di-edid-decode"]
+tags             = ["base", "library", "display"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

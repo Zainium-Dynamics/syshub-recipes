@@ -1,0 +1,29 @@
+[package]
+name             = "libdisplay-info-dev"
+version          = "0.4.0"
+description      = "libdisplay-info headers, pkgconfig"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/emersion/libdisplay-info"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libdisplay-info"]
+provides         = ["libdisplay-info-dev"]
+tags             = ["base", "display", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
