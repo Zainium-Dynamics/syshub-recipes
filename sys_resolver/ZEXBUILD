@@ -2,9 +2,9 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=sys_resolver
 pkgver=0.1.0
 pkgrel=0
-_commit=8959388ec645ed91868cbdd3afa9d64c7b309732
+_commit=1674206ee720e8a065242d97e09672480d83d501
 source="https://github.com/Zainium-Dynamics/sys_resolver/archive/$_commit.tar.gz"
-sha256sums="8afce097e7cbfdc7acc75b96bb9dda57dde8623f7e1f588db78ccda7199d6d1b  $_commit.tar.gz"
+sha256sums="83fd0bd3a02844541b607fb7384b3533b77030fc5009fffa02544243c96841fe  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
