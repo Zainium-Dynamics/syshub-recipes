@@ -20,7 +20,6 @@ build() {
 }
 
 package() {
-    cd "libevdev-libevdev-$pkgver"
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
     find "$inst/lib" -maxdepth 1 -name 'libevdev*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
@@ -28,7 +27,6 @@ package() {
 }
 
 dev() {
-    cd "libevdev-libevdev-$pkgver"
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
