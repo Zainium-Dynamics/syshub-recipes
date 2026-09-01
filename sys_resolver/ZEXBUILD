@@ -1,0 +1,32 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=sys_resolver
+pkgver=0.1.0
+pkgrel=0
+_commit=8959388ec645ed91868cbdd3afa9d64c7b309732
+source="https://github.com/Zainium-Dynamics/sys_resolver/archive/$_commit.tar.gz"
+sha256sums="8afce097e7cbfdc7acc75b96bb9dda57dde8623f7e1f588db78ccda7199d6d1b  $_commit.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+build() {
+    cd "sys_resolver-$_commit"
+    export PATH="/overlayer/syshub/bin:$PATH"
+    rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    RUSTFLAGS="-C target-feature=-crt-static -C linker=x86_64-zainium-linux-musl-gcc -L/overlayer/syshub/lib" \
+        cargo build --release --target x86_64-unknown-linux-musl
+
+    local out="target/x86_64-unknown-linux-musl/release"
+    x86_64-zainium-linux-musl-gcc -shared -o "$out/libsys_resolver.so" \
+        -Wl,--whole-archive "$out/libsys_resolver.a" -Wl,--no-whole-archive \
+        -lpthread -ldl
+}
+
+package() {
+    local out="target/x86_64-unknown-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    cp "$out/libsys_resolver.so" "$PAYLOAD_DIR/lib/"
+    cp "$out/sys-resolver" "$PAYLOAD_DIR/bin/"
+    strip "$PAYLOAD_DIR/lib/libsys_resolver.so" "$PAYLOAD_DIR/bin/sys-resolver" 2>/dev/null || true
+}
