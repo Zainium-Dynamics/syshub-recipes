@@ -1,6 +1,6 @@
 [package]
 name             = "libdisplay-info-dev"
-version          = "0.4.0"
+version          = "0.3.0"
 description      = "libdisplay-info headers, pkgconfig"
 license          = "MIT"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
