@@ -1,10 +1,10 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=libdisplay-info
-pkgver=0.4.0
+pkgver=0.3.0
 pkgrel=0
 subpackages="libdisplay-info-dev"
 source="https://gitlab.freedesktop.org/emersion/libdisplay-info/-/releases/$pkgver/downloads/libdisplay-info-$pkgver.tar.xz"
-sha256sums="43b180baa143e2035654759d84e2b2f5ee77d5fe817c423838c7fe59c0d68459  libdisplay-info-$pkgver.tar.xz"
+sha256sums="6ae77cd937f9cf7d1321d35c116062c4911e8447010a6a713ac4286f7a9d5987  libdisplay-info-$pkgver.tar.xz"
 makedepends="meson ninja hwdata"
 
 build() {
