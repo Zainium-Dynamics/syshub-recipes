@@ -1,0 +1,29 @@
+[package]
+name             = "seatd"
+version          = "0.9.3"
+description      = "Seat management daemon and libseat"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://sr.ht/~kennylevinsen/seatd/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["seatd", "seatd-launch", "libseat"]
+tags             = ["base", "seat", "display"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
