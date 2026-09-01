@@ -1,6 +1,6 @@
 [package]
 name             = "libdisplay-info"
-version          = "0.4.0"
+version          = "0.3.0"
 description      = "EDID and DisplayID library"
 license          = "MIT"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
