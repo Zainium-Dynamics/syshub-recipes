@@ -23,7 +23,15 @@ package() {
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_dbus-dev/include"
     mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_dbus-dev/pkgconfig"
 
+    is_text_file() {
+        case "$(file -b --mime-type "$1")" in
+            text/*) return 0 ;;
+            *) return 1 ;;
+        esac
+    }
+
     for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
         sed -i \
             -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
             -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
