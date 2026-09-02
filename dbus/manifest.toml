@@ -1,0 +1,33 @@
+[package]
+name             = "dbus"
+version          = "1.16.0"
+description      = "D-Bus message bus system (reference implementation)"
+license          = "AFL-2.1 OR GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.freedesktop.org/wiki/Software/dbus/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "expat"]
+provides         = ["dbus", "dbus-daemon", "dbus-send", "dbus-monitor", "libdbus-1"]
+tags             = ["base", "ipc", "message-bus"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+share   = "/overlayer/syshub/share"
+etc     = "/overlayer/syshub/etc"
+var     = "/overlayer/syshub/var"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
