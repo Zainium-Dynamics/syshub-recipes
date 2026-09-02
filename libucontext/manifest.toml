@@ -1,0 +1,28 @@
+[package]
+name             = "libucontext"
+version          = "1.5.2"
+description      = "ucontext.h implementation for musl"
+license          = "ISC"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/kaniini/libucontext"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["libucontext"]
+tags             = ["base", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

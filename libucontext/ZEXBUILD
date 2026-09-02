@@ -1,0 +1,43 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libucontext
+pkgver=1.5.2
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://github.com/kaniini/libucontext/archive/refs/tags/libucontext-$pkgver.tar.gz"
+sha256sums="9230397327bbf580e04c9456d1509e9af19599c7f6deca7f75969ece6e9d598e  libucontext-$pkgver.tar.gz"
+makedepends="meson ninja pkgconf"
+
+build() {
+    cd "libucontext-libucontext-$pkgver"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib
+    ninja -C builddir
+}
+
+package() {
+    cd "libucontext-libucontext-$pkgver"
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+
+    mkdir -p "$STAGING_ROOT/_libucontext-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_libucontext-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_libucontext-dev/pkgconfig"
+
+    is_text_file() {
+        case "$(file -b --mime-type "$1")" in
+            text/*) return 0 ;;
+            *) return 1 ;;
+        esac
+    }
+
+    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
+        sed -i 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_libucontext-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_libucontext-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
