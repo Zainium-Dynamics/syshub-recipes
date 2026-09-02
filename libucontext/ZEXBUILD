@@ -16,7 +16,6 @@ build() {
 }
 
 package() {
-    cd "libucontext-libucontext-$pkgver"
     DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
 
     mkdir -p "$STAGING_ROOT/_libucontext-dev"
