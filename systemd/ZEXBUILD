@@ -82,7 +82,22 @@ build() {
 package() {
     DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
 
+    # `sed -i` rewrites files in place at the byte level -- fine for text,
+    # catastrophic for ELF: replacing "/usr/lib/" (9 bytes) with
+    # "/overlayer/syshub/lib/" (22 bytes) shifts every byte after the match,
+    # which corrupts every fixed offset the ELF format depends on (section
+    # header table, string table sizes, .dynamic). `grep -I` is supposed to
+    # skip binaries but isn't reliable enough here to trust alone, so filter
+    # explicitly with `file` too -- only ever touch confirmed text files.
+    is_text_file() {
+        case "$(file -b --mime-type "$1")" in
+            text/*) return 0 ;;
+            *) return 1 ;;
+        esac
+    }
+
     for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
         sed -i \
             -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
             -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
@@ -98,6 +113,7 @@ package() {
     # /overlayer/syshub/var), so leaving them as-is would make
     # systemd-tmpfiles create/reference the wrong location at boot.
     for f in $(grep -rIl '/var/' "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
         sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
     done
 }
