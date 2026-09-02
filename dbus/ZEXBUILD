@@ -5,7 +5,7 @@ pkgrel=0
 subpackages="$pkgname-dev"
 source="https://gitlab.freedesktop.org/dbus/dbus/-/archive/dbus-$pkgver/dbus-dbus-$pkgver.tar.gz"
 sha256sums="d2ca9d958c830e762ba70aea8e6b5c29fa7b58d0fee8ddd9bb5a00f35106ab57  dbus-dbus-$pkgver.tar.gz"
-makedepends="meson ninja pkgconf expat-dev libapparmor-dev audit-dev libselinux-dev"
+makedepends="meson ninja pkgconf expat-dev libapparmor-dev audit-dev libselinux-dev glib-dev"
 
 build() {
     cd "dbus-dbus-$pkgver"
