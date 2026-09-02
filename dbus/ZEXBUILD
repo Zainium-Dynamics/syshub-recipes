@@ -17,7 +17,6 @@ build() {
 }
 
 package() {
-    cd "dbus-dbus-$pkgver"
     DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
 
     mkdir -p "$STAGING_ROOT/_dbus-dev"
