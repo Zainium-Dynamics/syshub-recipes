@@ -4,7 +4,7 @@ pkgver=2.42-rc2
 pkgrel=0
 source="https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-$pkgver.tar.gz"
 sha256sums="a14cea0b33cef163544696309d5b684844a9568c4ed6179cc140c94e567d2174  util-linux-$pkgver.tar.gz"
-makedepends="ncurses-dev linux-headers python3-dev systemd-dev"
+makedepends="ncurses-dev linux-headers python3-dev"
 
 # Real C util-linux, built only for the ~80 tools userutiles (Rust) does
 # not reimplement yet -- see userutiles' MISSING.md. package() cherry-picks
@@ -26,14 +26,15 @@ build() {
 #define AT_HANDLE_FID 0x200\
 #endif' sys-utils/nsenter.c
 
-    # --with-systemd needs libsystemd-dev already in the sysroot — build
-    # util-linux once without it first (for libmount-dev, so systemd itself
-    # can build with HAVE_LIBMOUNT), then rebuild util-linux with this on.
+    # --with-systemd needs libsystemd-dev, which doesn't exist yet -- our
+    # own systemd needs THIS package's libmount to build in the first
+    # place, so it can't come first. Build without it now; re-enable via
+    # needs_toolchain="systemd" once systemd is published.
     ./configure \
         --prefix=/overlayer/syshub \
         --disable-nls \
         --disable-static \
-        --with-systemd \
+        --without-systemd \
         --with-python \
         --without-selinux \
         --with-ncursesw \
