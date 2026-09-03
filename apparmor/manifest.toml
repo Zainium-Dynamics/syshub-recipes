@@ -1,0 +1,36 @@
+[package]
+name             = "apparmor"
+version          = "5.0.1"
+description      = "AppArmor MAC (mandatory access control) parser, tools, profiles"
+license          = "GPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://apparmor.net/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "python"]
+provides         = [
+    "apparmor_parser", "aa-exec", "aa-enabled", "aa-status", "aa-load", "aa-features-abi",
+    "aa-easyprof", "aa-genprof", "aa-logprof", "aa-cleanprof", "aa-mergeprof",
+    "aa-autodep", "aa-audit", "aa-complain", "aa-enforce", "aa-disable",
+    "aa-notify", "aa-unconfined", "aa-show-usage", "aa-decode", "aa-remove-unknown"
+]
+tags             = ["base", "security", "mac"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

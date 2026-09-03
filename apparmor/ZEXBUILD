@@ -1,0 +1,158 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=apparmor
+pkgver=5.0.1
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://gitlab.com/apparmor/apparmor/-/archive/v$pkgver/apparmor-v$pkgver.tar.gz"
+sha256sums="cea1fc638dccea42a0a972bfe6ee2a34cbf52ed98526c25a49bbed39450d2dcc  apparmor-v$pkgver.tar.gz"
+# af_protos.h's generator rule relies on GNU sed's \U/\L case-conversion
+# escapes (BusyBox's sed treats \U as a literal "U", producing garbage
+# like "UIPPROTO_UDPLITE") -- pull in the real GNU sed to shadow it.
+makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison flex perl python3 py3-setuptools linux-headers sed gettext gettext-dev zstd-dev"
+
+# libapparmor is a plain autotools lib; apparmor_parser and binutils are
+# hand-written Makefiles that auto-detect an in-tree, not-yet-installed
+# libapparmor build via a relative ../libraries/libapparmor path -- so
+# libapparmor only needs to be *built* here, not installed, before the
+# other two can compile against it. utils/ is pure Python (setuptools),
+# no C dependency on libapparmor at build time.
+build() {
+    cd "apparmor-v$pkgver"
+
+    # common/Make.rules' MANDIR/DOCDIR default to /usr/share/... and every
+    # subdir's install_manpages target reads them straight from here --
+    # fix once, applies everywhere (parser, binutils, utils, libapparmor).
+    # utils/python-tools-setup.py hardcodes two /usr/share/... strings as
+    # plain Python literals (not a Makefile var at all -- setup.py's own
+    # --root=$DESTDIR only prefixes them, doesn't replace them).
+    sed -i \
+        -e 's#^MANDIR\(\s*\)=\(\s*\)/usr/share/man#MANDIR\1=\2/overlayer/syshub/share/man#' \
+        -e 's#^DOCDIR\(\s*\)=\(\s*\)/usr/share/doc#DOCDIR\1=\2/overlayer/syshub/share/doc#' \
+        common/Make.rules
+    sed -i \
+        -e 's#/usr/share/apparmor#/overlayer/syshub/share/apparmor#g' \
+        -e 's#/usr/share/polkit-1#/overlayer/syshub/share/polkit-1#g' \
+        -e 's#/usr/bin/aa-easyprof#/overlayer/syshub/bin/aa-easyprof#g' \
+        utils/python-tools-setup.py
+
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+
+    cd libraries/libapparmor
+    ./autogen.sh
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --without-python \
+        --without-perl
+    make -j"$(nproc)"
+    cd ../..
+
+    cd parser
+    make -j"$(nproc)" \
+        WITH_LIBINTL=1 \
+        CONFDIR=/overlayer/syshub/etc/apparmor \
+        SBINDIR=/overlayer/syshub/bin \
+        USR_SBINDIR=/overlayer/syshub/bin \
+        LOCALEDIR=/overlayer/syshub/share/locale
+    cd ..
+
+    cd binutils
+    make -j"$(nproc)" \
+        WITH_LIBINTL=1 \
+        CONFDIR=/overlayer/syshub/etc/apparmor \
+        BINDIR=/overlayer/syshub/bin \
+        SBINDIR=/overlayer/syshub/bin \
+        LOCALEDIR=/overlayer/syshub/share/locale
+    cd ..
+}
+
+package() {
+    # build() already cd'd into apparmor-v$pkgver -- persists here, no
+    # need to cd again.
+    cd libraries/libapparmor
+    make install DESTDIR="$PAYLOAD_DIR"
+    cd ../..
+
+    cd parser
+    make install \
+        DESTDIR="$PAYLOAD_DIR" \
+        CONFDIR=/overlayer/syshub/etc/apparmor \
+        INSTALL_CONFDIR="$PAYLOAD_DIR/overlayer/syshub/etc/apparmor" \
+        SBINDIR="$PAYLOAD_DIR/overlayer/syshub/bin" \
+        USR_SBINDIR="$PAYLOAD_DIR/overlayer/syshub/bin" \
+        LOCALEDIR=/overlayer/syshub/share/locale
+    cd ..
+
+    cd binutils
+    make install \
+        DESTDIR="$PAYLOAD_DIR" \
+        CONFDIR=/overlayer/syshub/etc/apparmor \
+        BINDIR="$PAYLOAD_DIR/overlayer/syshub/bin" \
+        SBINDIR="$PAYLOAD_DIR/overlayer/syshub/bin" \
+        LOCALEDIR=/overlayer/syshub/share/locale
+    cd ..
+
+    cd utils
+    PYTHON=python3 make install \
+        DESTDIR="$PAYLOAD_DIR" \
+        BINDIR="$PAYLOAD_DIR/overlayer/syshub/bin" \
+        CONFDIR="$PAYLOAD_DIR/overlayer/syshub/etc/apparmor" \
+        PYPREFIX=/overlayer/syshub \
+        LOCALEDIR=/overlayer/syshub/share/locale \
+        VIM_INSTALL_PATH="$PAYLOAD_DIR/overlayer/syshub/share/apparmor" \
+        || true
+    cd ..
+
+    cd profiles
+    make install \
+        DESTDIR="$PAYLOAD_DIR" \
+        PROFILES_DEST="$PAYLOAD_DIR/overlayer/syshub/etc/apparmor.d" \
+        EXTRAS_DEST="$PAYLOAD_DIR/overlayer/syshub/share/apparmor/extra-profiles" \
+        || true
+    cd ..
+
+    # extras/ and the legacy usr.<sbin|bin|lib>.<daemon> / sbin.<daemon>
+    # profiles are all for third-party software (dovecot, samba, apache2,
+    # klogd, syslogd, ...) Zainium doesn't ship -- drop rather than
+    # rename, they'd never load.
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share/apparmor/extra-profiles"
+    find "$PAYLOAD_DIR/overlayer/syshub/etc/apparmor.d" -maxdepth 1 \
+        \( -name 'usr.*' -o -name 'sbin.*' \) -delete 2>/dev/null || true
+
+    # setuptools bakes the build-time interpreter's exact absolute path
+    # into each installed aa-* tool's shebang -- pin it to Zainium's own
+    # python3 directly rather than trust substrate's generic basename-only
+    # shebang rewrite to guess the right versioned filename.
+    grep -rl '^#!.*python3' "$PAYLOAD_DIR/overlayer/syshub/bin" 2>/dev/null | \
+        xargs -r sed -i '1s@^#!.*python3.*@#!/overlayer/syshub/bin/python3@'
+
+    is_text_file() {
+        case "$(file -b --mime-type "$1")" in
+            text/*) return 0 ;;
+            *) return 1 ;;
+        esac
+    }
+
+    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
+        sed -i \
+            -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
+            -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/bin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/share/#/overlayer/syshub/share/#g' \
+            -e 's#/usr/#/overlayer/syshub/#g' \
+            "$f"
+    done
+
+    mkdir -p "$STAGING_ROOT/_apparmor-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_apparmor-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_apparmor-dev/pkgconfig"
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_apparmor-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_apparmor-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
