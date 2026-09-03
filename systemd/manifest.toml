@@ -29,7 +29,6 @@ lib     = "/overlayer/syshub/lib"
 etc     = "/overlayer/syshub/etc"
 share   = "/overlayer/syshub/share"
 var     = "/overlayer/syshub/var"
-include = "/overlayer/syshub/include"
 _syshub = true
 
 [remove]

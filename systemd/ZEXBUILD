@@ -2,18 +2,26 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=systemd
 pkgver=261.2
 pkgrel=0
+subpackages="$pkgname-dev"
 source="https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz"
 sha256sums="ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec  v$pkgver.tar.gz"
 makedepends="meson ninja pkgconf gperf python3 py3-jinja2 build-base linux-headers gettext-dev libucontext-dev coreutils
     libcap-dev libseccomp-dev kmod-dev pcre2-dev
     xz-dev zstd-dev zlib-dev
-    elfutils-dev libarchive-dev util-linux-dev libxkbcommon-dev
+    elfutils-dev libarchive-dev libxkbcommon-dev
     curl-dev openssl-dev libapparmor-dev"
+
+# util-linux is our own syshub package, not Alpine's -- pulled in as a
+# real dependency (not apk) so meson picks up its libmount.pc/headers
+# under /overlayer/syshub, giving a real "libmount: YES" instead of
+# Alpine's musl-but-not-Zainium-runtime libmount.so.
+needs_toolchain="util-linux"
 
 build() {
     grep -rl '"/bin/sh"' src/ | xargs -r sed -i 's#"/bin/sh"#"/overlayer/syshub/bin/bash"#g'
 
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
     meson setup builddir \
         --prefix=/overlayer/syshub \
@@ -82,6 +90,10 @@ build() {
 package() {
     DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
 
+    mkdir -p "$STAGING_ROOT/_systemd-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_systemd-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_systemd-dev/pkgconfig"
+
     # `sed -i` rewrites files in place at the byte level -- fine for text,
     # catastrophic for ELF: replacing "/usr/lib/" (9 bytes) with
     # "/overlayer/syshub/lib/" (22 bytes) shifts every byte after the match,
@@ -116,4 +128,10 @@ package() {
         is_text_file "$f" || continue
         sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
     done
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_systemd-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_systemd-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
 }
