@@ -19,6 +19,21 @@ makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison
 build() {
     cd "apparmor-v$pkgver"
 
+    # common/Make.rules' MANDIR/DOCDIR default to /usr/share/... and every
+    # subdir's install_manpages target reads them straight from here --
+    # fix once, applies everywhere (parser, binutils, utils, libapparmor).
+    # utils/python-tools-setup.py hardcodes two /usr/share/... strings as
+    # plain Python literals (not a Makefile var at all -- setup.py's own
+    # --root=$DESTDIR only prefixes them, doesn't replace them).
+    sed -i \
+        -e 's#^MANDIR\(\s*\)=\(\s*\)/usr/share/man#MANDIR\1=\2/overlayer/syshub/share/man#' \
+        -e 's#^DOCDIR\(\s*\)=\(\s*\)/usr/share/doc#DOCDIR\1=\2/overlayer/syshub/share/doc#' \
+        common/Make.rules
+    sed -i \
+        -e 's#/usr/share/apparmor#/overlayer/syshub/share/apparmor#g' \
+        -e 's#/usr/share/polkit-1#/overlayer/syshub/share/polkit-1#g' \
+        utils/python-tools-setup.py
+
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 
     cd libraries/libapparmor
@@ -85,6 +100,7 @@ package() {
         CONFDIR="$PAYLOAD_DIR/overlayer/syshub/etc/apparmor" \
         PYPREFIX=/overlayer/syshub \
         LOCALEDIR=/overlayer/syshub/share/locale \
+        VIM_INSTALL_PATH="$PAYLOAD_DIR/overlayer/syshub/share/apparmor" \
         || true
     cd ..
 
