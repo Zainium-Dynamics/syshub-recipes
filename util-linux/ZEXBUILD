@@ -4,7 +4,7 @@ pkgver=2.42-rc2
 pkgrel=0
 source="https://www.kernel.org/pub/linux/utils/util-linux/v2.42/util-linux-$pkgver.tar.gz"
 sha256sums="a14cea0b33cef163544696309d5b684844a9568c4ed6179cc140c94e567d2174  util-linux-$pkgver.tar.gz"
-makedepends="ncurses-dev linux-headers"
+makedepends="ncurses-dev linux-headers python3-dev"
 
 # Real C util-linux, built only for the ~80 tools userutiles (Rust) does
 # not reimplement yet -- see userutiles' MISSING.md. package() cherry-picks
@@ -26,12 +26,16 @@ build() {
 #define AT_HANDLE_FID 0x200\
 #endif' sys-utils/nsenter.c
 
+    # --with-systemd needs libsystemd-dev, which doesn't exist yet -- our
+    # own systemd needs THIS package's libmount to build in the first
+    # place, so it can't come first. Build without it now; re-enable via
+    # needs_toolchain="systemd" once systemd is published.
     ./configure \
         --prefix=/overlayer/syshub \
         --disable-nls \
         --disable-static \
         --without-systemd \
-        --without-python \
+        --with-python \
         --without-selinux \
         --with-ncursesw \
         --enable-write
@@ -41,7 +45,7 @@ build() {
 package() {
     local stage="$(pwd)/_instroot"
     make install DESTDIR="$stage"
-    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/include"
 
     for b in cfdisk blkdiscard blkzone blkpr fallocate fincore isosize wipefs mkfs swaplabel fstrim zramctl \
         nsenter unshare namei exch \
@@ -58,6 +62,13 @@ package() {
     done
 
     find "$stage/overlayer/syshub/lib" -maxdepth 1 -name '*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+
+    # Headers + .pc files (libmount/libblkid/libuuid/libfdisk/libsmartcols) —
+    # shipped directly, no subpackage. Needed so other packages' meson
+    # `dependency()` checks (systemd's HAVE_LIBMOUNT is the confirmed real
+    # case, 2026-09-03) actually find them at configure time.
+    [ -d "$stage/overlayer/syshub/include" ] && cp -a "$stage/overlayer/syshub/include/." "$PAYLOAD_DIR/include/"
+    [ -d "$stage/overlayer/syshub/lib/pkgconfig" ] && mkdir -p "$PAYLOAD_DIR/lib/pkgconfig" && cp -a "$stage/overlayer/syshub/lib/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
 
     strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/lib/"*.so* 2>/dev/null || true
 }
