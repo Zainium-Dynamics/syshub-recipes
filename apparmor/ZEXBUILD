@@ -5,7 +5,10 @@ pkgrel=0
 subpackages="$pkgname-dev"
 source="https://gitlab.com/apparmor/apparmor/-/archive/v$pkgver/apparmor-v$pkgver.tar.gz"
 sha256sums="cea1fc638dccea42a0a972bfe6ee2a34cbf52ed98526c25a49bbed39450d2dcc  apparmor-v$pkgver.tar.gz"
-makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison flex perl python3 py3-setuptools linux-headers"
+# af_protos.h's generator rule relies on GNU sed's \U/\L case-conversion
+# escapes (BusyBox's sed treats \U as a literal "U", producing garbage
+# like "UIPPROTO_UDPLITE") -- pull in the real GNU sed to shadow it.
+makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison flex perl python3 py3-setuptools linux-headers sed"
 
 # libapparmor is a plain autotools lib; apparmor_parser and binutils are
 # hand-written Makefiles that auto-detect an in-tree, not-yet-installed
