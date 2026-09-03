@@ -8,7 +8,7 @@ sha256sums="cea1fc638dccea42a0a972bfe6ee2a34cbf52ed98526c25a49bbed39450d2dcc  ap
 # af_protos.h's generator rule relies on GNU sed's \U/\L case-conversion
 # escapes (BusyBox's sed treats \U as a literal "U", producing garbage
 # like "UIPPROTO_UDPLITE") -- pull in the real GNU sed to shadow it.
-makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison flex perl python3 py3-setuptools linux-headers sed gettext gettext-dev"
+makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison flex perl python3 py3-setuptools linux-headers sed gettext gettext-dev zstd-dev"
 
 # libapparmor is a plain autotools lib; apparmor_parser and binutils are
 # hand-written Makefiles that auto-detect an in-tree, not-yet-installed
@@ -35,6 +35,7 @@ build() {
 
     cd parser
     make -j"$(nproc)" \
+        WITH_LIBINTL=1 \
         CONFDIR=/overlayer/syshub/etc/apparmor \
         SBINDIR=/overlayer/syshub/bin \
         USR_SBINDIR=/overlayer/syshub/bin \
@@ -43,6 +44,7 @@ build() {
 
     cd binutils
     make -j"$(nproc)" \
+        WITH_LIBINTL=1 \
         CONFDIR=/overlayer/syshub/etc/apparmor \
         BINDIR=/overlayer/syshub/bin \
         SBINDIR=/overlayer/syshub/bin \
