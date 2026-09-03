@@ -113,11 +113,13 @@ package() {
         || true
     cd ..
 
-    # extras/ and the legacy usr.<sbin|bin|lib>.<daemon> profiles are all
-    # for third-party software (dovecot, samba, apache2, ...) Zainium
-    # doesn't ship -- drop them rather than rename, they'd never load.
+    # extras/ and the legacy usr.<sbin|bin|lib>.<daemon> / sbin.<daemon>
+    # profiles are all for third-party software (dovecot, samba, apache2,
+    # klogd, syslogd, ...) Zainium doesn't ship -- drop rather than
+    # rename, they'd never load.
     rm -rf "$PAYLOAD_DIR/overlayer/syshub/share/apparmor/extra-profiles"
-    find "$PAYLOAD_DIR/overlayer/syshub/etc/apparmor.d" -maxdepth 1 -name 'usr.*' -delete 2>/dev/null || true
+    find "$PAYLOAD_DIR/overlayer/syshub/etc/apparmor.d" -maxdepth 1 \
+        \( -name 'usr.*' -o -name 'sbin.*' \) -delete 2>/dev/null || true
 
     # setuptools bakes the build-time interpreter's exact absolute path
     # into each installed aa-* tool's shebang -- pin it to Zainium's own
