@@ -9,10 +9,26 @@ makedepends="meson ninja pkgconf expat-dev libapparmor-dev audit-dev libselinux-
 
 build() {
     cd "dbus-dbus-$pkgver"
+    # selinux/libaudit auto-detected enabled (makedepends pulls in
+    # libselinux-dev/audit-dev) but their .so runtime libs never made
+    # it into any deployed package -- dbus-daemon relocation errors at
+    # every boot (avc_open, audit_open, selinux_policy_root, ... symbol
+    # not found), confirmed via real boot journal 2026-09-04. Zainium
+    # doesn't use SELinux (systemd's own build has -Dselinux=disabled
+    # too), so disable outright rather than chase down libs for a
+    # feature nothing uses. AppArmor is real and wanted here (unlike
+    # selinux) but the same problem applies today -- no libapparmor.so
+    # deployed yet either -- so 'auto' rather than 'enabled': meson
+    # quietly turns it off if the lib isn't there instead of a hard
+    # configure failure, and it comes back on its own the day the
+    # apparmor package actually ships the runtime library.
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
-        --localstatedir=/overlayer/syshub/var
+        --localstatedir=/overlayer/syshub/var \
+        -Dselinux=disabled \
+        -Dlibaudit=disabled \
+        -Dapparmor=auto
     ninja -C builddir
 }
 
