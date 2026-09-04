@@ -110,6 +110,19 @@ build() {
 package() {
     DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
 
+    # ninja install preserves whatever mode the build tree had; unit
+    # files ending up executable produces a
+    # "Configuration file X is marked executable. Please remove
+    # executable permission bits. Proceeding anyway." warning per unit
+    # at every boot (real boot journal, 2026-09-04) -- harmless
+    # (systemd proceeds regardless) but real, and pure noise once
+    # you're staring at ~150 of them. Unit files are data, never meant
+    # to be executed directly.
+    find "$PAYLOAD_DIR/overlayer/syshub/lib/systemd" \
+        \( -name '*.service' -o -name '*.socket' -o -name '*.target' \
+           -o -name '*.timer' -o -name '*.path' -o -name '*.mount' \) \
+        -exec chmod 644 {} +
+
     mkdir -p "$STAGING_ROOT/_systemd-dev"
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_systemd-dev/include"
     mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_systemd-dev/pkgconfig"
@@ -218,7 +231,14 @@ package() {
         [ -d "$unitdir" ] || continue
         for f in "$unitdir"/*.service; do
             [ -f "$f" ] || continue
-            sed -i -E 's#^(Exec(Start|Stop|Reload)[a-zA-Z]*=)(systemctl|journalctl|networkctl|resolvectl|timedatectl|hostnamectl|loginctl|localectl|machinectl|coredumpctl|bootctl|portablectl|homectl|oomctl|busctl|udevadm|userdbctl|systemd-[a-zA-Z0-9_-]*)([[:space:]]|$)#\1/overlayer/syshub/bin/\3\4#' "$f"
+            # systemd.service(5) exec-line modifier chars ('-' ignore
+            # exit, '+' full privileges, ':' no var substitution, '@'
+            # argv0 override, combinable up to 3) can sit right after
+            # the "=" and before the actual binary -- e.g.
+            # "ExecStart=-udevadm trigger ...". Missed on the first
+            # pass (systemd-udev-trigger.service + 6 siblings), caught
+            # once the real boot journal showed it still failing.
+            sed -i -E 's#^(Exec(Start|Stop|Reload)[a-zA-Z]*=)([-+:!@]{1,3})?(systemctl|journalctl|networkctl|resolvectl|timedatectl|hostnamectl|loginctl|localectl|machinectl|coredumpctl|bootctl|portablectl|homectl|oomctl|busctl|udevadm|userdbctl|systemd-[a-zA-Z0-9_-]*)([[:space:]]|$)#\1\3/overlayer/syshub/bin/\4\5#' "$f"
         done
     done
 }
