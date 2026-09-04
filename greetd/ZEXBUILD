@@ -13,6 +13,14 @@ makedepends="cargo linux-pam-dev"
 # already used for libzstd/libxml2/etc during systemd's build) rather
 # than block greetd on PAM getting published first.
 build() {
+    # RUSTFLAGS below applies to every rustc invocation, including cargo's
+    # own build-script helper binaries that run right here on the CI host
+    # -- they inherit the /overlayer/syshub/lib RPATH too and need a real
+    # libgcc_s.so.1 to find there, same musl-ABI-stable-borrow reasoning
+    # as the /usr bootstrap list in ci/build.sh itself.
+    mkdir -p /overlayer/syshub/lib
+    [ -e /overlayer/syshub/lib/libgcc_s.so.1 ] || cp -L /usr/lib/libgcc_s.so.1 /overlayer/syshub/lib/libgcc_s.so.1
+
     export RUSTFLAGS="-C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
     cargo build --release --workspace
 }
