@@ -1,0 +1,45 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=expat
+pkgver=2.8.2
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://github.com/libexpat/libexpat/releases/download/R_2_8_2/expat-$pkgver.tar.gz"
+sha256sums="ef7d1994f533c9e7343d6c19f31064fc8ebbcbcaa144be3812b4f43052a05f4c  expat-$pkgver.tar.gz"
+makedepends="cmake ninja"
+
+build() {
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    cmake -B build -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DEXPAT_SHARED_LIBS=ON \
+        -DEXPAT_BUILD_TESTS=OFF \
+        -DEXPAT_BUILD_EXAMPLES=OFF \
+        -DEXPAT_BUILD_TOOLS=OFF \
+        -DEXPAT_BUILD_DOCS=OFF
+    cmake --build build
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" cmake --install build
+
+    # changelog/AUTHORS are just prose, not runtime files -- and
+    # changelog's own text mentions "/usr/bin/env bash" (describing a
+    # historical upstream fix), which trips the layout scan for no
+    # functional reason. Simplest fix: don't ship docs at all.
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share/doc"
+
+    mkdir -p "$STAGING_ROOT/_expat-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_expat-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/cmake" "$STAGING_ROOT/_expat-dev/cmake"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_expat-dev/pkgconfig"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/cmake" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_expat-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_expat-dev/cmake/." "$PAYLOAD_DIR/lib/cmake/"
+    cp -a "$STAGING_ROOT/_expat-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
