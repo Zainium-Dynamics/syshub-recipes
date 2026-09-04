@@ -31,7 +31,9 @@ build() {
         -Dselinux=disabled \
         -Dlibaudit=disabled \
         -Dapparmor=auto \
-        -Dsystemd=enabled
+        -Dsystemd=enabled \
+        -Dsystemd_system_unitdir=/overlayer/syshub/lib/systemd/system \
+        -Dsystemd_user_unitdir=/overlayer/syshub/lib/systemd/user
     ninja -C builddir
 }
 
