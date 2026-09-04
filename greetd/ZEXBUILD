@@ -2,8 +2,8 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=greetd
 pkgver=0.10.3
 pkgrel=0
-source="https://github.com/kennylevinsen/greetd/releases/download/$pkgver/greetd-$pkgver.tar.gz"
-sha256sums="ee5cb70e0add4ca9c9fe57e47581ab0002d44c07743fb5492469f3b570db640b  greetd-$pkgver.tar.gz"
+source="https://github.com/kennylevinsen/greetd/archive/refs/tags/$pkgver.tar.gz"
+sha256sums="ee5cb70e0add4ca9c9fe57e47581ab0002d44c07743fb5492469f3b570db640b  $pkgver.tar.gz"
 makedepends="cargo linux-pam-dev"
 
 # greetd's own auth path (pam-sys crate) hard-depends on PAM -- not
