@@ -174,6 +174,25 @@ package() {
         # "/etcetera" is left alone either way.
         sed -i -E 's#/etc([[:space:],]|$)#/overlayer/syshub/etc\1#g' "$f"
     done
+
+    # Same bug class once more, but "/etc/something" (slash + content) --
+    # NOT covered by the bare-"/etc" loop above. Deliberately scoped by
+    # filename, NOT a blanket "/etc/" sed like the /usr/ and /var/ loops
+    # use: real /etc/initrd-release checks (initrd-parse-etc.service and
+    # ~20 siblings) and systemd-sysext-initrd.service/-sysroot.service's
+    # own /etc/extensions are genuinely about the INITRD's (quantra-ramfs)
+    # own, separate, transient root filesystem -- not zairoot's overlayer
+    # -- rewriting those would be a new bug, not a fix. Only the units
+    # below run after switch-root, against the real Zainium root.
+    unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"
+    [ -f "$unitdir/systemd-machine-id-commit.service" ] && sed -i 's#/etc/machine-id#/overlayer/syshub/etc/machine-id#' "$unitdir/systemd-machine-id-commit.service"
+    [ -f "$unitdir/ldconfig.service" ] && sed -i 's#/etc/ld\.so\.cache#/overlayer/syshub/etc/ld.so.cache#' "$unitdir/ldconfig.service"
+    [ -f "$unitdir/systemd-hwdb-update.service" ] && sed -i 's#/etc/udev/#/overlayer/syshub/etc/udev/#g' "$unitdir/systemd-hwdb-update.service"
+    [ -f "$unitdir/system-update-cleanup.service" ] && sed -i 's#/etc/system-update#/overlayer/syshub/etc/system-update#g' "$unitdir/system-update-cleanup.service"
+    [ -f "$unitdir/systemd-binfmt.service" ] && sed -i 's#/etc/binfmt\.d#/overlayer/syshub/etc/binfmt.d#' "$unitdir/systemd-binfmt.service"
+    [ -f "$unitdir/systemd-modules-load.service" ] && sed -i 's#/etc/modules-load\.d#/overlayer/syshub/etc/modules-load.d#' "$unitdir/systemd-modules-load.service"
+    [ -f "$unitdir/systemd-repart.service" ] && sed -i 's#/etc/repart\.d#/overlayer/syshub/etc/repart.d#' "$unitdir/systemd-repart.service"
+    [ -f "$unitdir/systemd-sysext.service" ] && sed -i 's#/etc/extensions#/overlayer/syshub/etc/extensions#' "$unitdir/systemd-sysext.service"
 }
 
 dev() {
