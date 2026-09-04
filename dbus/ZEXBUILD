@@ -40,6 +40,46 @@ package() {
             -e 's#/usr/#/overlayer/syshub/#g' \
             "$f"
     done
+
+    # meson never auto-detected systemd here (no pkg-config/headers for
+    # it during THIS package's own build, same bootstrap-ordering class
+    # of problem util-linux/systemd have with each other) -- dbus.service
+    # / dbus.socket, the actual system-bus daemon's own units, never got
+    # installed. Only the D-Bus-*activated* per-service units
+    # (dbus-org.freedesktop.login1.service etc, which just proxy to an
+    # already-running bus) exist without it. Confirmed real-world impact:
+    # systemd-logind fails with "Failed to connect to system bus: No
+    # such file or directory" at boot, 2026-09-04 -- logind absolutely
+    # requires the system bus, this isn't an edge case. Ship them by
+    # hand until dbus's own meson correctly emits these.
+    unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"
+    mkdir -p "$unitdir/multi-user.target.wants" "$unitdir/sockets.target.wants"
+    cat > "$unitdir/dbus.service" <<'EOF'
+[Unit]
+Description=D-Bus System Message Bus
+Documentation=man:dbus-daemon(1)
+Requires=dbus.socket
+
+[Service]
+ExecStart=/overlayer/syshub/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+ExecReload=/overlayer/syshub/bin/dbus-daemon --system --address=systemd: --nofork --nopidfile --systemd-activation --syslog-only
+OOMScoreAdjust=-900
+
+[Install]
+WantedBy=multi-user.target
+EOF
+    cat > "$unitdir/dbus.socket" <<'EOF'
+[Unit]
+Description=D-Bus System Message Bus Socket
+
+[Socket]
+ListenStream=/run/dbus/system_bus_socket
+
+[Install]
+WantedBy=sockets.target
+EOF
+    ln -sf ../dbus.service "$unitdir/multi-user.target.wants/dbus.service"
+    ln -sf ../dbus.socket "$unitdir/sockets.target.wants/dbus.socket"
 }
 
 dev() {
