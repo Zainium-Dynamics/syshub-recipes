@@ -20,6 +20,26 @@ needs_toolchain="util-linux"
 build() {
     grep -rl '"/bin/sh"' src/ | xargs -r sed -i 's#"/bin/sh"#"/overlayer/syshub/bin/bash"#g'
 
+    # --sysconfdir=/overlayer/syshub/etc (set below) only affects paths
+    # meson actually parameterizes. A handful of real files/*.c ship a
+    # bare `secure_getenv("SYSTEMD_X") ?: "/etc/whatever"` fallback
+    # instead -- a literal C string compiled straight into the binary,
+    # never touched by --sysconfdir. Confirmed root cause of the
+    # `localhost login:` hostname bug (hostname-util.c's etc_hostname()):
+    # Zainium has no real /etc, so hostname_setup()'s open() of the
+    # literal "/etc/hostname" always misses, silently falling back to
+    # "localhost" -- despite /overlayer/syshub/etc/hostname existing
+    # and being correct. Same exact pattern (grepped across src/basic
+    # and src/shared) hits machine-info/localtime/fstab/locale.conf/
+    # vconsole.conf too -- fixed here in one pass, not one bug report
+    # at a time as each gets hit at boot.
+    sed -i 's#"/etc/hostname"#"/overlayer/syshub/etc/hostname"#' src/basic/hostname-util.c
+    sed -i 's#"/etc/machine-info"#"/overlayer/syshub/etc/machine-info"#' src/basic/hostname-util.c
+    sed -i 's#"/etc/localtime"#"/overlayer/syshub/etc/localtime"#' src/basic/time-util.c
+    sed -i 's#"/etc/fstab"#"/overlayer/syshub/etc/fstab"#' src/shared/fstab-util.c
+    sed -i 's#"/etc/locale.conf"#"/overlayer/syshub/etc/locale.conf"#' src/shared/locale-setup.c
+    sed -i 's#"/etc/vconsole.conf"#"/overlayer/syshub/etc/vconsole.conf"#' src/shared/locale-setup.c
+
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
@@ -127,6 +147,32 @@ package() {
     for f in $(grep -rIl '/var/' "$PAYLOAD_DIR" 2>/dev/null); do
         is_text_file "$f" || continue
         sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
+    done
+
+    # Same bug class again, third time: systemd-logind/-localed/
+    # -hostnamed/-timedated.service.in ship a literal, un-templated
+    # `ReadWritePaths=/etc ...` (confirmed by reading the actual --
+    # meson's --sysconfdir doesn't touch this line at all, it's a bare
+    # C-string-equivalent in the .service.in, same as the hardcoded
+    # "/etc/hostname" etc. C literals fixed via source sed above).
+    # ProtectSystem=strict + a ReadWritePaths that resolves nowhere on
+    # Zainium (no real /etc) meant these 4 units silently couldn't
+    # write their runtime state -- root-caused this by diff against a
+    # real host Fedora's own deployed unit, 2026-09-03. Confirmed via a
+    # full sweep of every enabled unit (multi-user/sysinit/basic/
+    # getty.target.wants) that no other unit has this same bug. Note
+    # the trailing-slash convention the /usr/ and /var/ loops above use
+    # doesn't apply here -- `ReadWritePaths=/etc /run` has no slash
+    # after "etc", so match "/etc" itself when followed by whitespace,
+    # a comma, or end-of-line, not "/etc/" with a slash.
+    for f in $(grep -rIl '/etc' "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
+        # Grep above is deliberately loose (portable across GNU/BusyBox
+        # grep); the sed itself is the real filter -- only rewrites a
+        # genuine standalone "/etc" (space/comma/end-of-line after it),
+        # so a real "/etc/passwd"-shaped path or an unrelated word like
+        # "/etcetera" is left alone either way.
+        sed -i -E 's#/etc([[:space:],]|$)#/overlayer/syshub/etc\1#g' "$f"
     done
 }
 
