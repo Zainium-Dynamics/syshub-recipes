@@ -8,7 +8,6 @@ sha256sums="ef7d1994f533c9e7343d6c19f31064fc8ebbcbcaa144be3812b4f43052a05f4c  ex
 makedepends="cmake ninja"
 
 build() {
-    cd "expat-$pkgver"
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
     cmake -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
@@ -22,7 +21,7 @@ build() {
 }
 
 package() {
-    DESTDIR="$PAYLOAD_DIR" cmake --install "expat-$pkgver/build"
+    DESTDIR="$PAYLOAD_DIR" cmake --install build
 
     mkdir -p "$STAGING_ROOT/_expat-dev"
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_expat-dev/include"
