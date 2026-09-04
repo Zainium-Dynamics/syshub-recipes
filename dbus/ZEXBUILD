@@ -6,9 +6,16 @@ subpackages="$pkgname-dev"
 source="https://gitlab.freedesktop.org/dbus/dbus/-/archive/dbus-$pkgver/dbus-dbus-$pkgver.tar.gz"
 sha256sums="d2ca9d958c830e762ba70aea8e6b5c29fa7b58d0fee8ddd9bb5a00f35106ab57  dbus-dbus-$pkgver.tar.gz"
 makedepends="meson ninja pkgconf expat-dev libapparmor-dev audit-dev libselinux-dev glib-dev"
+needs_toolchain="systemd systemd-dev"
 
 build() {
     cd "dbus-dbus-$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # meson's find_program('systemctl') searches PATH at configure time and
+    # bakes the result into dbus.socket's ExecStartPost -- falls back to a
+    # hardcoded /usr/bin/systemctl if not found. Put our real one (from
+    # needs_toolchain="systemd") on PATH so it resolves correctly instead.
+    export PATH="/overlayer/syshub/bin:$PATH"
     # selinux/libaudit auto-detected enabled (makedepends pulls in
     # libselinux-dev/audit-dev) but their .so runtime libs never made
     # it into any deployed package -- dbus-daemon relocation errors at
@@ -28,7 +35,10 @@ build() {
         --localstatedir=/overlayer/syshub/var \
         -Dselinux=disabled \
         -Dlibaudit=disabled \
-        -Dapparmor=auto
+        -Dapparmor=auto \
+        -Dsystemd=enabled \
+        -Dsystemd_system_unitdir=/overlayer/syshub/lib/systemd/system \
+        -Dsystemd_user_unitdir=/overlayer/syshub/lib/systemd/user
     ninja -C builddir
 }
 
