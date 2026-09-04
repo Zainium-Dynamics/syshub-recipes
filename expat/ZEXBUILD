@@ -23,6 +23,12 @@ build() {
 package() {
     DESTDIR="$PAYLOAD_DIR" cmake --install build
 
+    # changelog/AUTHORS are just prose, not runtime files -- and
+    # changelog's own text mentions "/usr/bin/env bash" (describing a
+    # historical upstream fix), which trips the layout scan for no
+    # functional reason. Simplest fix: don't ship docs at all.
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share/doc"
+
     mkdir -p "$STAGING_ROOT/_expat-dev"
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_expat-dev/include"
     mv "$PAYLOAD_DIR/overlayer/syshub/lib/cmake" "$STAGING_ROOT/_expat-dev/cmake"
