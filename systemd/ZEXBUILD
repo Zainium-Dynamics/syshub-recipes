@@ -193,6 +193,34 @@ package() {
     [ -f "$unitdir/systemd-modules-load.service" ] && sed -i 's#/etc/modules-load\.d#/overlayer/syshub/etc/modules-load.d#' "$unitdir/systemd-modules-load.service"
     [ -f "$unitdir/systemd-repart.service" ] && sed -i 's#/etc/repart\.d#/overlayer/syshub/etc/repart.d#' "$unitdir/systemd-repart.service"
     [ -f "$unitdir/systemd-sysext.service" ] && sed -i 's#/etc/extensions#/overlayer/syshub/etc/extensions#' "$unitdir/systemd-sysext.service"
+
+    # Fourth instance of the same underlying problem, biggest one yet:
+    # ~28 unit files across lib/systemd/{system,user} ship
+    # Exec{Start,Stop,Reload}*= lines that invoke one of systemd's OWN
+    # internal helper binaries (systemd-tmpfiles, systemd-sysusers,
+    # systemd-hwdb, udevadm, userdbctl, journalctl, systemctl,
+    # networkctl, systemd-firstboot, systemd-repart, systemd-sysext,
+    # systemd-confext, systemd-nspawn, systemd-mute-console,
+    # systemd-machine-id-setup, systemd-sysupdate, systemd-sysinstall,
+    # systemd-tty-ask-password-agent, ...) by BARE NAME, relying on
+    # PATH search to find them at exec time -- confirmed via real boot
+    # journal, 2026-09-04 ("Unable to locate executable 'X': No such
+    # file or directory", "Failed at step EXEC spawning X"). Zainium's
+    # PATH (wired via DefaultEnvironment in system.conf.d, see the
+    # sibling drop-in this package doesn't ship) wasn't taking effect
+    # for these units at the point this was diagnosed, so relying on
+    # PATH resolution at all is fragile here -- give every one of these
+    # an absolute path instead, sidestepping that dependency entirely
+    # (same fix real systemd's @rootlibexecdir@-templated .service.in
+    # files are supposed to produce automatically; ours apparently
+    # weren't templating that for some of these).
+    for unitdir in "$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system" "$PAYLOAD_DIR/overlayer/syshub/lib/systemd/user"; do
+        [ -d "$unitdir" ] || continue
+        for f in "$unitdir"/*.service; do
+            [ -f "$f" ] || continue
+            sed -i -E 's#^(Exec(Start|Stop|Reload)[a-zA-Z]*=)(systemctl|journalctl|networkctl|resolvectl|timedatectl|hostnamectl|loginctl|localectl|machinectl|coredumpctl|bootctl|portablectl|homectl|oomctl|busctl|udevadm|userdbctl|systemd-[a-zA-Z0-9_-]*)([[:space:]]|$)#\1/overlayer/syshub/bin/\3\4#' "$f"
+        done
+    done
 }
 
 dev() {
