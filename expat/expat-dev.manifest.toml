@@ -1,0 +1,29 @@
+[package]
+name             = "expat-dev"
+version          = "2.8.2"
+description      = "Expat headers, pkgconfig, cmake config"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://libexpat.github.io/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["expat"]
+provides         = ["expat-dev"]
+tags             = ["base", "xml", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
