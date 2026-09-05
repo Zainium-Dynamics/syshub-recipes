@@ -4,14 +4,13 @@ pkgver=0.10.3
 pkgrel=0
 source="https://github.com/kennylevinsen/greetd/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="ee5cb70e0add4ca9c9fe57e47581ab0002d44c07743fb5492469f3b570db640b  $pkgver.tar.gz"
-makedepends="cargo linux-pam-dev"
+makedepends="cargo"
 
 # greetd's own auth path (pam-sys crate) hard-depends on PAM -- not
-# optional, no feature flag. Zainium has no published PAM package yet,
-# so build/link against Alpine's own linux-pam-dev and ship its .so +
-# modules straight into the payload (same musl-ABI-stable borrowing
-# already used for libzstd/libxml2/etc during systemd's build) rather
-# than block greetd on PAM getting published first.
+# optional, no feature flag. Real PAM is elevate-privilege's own
+# elevate-pam (libpam.so.0 + lib/security/*.so) -- deployed separately,
+# not built or bundled here. Do not reintroduce Alpine's borrowed
+# glibc linux-pam-dev/.so -- that was here once, deliberately removed.
 build() {
     # RUSTFLAGS below applies to every rustc invocation, including cargo's
     # own build-script helper binaries that run right here on the CI host
@@ -32,15 +31,6 @@ package() {
     cp target/release/greetd "$PAYLOAD_DIR/bin/greetd"
     cp target/release/agreety "$PAYLOAD_DIR/bin/agreety"
     strip "$PAYLOAD_DIR/bin/"*
-
-    for f in libpam.so.0 libpam.so.0.85.1; do
-        [ -e "/usr/lib/$f" ] && cp -L "/usr/lib/$f" "$PAYLOAD_DIR/lib/$f"
-    done
-    ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
-
-    for m in pam_unix.so pam_permit.so pam_deny.so pam_env.so pam_faildelay.so pam_nologin.so; do
-        [ -e "/usr/lib/security/$m" ] && cp -L "/usr/lib/security/$m" "$PAYLOAD_DIR/lib/security/$m"
-    done
 
     cat > "$PAYLOAD_DIR/etc/pam.d/greetd" <<'EOF'
 auth       required     pam_unix.so nullok
