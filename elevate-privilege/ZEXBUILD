@@ -3,9 +3,9 @@ pkgname=elevate-privilege
 pkgver=1.0.1
 pkgrel=0
 _nightly=nightly-2026-05-24
-_commit=a9ca601e7b59b0b072e4509029f0ce43b5a5ec89
+_commit=ba3706474be9f10749b157371b46b2e03b96799b
 source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/$_commit.tar.gz"
-sha256sums="c3e8f0eb1a27e2bc111dcd09b34205417d86523d4d256e2ef78e8d4ad1b00a42  $_commit.tar.gz"
+sha256sums="b089421aca0fb688bc3e7dea36a3615c37fbfdbe580ffb2c1d52ca92b0e41c50  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
@@ -61,16 +61,15 @@ package() {
             *)            cp "$f" "$PAYLOAD_DIR/bin/$b" ;;
         esac
     done
-    chmod 4755 "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/bin/elevate" 2>/dev/null || true
-
     # Every cdylib cargo produced. PAM modules (libpam_*.so) go to
     # lib/security/ under the bare pam_*.so name modules are dlopen()'d
-    # by; the two library .so's stay under lib/.
+    # by; libpam_misc.so is a real linked-against library (not a PAM
+    # module) despite matching that same glob, so it's special-cased
+    # ahead of it; the other library .so's stay under lib/.
     find "$out" -maxdepth 1 -name '*.so' -print0 |
     while IFS= read -r -d '' f; do
         b="$(basename "$f")"
         case "$b" in
-            libpam_*.so) cp "$f" "$PAYLOAD_DIR/lib/security/${b#lib}" ;;
             libelevate_pam.so)
                 cp "$f" "$PAYLOAD_DIR/lib/libelevate_pam.so.0"
                 ln -sf libelevate_pam.so.0 "$PAYLOAD_DIR/lib/libelevate_pam.so"
@@ -83,6 +82,13 @@ package() {
                 cp "$f" "$PAYLOAD_DIR/lib/libpam.so.0"
                 ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
                 ;;
+            # libpam-misc: real Linux-PAM's misc_conv()/pam_misc_* helpers,
+            # ported from linux-pam-1.7.2 (see elevate-pam/libpam-misc).
+            libpam_misc.so)
+                cp "$f" "$PAYLOAD_DIR/lib/libpam_misc.so.0"
+                ln -sf libpam_misc.so.0 "$PAYLOAD_DIR/lib/libpam_misc.so"
+                ;;
+            libpam_*.so) cp "$f" "$PAYLOAD_DIR/lib/security/${b#lib}" ;;
             *) cp "$f" "$PAYLOAD_DIR/lib/$b" ;;
         esac
     done
@@ -92,5 +98,10 @@ package() {
     mkdir -p "$PAYLOAD_DIR/etc/pam.d"
     cp elevate/pam.d/elev elevate/pam.d/elev-l elevate/pam.d/elevate "$PAYLOAD_DIR/etc/pam.d/"
 
+    # strip MUST run before chmod: the kernel silently clears setuid on
+    # ANY write to a file carrying that bit (unless the writer holds
+    # CAP_FSETID, which strip never does) -- stripping an already-setuid
+    # binary throws the bit away with no error. setuid goes on last.
     strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/sbin/"* "$PAYLOAD_DIR/lib/"*.so* "$PAYLOAD_DIR/lib/security/"* 2>/dev/null || true
+    chmod 4755 "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/bin/elevate" 2>/dev/null || true
 }
