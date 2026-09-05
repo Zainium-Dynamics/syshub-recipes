@@ -1,24 +1,17 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=userutiles
 pkgver=1.0.0
-pkgrel=0
-source="https://github.com/Zainium-Dynamics/userutiles/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="571dea88c9b9e03a9faa80f22577944b6719e7c17dfdfb1b025710db4589091d  v$pkgver.tar.gz"
+pkgrel=1
+source=""https://github.com/Zainium-Dynamics/userutiles/archive/f96d57a7f263da1a167d2a8f8fead36aba16a502.tar.gz"
+sha256sums=""
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
-# coreutils/util-linux-style replacement -- one discrete binary per
-# cmd/* crate, no cdylib anywhere. Stock rustup musl target is enough,
-# same as oxibus: override crt-static off (fully dynamic, our own
-# toolchain as linker) instead of upstream's own static-by-default build.
 build() {
     export PATH="/overlayer/syshub/bin:$PATH"
     rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
     export PATH="$HOME/.cargo/bin:$PATH"
 
-    # checked-in .cargo/config.toml hardcodes linker="musl-gcc" for this
-    # target -- outranks RUSTFLAGS, so override it via --config instead
-    # (CLI config beats project config.toml in cargo's precedence order).
     RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib" \
         cargo build --release --workspace --target x86_64-unknown-linux-musl \
         --config 'target.x86_64-unknown-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
@@ -28,8 +21,7 @@ package() {
     local out="target/x86_64-unknown-linux-musl/release"
     mkdir -p "$PAYLOAD_DIR/bin"
 
-    # No hand-maintained allowlist -- 176 crates, every plain executable
-    # cargo produced (no extension, e.g. skips .d dep-info files) -> bin/.
+  
     find "$out" -maxdepth 1 -type f -executable ! -name '*.*' -print0 |
     while IFS= read -r -d '' f; do
         cp "$f" "$PAYLOAD_DIR/bin/$(basename "$f")"
