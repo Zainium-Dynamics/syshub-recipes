@@ -52,13 +52,22 @@ session    required     pam_unix.so
 session    required     pam_env.so
 EOF
 
+    # cosmic-greeter, not agreety+bash -- Zainium's actual default
+    # session is the COSMIC greeter UI, not a bare shell. Shipping the
+    # generic upstream default here would silently clobber this on
+    # every rebuild (this exact file was hand-authored/renamed once
+    # already at etc/greetd/config.toml in zairoot -- see
+    # cosmic-greeter's own sysusers.d entry for the matching user).
     cat > "$PAYLOAD_DIR/etc/greetd/config.toml" <<'EOF'
 [terminal]
-vt = 1
+vt = "1"
+
+[general]
+service = "cosmic-greeter"
 
 [default_session]
-command = "agreety --cmd /overlayer/syshub/bin/bash"
-user = "greeter"
+command = "cosmic-greeter-start"
+user = "cosmic-greeter"
 EOF
 
     cat > "$PAYLOAD_DIR/lib/systemd/system/greetd.service" <<'EOF'
@@ -67,6 +76,7 @@ Description=Greeter daemon
 After=systemd-user-sessions.service plymouth-quit-wait.service
 After=getty@tty1.service
 Conflicts=getty@tty1.service
+Before=graphical.target
 
 [Service]
 Type=simple
@@ -81,10 +91,16 @@ StartLimitBurst=5
 StartLimitInterval=30
 
 [Install]
+WantedBy=graphical.target
 Alias=display-manager.service
 EOF
 
     cat > "$PAYLOAD_DIR/lib/sysusers.d/greetd.conf" <<'EOF'
 u greeter - "greetd greeter" -
 EOF
+
+    # unit files are data, not programs -- "Configuration file X is
+    # marked executable" warning at every boot otherwise (same bug
+    # class already hit and fixed for systemd's own units, 2026-09-04).
+    chmod 644 "$PAYLOAD_DIR/lib/systemd/system/greetd.service"
 }
