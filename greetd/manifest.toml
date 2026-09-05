@@ -1,0 +1,30 @@
+[package]
+name             = "greetd"
+version          = "0.10.3"
+description      = "Minimal, flexible login manager daemon"
+license          = "GPL-3.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://sr.ht/~kennylevinsen/greetd/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["greetd", "agreety"]
+tags             = ["base", "login", "greeter"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
