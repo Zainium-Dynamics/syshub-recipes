@@ -17,6 +17,7 @@ ed25519_pubkey   = ""
 depends          = ["musl"]
 provides         = [
     "elevate", "elev", "vielev", "elevate-pam", "sudo",
+    "libpam", "libelevate_pam", "unix_chkpwd",
     "useradd", "userdel", "usermod", "groupadd", "groupdel", "groupmod",
     "passwd", "chpasswd", "chgpasswd", "chage", "chfn", "chsh", "pwck",
     "grpck", "vipw", "umbra-sign", "gpasswd", "newusers", "groupmems",

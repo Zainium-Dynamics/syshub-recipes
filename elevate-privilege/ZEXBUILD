@@ -3,8 +3,9 @@ pkgname=elevate-privilege
 pkgver=1.0.1
 pkgrel=0
 _nightly=nightly-2026-05-24
-source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="a270e0279bca1f81ec519b491af76e8e1ff72cdf675f9643a4ec22adec0ed2c9  v$pkgver.tar.gz"
+_commit=a9ca601e7b59b0b072e4509029f0ce43b5a5ec89
+source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/$_commit.tar.gz"
+sha256sums="c3e8f0eb1a27e2bc111dcd09b34205417d86523d4d256e2ef78e8d4ad1b00a42  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
@@ -17,6 +18,8 @@ needs_toolchain="musl gcc-musl"
 # modules possible at all; nightly + -Z build-std is required since no
 # prebuilt std ships for a custom target triple.
 build() {
+    cd "elevate-privilege-$_commit"
+
     export PATH="/overlayer/syshub/bin:$PATH"
     export LD_LIBRARY_PATH=/usr/lib:/lib
 
@@ -27,7 +30,15 @@ build() {
     export PATH="$HOME/.cargo/bin:$PATH"
 
     rustup toolchain install "$_nightly" --profile minimal --component rust-src
+
+    # legacy_pamd is off by default in this workspace (elevate's own
+    # tools use TOML services under /etc/elevate-pam/services/) but is a
+    # real, working /etc/pam.d/<service> parser -- external consumers
+    # that don't know about elevate's TOML format (greetd, anything else
+    # linking pam-sys) need it on to have their /etc/pam.d/<service>
+    # files read at all.
     cargo "+$_nightly" build --release --workspace \
+        --features elevate-pam/legacy_pamd \
         -Z json-target-spec \
         --target targets/x86_64-zainium-linux-musl.json \
         -Z build-std=core,alloc,std,panic_abort \
@@ -60,7 +71,18 @@ package() {
         b="$(basename "$f")"
         case "$b" in
             libpam_*.so) cp "$f" "$PAYLOAD_DIR/lib/security/${b#lib}" ;;
-            libelevate_pam.so) cp "$f" "$PAYLOAD_DIR/lib/libelevate_pam.so.0" ;;
+            libelevate_pam.so)
+                cp "$f" "$PAYLOAD_DIR/lib/libelevate_pam.so.0"
+                ln -sf libelevate_pam.so.0 "$PAYLOAD_DIR/lib/libelevate_pam.so"
+                ;;
+            # libpam-abi: same C ABI as libelevate_pam.so, statically
+            # relinked under the real libpam.so.0 SONAME (baked in via
+            # libpam-abi's own build.rs) -- the actual drop-in for
+            # pam-sys/dlopen("libpam.so.0") consumers.
+            libpam.so)
+                cp "$f" "$PAYLOAD_DIR/lib/libpam.so.0"
+                ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
+                ;;
             *) cp "$f" "$PAYLOAD_DIR/lib/$b" ;;
         esac
     done
