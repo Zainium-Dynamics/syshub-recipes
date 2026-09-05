@@ -5,7 +5,7 @@ pkgrel=0
 source="https://github.com/kennylevinsen/greetd/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="ee5cb70e0add4ca9c9fe57e47581ab0002d44c07743fb5492469f3b570db640b  $pkgver.tar.gz"
 makedepends="cargo"
-
+needs_toolchain="elevate-privilege"
 build() {
     
     mkdir -p /overlayer/syshub/lib
