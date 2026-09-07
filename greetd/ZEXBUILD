@@ -9,7 +9,18 @@ makedepends="cargo"
 depends="elevate-privilege"
 
 build() {
+    # ci/build.sh globally exports both of these pointed at Zainium's own
+    # musl loader. Alpine's own `cargo`'s default host triple is the
+    # standard upstream x86_64-unknown-linux-musl name, so the per-target
+    # RUSTFLAGS below applies to every build here even with no explicit
+    # --target -- including build-script binaries that run right here on
+    # the CI host, not shipped. Forcing those to exec under a foreign
+    # musl loader is what was crashing them (SIGSEGV, different build
+    # script each time depending on which crate happened to be built
+    # first -- curve25519-dalek, then elevate-paths). Unsetting plain
+    # LDFLAGS alone wasn't enough; this is the one that actually matters.
     unset LDFLAGS
+    unset CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS
     cargo build --release --workspace
 }
 
