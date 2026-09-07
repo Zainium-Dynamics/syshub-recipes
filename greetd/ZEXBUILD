@@ -9,7 +9,7 @@ makedepends="cargo"
 depends="elevate-privilege"
 
 build() {
-  
+    unset LDFLAGS
     cargo build --release --workspace
 }
 
