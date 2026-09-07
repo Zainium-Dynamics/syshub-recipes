@@ -15,10 +15,16 @@ build() {
     # $pkgname-$pkgver exactly. A second cd from here was one level too
     # deep and failed both fallback attempts.
 
-    mkdir -p /overlayer/syshub/lib
-    [ -e /overlayer/syshub/lib/libgcc_s.so.1 ] || cp -L /usr/lib/libgcc_s.so.1 /overlayer/syshub/lib/libgcc_s.so.1
-
-    export RUSTFLAGS="-C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
+    # No custom RUSTFLAGS here on purpose: forcing Zainium's own musl
+    # loader onto every rustc invocation also forces it onto build-script
+    # helper binaries that run right here on the CI host (not shipped) --
+    # exec'ing those under a foreign target loader is what was crashing
+    # curve25519-dalek's build script (SIGSEGV, no missing-library error,
+    # just a straight crash). substrate's own elfpatch already retargets
+    # the *shipped* binaries' interpreter/rpath automatically at pack
+    # time (manifest.toml has no `native = true`), so build natively
+    # against Alpine's own loader the whole way through, same as every
+    # other syshub-recipes package.
     cargo build --release --workspace
 }
 
