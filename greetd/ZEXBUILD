@@ -2,30 +2,15 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=greetd
 pkgver=0.10.3
 pkgrel=0
-# Zainium's own fork (github.com/Zainium-Dynamics/greetd), not upstream
-# kennylevinsen/greetd -- fixes every hardcoded FHS path (/etc/pam.d,
-# /etc/greetd, /etc/os-release, /etc/issue, /bin/sh) and replaces the
-# pam-sys dependency (C ABI, dlopen against whatever libpam.so.0 happens
-# to be on the runtime linker path) with elevate-pam's own native Rust
-# API directly -- see that repo's NOTICE.md for the full change list.
+
 source="https://github.com/Zainium-Dynamics/greetd/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5  v$pkgver.tar.gz"
 makedepends="cargo"
 depends="elevate-privilege"
 
-# greetd now links directly against elevate-pam's own Rust API (compiled
-# in, not dlopened) -- no more borrowing Alpine's linux-pam-dev at build
-# time. It still needs elevate-privilege installed at runtime, though:
-# that's what actually ships the PAM modules (pam_unix.so, pam_env.so,
-# ...) greetd's own etc/pam.d/greetd stack dispatches to.
 build() {
     cd "greetd-$pkgver" 2>/dev/null || cd "greetd-v$pkgver"
 
-    # RUSTFLAGS below applies to every rustc invocation, including cargo's
-    # own build-script helper binaries that run right here on the CI host
-    # -- they inherit the /overlayer/syshub/lib RPATH too and need a real
-    # libgcc_s.so.1 to find there, same musl-ABI-stable-borrow reasoning
-    # as the /usr bootstrap list in ci/build.sh itself.
+
     mkdir -p /overlayer/syshub/lib
     [ -e /overlayer/syshub/lib/libgcc_s.so.1 ] || cp -L /usr/lib/libgcc_s.so.1 /overlayer/syshub/lib/libgcc_s.so.1
 
@@ -51,12 +36,7 @@ session    required     pam_unix.so
 session    required     pam_env.so
 EOF
 
-    # cosmic-greeter, not agreety+bash -- Zainium's actual default
-    # session is the COSMIC greeter UI, not a bare shell. Shipping the
-    # generic upstream default here would silently clobber this on
-    # every rebuild (this exact file was hand-authored/renamed once
-    # already at etc/greetd/config.toml in zairoot -- see
-    # cosmic-greeter's own sysusers.d entry for the matching user).
+   
     cat > "$PAYLOAD_DIR/etc/greetd/config.toml" <<'EOF'
 [terminal]
 vt = "1"
@@ -98,8 +78,6 @@ EOF
 u greeter - "greetd greeter" -
 EOF
 
-    # unit files are data, not programs -- "Configuration file X is
-    # marked executable" warning at every boot otherwise (same bug
-    # class already hit and fixed for systemd's own units, 2026-09-04).
+  
     chmod 644 "$PAYLOAD_DIR/lib/systemd/system/greetd.service"
 }
