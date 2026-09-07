@@ -2,17 +2,25 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=greetd
 pkgver=0.10.3
 pkgrel=0
-source="https://github.com/kennylevinsen/greetd/archive/refs/tags/$pkgver.tar.gz"
-sha256sums="ee5cb70e0add4ca9c9fe57e47581ab0002d44c07743fb5492469f3b570db640b  $pkgver.tar.gz"
-makedepends="cargo linux-pam-dev"
+# Zainium's own fork (github.com/Zainium-Dynamics/greetd), not upstream
+# kennylevinsen/greetd -- fixes every hardcoded FHS path (/etc/pam.d,
+# /etc/greetd, /etc/os-release, /etc/issue, /bin/sh) and replaces the
+# pam-sys dependency (C ABI, dlopen against whatever libpam.so.0 happens
+# to be on the runtime linker path) with elevate-pam's own native Rust
+# API directly -- see that repo's NOTICE.md for the full change list.
+source="https://github.com/Zainium-Dynamics/greetd/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5  v$pkgver.tar.gz"
+makedepends="cargo"
+depends="elevate-privilege"
 
-# greetd's own auth path (pam-sys crate) hard-depends on PAM -- not
-# optional, no feature flag. Zainium has no published PAM package yet,
-# so build/link against Alpine's own linux-pam-dev and ship its .so +
-# modules straight into the payload (same musl-ABI-stable borrowing
-# already used for libzstd/libxml2/etc during systemd's build) rather
-# than block greetd on PAM getting published first.
+# greetd now links directly against elevate-pam's own Rust API (compiled
+# in, not dlopened) -- no more borrowing Alpine's linux-pam-dev at build
+# time. It still needs elevate-privilege installed at runtime, though:
+# that's what actually ships the PAM modules (pam_unix.so, pam_env.so,
+# ...) greetd's own etc/pam.d/greetd stack dispatches to.
 build() {
+    cd "greetd-$pkgver" 2>/dev/null || cd "greetd-v$pkgver"
+
     # RUSTFLAGS below applies to every rustc invocation, including cargo's
     # own build-script helper binaries that run right here on the CI host
     # -- they inherit the /overlayer/syshub/lib RPATH too and need a real
@@ -26,21 +34,12 @@ build() {
 }
 
 package() {
-    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/etc/pam.d" \
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc/pam.d" \
         "$PAYLOAD_DIR/etc/greetd" "$PAYLOAD_DIR/lib/systemd/system" "$PAYLOAD_DIR/lib/sysusers.d"
 
     cp target/release/greetd "$PAYLOAD_DIR/bin/greetd"
     cp target/release/agreety "$PAYLOAD_DIR/bin/agreety"
     strip "$PAYLOAD_DIR/bin/"*
-
-    for f in libpam.so.0 libpam.so.0.85.1; do
-        [ -e "/usr/lib/$f" ] && cp -L "/usr/lib/$f" "$PAYLOAD_DIR/lib/$f"
-    done
-    ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
-
-    for m in pam_unix.so pam_permit.so pam_deny.so pam_env.so pam_faildelay.so pam_nologin.so; do
-        [ -e "/usr/lib/security/$m" ] && cp -L "/usr/lib/security/$m" "$PAYLOAD_DIR/lib/security/$m"
-    done
 
     cat > "$PAYLOAD_DIR/etc/pam.d/greetd" <<'EOF'
 auth       required     pam_unix.so nullok
