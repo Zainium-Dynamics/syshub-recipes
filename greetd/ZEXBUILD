@@ -9,22 +9,7 @@ makedepends="cargo"
 depends="elevate-privilege"
 
 build() {
-    # ci/build.sh's own default `cd "$pkgname-$pkgver"` already lands here
-    # correctly -- GitHub strips the tag's "v" prefix when naming the
-    # extracted dir ("greetd-0.10.3", not "greetd-v0.10.3"), matching
-    # $pkgname-$pkgver exactly. A second cd from here was one level too
-    # deep and failed both fallback attempts.
-
-    # No custom RUSTFLAGS here on purpose: forcing Zainium's own musl
-    # loader onto every rustc invocation also forces it onto build-script
-    # helper binaries that run right here on the CI host (not shipped) --
-    # exec'ing those under a foreign target loader is what was crashing
-    # curve25519-dalek's build script (SIGSEGV, no missing-library error,
-    # just a straight crash). substrate's own elfpatch already retargets
-    # the *shipped* binaries' interpreter/rpath automatically at pack
-    # time (manifest.toml has no `native = true`), so build natively
-    # against Alpine's own loader the whole way through, same as every
-    # other syshub-recipes package.
+  
     cargo build --release --workspace
 }
 
@@ -50,10 +35,6 @@ EOF
     cat > "$PAYLOAD_DIR/etc/greetd/config.toml" <<'EOF'
 [terminal]
 vt = "1"
-
-[general]
-service = "cosmic-greeter"
-
 [default_session]
 command = "cosmic-greeter-start"
 user = "cosmic-greeter"
