@@ -66,7 +66,7 @@ vt = "1"
 service = "cosmic-greeter"
 
 [default_session]
-command = "cosmic-greeter-start"
+command = "/overlayer/syshub/bin/cosmic-greeter-start"
 user = "cosmic-greeter"
 EOF
 
@@ -74,13 +74,19 @@ EOF
 [Unit]
 Description=Greeter daemon
 After=systemd-user-sessions.service plymouth-quit-wait.service
-After=getty@tty1.service
+After=getty@tty1.service systemd-tmpfiles-setup.service
 Conflicts=getty@tty1.service
 Before=graphical.target
 
 [Service]
 Type=simple
-ExecStart=/overlayer/syshub/bin/greetd
+# /run/cosmic-greeter (owner cosmic-greeter:cosmic-greeter, mode 0755) is
+# created by tmpfiles.d/cosmic-greeter.conf via systemd-tmpfiles-setup.service
+# every boot -- NOT here. `struct` aborts with exit 1 if the path already
+# exists (by design, no -p/-f style overwrite), so an ExecStartPre that
+# re-runs it against a directory tmpfiles has already made would fail this
+# unit's start on every boot after the first. Do not add one.
+ExecStart=/overlayer/syshub/bin/greetd --config /overlayer/syshub/etc/greetd/config.toml
 IgnoreSIGPIPE=no
 SendSIGHUP=yes
 TimeoutStopSec=30s
