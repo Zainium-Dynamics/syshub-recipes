@@ -4,12 +4,16 @@ pkgver=0.10.3
 pkgrel=0
 
 source="https://github.com/Zainium-Dynamics/greetd/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="b6659c9cedff381adcc43eb09e182af618f5a350256c9d607b5e5cd716cdc5b6  v$pkgver.tar.gz"
 makedepends="cargo"
 depends="elevate-privilege"
 
 build() {
-    cd "greetd-$pkgver" 2>/dev/null || cd "greetd-v$pkgver"
-
+    # ci/build.sh's own default `cd "$pkgname-$pkgver"` already lands here
+    # correctly -- GitHub strips the tag's "v" prefix when naming the
+    # extracted dir ("greetd-0.10.3", not "greetd-v0.10.3"), matching
+    # $pkgname-$pkgver exactly. A second cd from here was one level too
+    # deep and failed both fallback attempts.
 
     mkdir -p /overlayer/syshub/lib
     [ -e /overlayer/syshub/lib/libgcc_s.so.1 ] || cp -L /usr/lib/libgcc_s.so.1 /overlayer/syshub/lib/libgcc_s.so.1
