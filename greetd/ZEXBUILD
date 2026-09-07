@@ -95,6 +95,15 @@ Restart=always
 RestartSec=1
 StartLimitBurst=5
 StartLimitInterval=30
+# If greetd or the session it launched (cosmic-comp) panics/crashes
+# while holding the VT/DRM master, the VT can be left in a broken state
+# with no way to switch back to it (Ctrl+Alt+F1 unresponsive) -- these
+# three make systemd itself reset tty1 on every (re)start attempt,
+# same mechanism real display managers (gdm.service, sddm.service) rely
+# on for exactly this crash-recovery case.
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVTDisallocate=yes
 
 [Install]
 WantedBy=graphical.target
