@@ -4,7 +4,7 @@ pkgver=0.10.3
 pkgrel=0
 
 source="https://github.com/Zainium-Dynamics/greetd/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="b6659c9cedff381adcc43eb09e182af618f5a350256c9d607b5e5cd716cdc5b6  v$pkgver.tar.gz"
+sha256sums="5a62e840a519a5f994150f2f1ccd95295ff413c3f88b78e5a2886001b2db17ec  v$pkgver.tar.gz"
 makedepends="cargo"
 depends="elevate-privilege"
 
