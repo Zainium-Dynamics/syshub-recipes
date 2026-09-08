@@ -3,9 +3,9 @@ pkgname=elevate-privilege
 pkgver=1.0.1
 pkgrel=0
 _nightly=nightly-2026-05-24
-_commit=d1d5d3a60d0c939c00f3171c5edaf83993fb0fb5
+_commit=6438401957f67f92167a09f1278713d7f525db31
 source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/$_commit.tar.gz"
-sha256sums="c6bcd3ffdc9173e6162521c80e65a0f205c0ec9ba99fb2ac7a5cd2e063710721  $_commit.tar.gz"
+sha256sums="55da838c4e0ef70a9c93fa3286a15cce55b80c2bf100380a3f6bbb3b53fe8731  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
@@ -97,6 +97,13 @@ package() {
     cp elevate_privilege.toml "$PAYLOAD_DIR/etc/"
     mkdir -p "$PAYLOAD_DIR/etc/pam.d"
     cp elevate/pam.d/elev elevate/pam.d/elev-l elevate/pam.d/elevate "$PAYLOAD_DIR/etc/pam.d/"
+
+    # Real Linux-PAM's own public headers, vendored under
+    # elevate-pam/pam/include/security -- same ABI, so any C module
+    # (pam_systemd.c and friends) can #include these and link against
+    # libpam.so.0 directly, no Alpine linux-pam-dev borrowing needed.
+    mkdir -p "$PAYLOAD_DIR/include/security"
+    cp elevate-pam/pam/include/security/*.h "$PAYLOAD_DIR/include/security/"
 
     # strip MUST run before chmod: the kernel silently clears setuid on
     # ANY write to a file carrying that bit (unless the writer holds
