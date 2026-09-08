@@ -31,6 +31,7 @@ bin     = "/overlayer/syshub/bin"
 sbin    = "/overlayer/syshub/sbin"
 lib     = "/overlayer/syshub/lib"
 etc     = "/overlayer/syshub/etc"
+include = "/overlayer/syshub/include"
 _syshub = true
 
 [remove]
