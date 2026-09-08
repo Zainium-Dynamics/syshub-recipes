@@ -9,7 +9,7 @@ makedepends="meson ninja pkgconf gperf python3 py3-jinja2 build-base linux-heade
     libcap-dev libseccomp-dev kmod-dev pcre2-dev
     xz-dev zstd-dev zlib-dev
     elfutils-dev libarchive-dev libxkbcommon-dev
-    curl-dev openssl-dev libapparmor-dev"
+    curl-dev openssl-dev libapparmor-dev linux-pam-dev"
 
 # util-linux is our own syshub package, not Alpine's -- pulled in as a
 # real dependency (not apk) so meson picks up its libmount.pc/headers
@@ -71,7 +71,7 @@ build() {
         -Daudit=disabled \
         -Dxenctrl=disabled \
         -Dacl=disabled \
-        -Dpam=disabled \
+        -Dpam=enabled \
         -Dlibcryptsetup=disabled \
         -Dlibcryptsetup-plugins=disabled \
         -Dtpm2=disabled \
