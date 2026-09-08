@@ -5,14 +5,20 @@ pkgrel=0
 subpackages="libdrm-dev"
 source="https://dri.freedesktop.org/libdrm/libdrm-$pkgver.tar.xz"
 sha256sums="ac5e74d157830eb8bee44c6a6bf3ad49774ef0dd2a72bdad74a8f20308b52a95  libdrm-$pkgver.tar.xz"
-makedepends="eudev-dev"
+makedepends="eudev-dev libpciaccess-dev"
 
+# -Dintel=enabled: mesa's iris/i915/intel gallium+vulkan drivers dlopen
+# libdrm_intel.so.1 by name; without libpciaccess-dev, libdrm's meson
+# "auto" feature silently dropped intel support and this .so never got
+# built, which only surfaced later as a runtime DlOpen failure in
+# cosmic-comp/libgallium, not as a build-time error here.
 build() {
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
         --includedir=/overlayer/syshub/include \
-        -Dudev=true
+        -Dudev=true \
+        -Dintel=enabled
     ninja -C builddir
     DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
 }
