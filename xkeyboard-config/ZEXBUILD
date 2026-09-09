@@ -7,19 +7,7 @@ sha256sums="b77041324f0109f77161ee43743fe04baa485866af8460d31e476ad3f7648fd5  xk
 makedepends="meson ninja python3 libxkbcommon"
 needs_toolchain="libxkbcommon"
 
-# Pure data (rules/symbols/keycodes/compat/types + a "share/X11/xkb"
-# compat symlink) -- no libc/ABI concerns, but real: without it,
-# libxkbcommon.so's hardcoded /overlayer/syshub/share/X11/xkb lookup
-# (see libxkbcommon's own ZEXBUILD comment, which already anticipated
-# this package) can't compile ANY keymap, not even the default one --
-# confirmed live via cosmic-comp's boot panic: "Failed to load provided
-# xkb configuration files": BadKeymap' at src/shell/seats.rs:261.
-#
-# nls=false: skip gettext-based translation strings -- not needed for
-# keymap compilation itself, and keeps this build free of a gettext
-# toolchain dependency.
 build() {
-    cd xkeyboard-config-$pkgver
     meson setup builddir \
         --prefix=/overlayer/syshub \
         -Dnls=false \
