@@ -1,0 +1,38 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=xkeyboard-config
+pkgver=2.48
+pkgrel=0
+source="https://xorg.freedesktop.org/archive/individual/data/xkeyboard-config/xkeyboard-config-$pkgver.tar.xz"
+sha256sums="b77041324f0109f77161ee43743fe04baa485866af8460d31e476ad3f7648fd5  xkeyboard-config-$pkgver.tar.xz"
+makedepends="meson ninja python3 libxkbcommon"
+needs_toolchain="libxkbcommon"
+
+# Pure data (rules/symbols/keycodes/compat/types + a "share/X11/xkb"
+# compat symlink) -- no libc/ABI concerns, but real: without it,
+# libxkbcommon.so's hardcoded /overlayer/syshub/share/X11/xkb lookup
+# (see libxkbcommon's own ZEXBUILD comment, which already anticipated
+# this package) can't compile ANY keymap, not even the default one --
+# confirmed live via cosmic-comp's boot panic: "Failed to load provided
+# xkb configuration files": BadKeymap' at src/shell/seats.rs:261.
+#
+# nls=false: skip gettext-based translation strings -- not needed for
+# keymap compilation itself, and keeps this build free of a gettext
+# toolchain dependency.
+build() {
+    cd xkeyboard-config-$pkgver
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        -Dnls=false \
+        -Dcompat-rules=true \
+        -Dxorg-rules-symlinks=false \
+        -Dnon-latin-layouts-list=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/share"
+    cp -a "$inst/share/X11" "$PAYLOAD_DIR/share/"
+    cp -a "$inst/share/xkeyboard-config-2" "$PAYLOAD_DIR/share/"
+}

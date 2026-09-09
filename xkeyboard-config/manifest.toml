@@ -1,0 +1,28 @@
+[package]
+name             = "xkeyboard-config"
+version          = "2.48"
+description      = "X/Wayland keyboard configuration database (rules/symbols/keycodes/compat/types)"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/xkeyboard-config/xkeyboard-config"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["xkeyboard-config"]
+tags             = ["base", "data", "input"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
