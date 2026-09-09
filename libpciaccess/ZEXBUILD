@@ -1,0 +1,32 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libpciaccess
+pkgver=0.19
+pkgrel=0
+subpackages="libpciaccess-dev"
+source="https://gitlab.freedesktop.org/xorg/lib/libpciaccess/-/archive/libpciaccess-$pkgver/libpciaccess-libpciaccess-$pkgver.tar.gz"
+sha256sums="ae2d080c8394d2b36a54aed270bc826f1438e41e7daf783ca5cff60285529ae2  libpciaccess-libpciaccess-$pkgver.tar.gz"
+makedepends="meson ninja pkgconf"
+
+build() {
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+
+    mkdir -p "$STAGING_ROOT/_libpciaccess-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_libpciaccess-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_libpciaccess-dev/pkgconfig"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_libpciaccess-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_libpciaccess-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
