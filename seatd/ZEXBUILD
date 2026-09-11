@@ -9,6 +9,7 @@ makedepends="meson ninja"
 needs_toolchain="systemd systemd-dev"
 
 build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
