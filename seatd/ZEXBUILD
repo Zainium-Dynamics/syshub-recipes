@@ -6,7 +6,7 @@ subpackages="seatd-dev"
 source="https://github.com/kennylevinsen/seatd/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="302564d54d8e28191fadfd734f2675ecb0c9e0615a58011b89ef15dfa4dbaa96  $pkgver.tar.gz"
 makedepends="meson ninja"
-needs_toolchain="systmed systemd-dev"
+needs_toolchain="systemd systemd-dev"
 
 build() {
     meson setup builddir \
