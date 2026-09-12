@@ -1,0 +1,69 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=networkmanager
+pkgver=1.58.1
+pkgrel=0
+source="https://download.gnome.org/sources/NetworkManager/1.58/NetworkManager-$pkgver.tar.gz"
+sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
+makedepends="meson ninja pkgconf glib-dev dbus-dev libndp-dev util-linux-dev jansson-dev curl-dev libpsl-dev readline-dev gobject-introspection-dev vala"
+needs_toolchain="systemd systemd-dev dbus dbus-dev util-linux util-linux-dev"
+
+build() {
+    cd "NetworkManager-$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --libdir=/overlayer/syshub/lib \
+        -Dsystemd_journal=true \
+        -Dsystemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        -Ddbus_conf_dir=/overlayer/syshub/etc/dbus-1/system.d \
+        -Dcrypto=null \
+        -Dselinux=false \
+        -Dpolkit=false \
+        -Dmodify_system=true \
+        -Dsession_tracking=systemd \
+        -Dsuspend_resume=systemd \
+        -Ddhcpcanon=false \
+        -Ddhcpcd=false \
+        -Dppp=false \
+        -Dmodem_manager=false \
+        -Dbluez5_dun=false \
+        -Dteamdctl=false \
+        -Dqt=false \
+        -Dnmtui=true \
+        -Dnmcli=true \
+        -Dintrospection=false \
+        -Dvapi=false \
+        -Ddocs=false \
+        -Dtests=no
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+
+    is_text_file() {
+        case "$(file -b --mime-type "$1")" in
+            text/*) return 0 ;;
+            *) return 1 ;;
+        esac
+    }
+
+    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
+        sed -i \
+            -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
+            -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/bin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/share/#/overlayer/syshub/share/#g' \
+            -e 's#/usr/#/overlayer/syshub/#g' \
+            "$f"
+    done
+
+    for f in $(grep -rIl '/var/' "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
+        sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
+    done
+}
