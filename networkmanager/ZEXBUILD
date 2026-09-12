@@ -18,6 +18,7 @@ meson setup builddir \
         --libdir=/overlayer/syshub/lib \
         -Dsystemd_journal=true \
         -Dsystemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        -Dsystemd_user_generator_dir=/overlayer/syshub/lib/systemd/user-generators \
         -Ddbus_conf_dir=/overlayer/syshub/etc/dbus-1/system.d \
         -Dcrypto=gnutls \
         -Dselinux=false \
