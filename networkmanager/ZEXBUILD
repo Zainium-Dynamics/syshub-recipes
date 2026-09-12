@@ -9,6 +9,7 @@ needs_toolchain="systemd systemd-dev dbus dbus-dev util-linux"
 
 build() {
     cd "NetworkManager-$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 meson setup builddir \
@@ -18,7 +19,6 @@ meson setup builddir \
         --libdir=/overlayer/syshub/lib \
         -Dsystemd_journal=true \
         -Dsystemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
-        -Dsystemd_user_generator_dir=/overlayer/syshub/lib/systemd/user-generators \
         -Ddbus_conf_dir=/overlayer/syshub/etc/dbus-1/system.d \
         -Dcrypto=gnutls \
         -Dselinux=false \
