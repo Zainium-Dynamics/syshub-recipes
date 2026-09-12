@@ -28,7 +28,6 @@ meson setup builddir \
         -Diwd=true \
         -Dwext=false \
         -Dwifi=true \
-        -Ddhcpcanon=false \
         -Ddhcpcd=false \
         -Dppp=false \
         -Dmodem_manager=false \
