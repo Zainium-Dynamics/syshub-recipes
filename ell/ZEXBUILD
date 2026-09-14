@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=ell
+pkgver=0.83
+pkgrel=0
+subpackages="ell-dev"
+makedepends="autoconf automake libtool pkgconf git"
+
+build() {
+    git clone --branch "$pkgver" --depth 1 https://git.kernel.org/pub/scm/libs/ell/ell.git "ell-$pkgver"
+    cd "ell-$pkgver"
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    ./bootstrap
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --libdir=/overlayer/syshub/lib \
+        --disable-glib
+    make -j"$(nproc)"
+}
+
+package() {
+    make -C "ell-$pkgver" install DESTDIR="$PAYLOAD_DIR"
+
+    mkdir -p "$STAGING_ROOT/_ell-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_ell-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_ell-dev/pkgconfig"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_ell-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_ell-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
