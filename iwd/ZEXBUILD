@@ -3,7 +3,7 @@ pkgname=iwd
 pkgver=3.12
 pkgrel=0
 makedepends="autoconf automake libtool pkgconf git readline-dev"
-needs_toolchain="ell ell-dev dbus dbus-dev"
+needs_toolchain="dbus dbus-dev"
 
 build() {
     git clone --branch "$pkgver" --depth 1 https://git.kernel.org/pub/scm/network/wireless/iwd.git "iwd-$pkgver"
@@ -16,7 +16,6 @@ build() {
         --sysconfdir=/overlayer/syshub/etc \
         --libdir=/overlayer/syshub/lib \
         --localstatedir=/overlayer/syshub/var \
-        --enable-external-ell \
         --enable-wired \
         --disable-manual-pages \
         --with-dbus-datadir=/overlayer/syshub/share \
@@ -28,7 +27,7 @@ build() {
 }
 
 package() {
-    make -C "iwd-$pkgver" install DESTDIR="$PAYLOAD_DIR"
+    make install DESTDIR="$PAYLOAD_DIR"
 
     is_text_file() {
         case "$(file -b --mime-type "$1")" in
