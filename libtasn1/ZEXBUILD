@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libtasn1
+pkgver=4.21.0
+pkgrel=0
+subpackages="libtasn1-dev"
+source="https://ftp.gnu.org/gnu/libtasn1/libtasn1-$pkgver.tar.gz"
+sha256sums="1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87  libtasn1-$pkgver.tar.gz"
+
+build() {
+    cd "libtasn1-$pkgver"
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --enable-shared \
+        --disable-static \
+        --disable-doc
+    make -j"$(nproc)"
+}
+
+package() {
+    make install DESTDIR="$PAYLOAD_DIR"
+
+    mkdir -p "$STAGING_ROOT/_libtasn1-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_libtasn1-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_libtasn1-dev/pkgconfig"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* "$PAYLOAD_DIR/overlayer/syshub/bin/"* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_libtasn1-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_libtasn1-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
