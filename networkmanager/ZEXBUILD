@@ -22,12 +22,14 @@ build() {
         -Dcrypto=null \
         -Dselinux=false \
         -Dpolkit=false \
+        -Dpolkit_noauth_group=wheel \
         -Dmodify_system=true \
         -Dsession_tracking=systemd \
         -Dsuspend_resume=systemd \
         -Diwd=true \
         -Dwext=false \
         -Dwifi=true \
+        -Dconfig_wifi_backend_default=iwd \
         -Ddhcpcd=false \
         -Dppp=false \
         -Dmodem_manager=false \
