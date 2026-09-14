@@ -1,0 +1,32 @@
+[package]
+name             = "networkmanager"
+version          = "1.58.1"
+description      = "Network connection manager and user applications"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://networkmanager.dev/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "dbus", "systemd"]
+provides         = ["networkmanager", "nmcli", "nmtui", "NetworkManager"]
+tags             = ["base", "network"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+var     = "/overlayer/syshub/var"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
