@@ -1,0 +1,32 @@
+[package]
+name             = "iwd"
+version          = "3.12"
+description      = "Internet Wireless Daemon"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://git.kernel.org/pub/scm/network/wireless/iwd.git"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "dbus"]
+provides         = ["iwd", "iwctl", "iwmon"]
+tags             = ["base", "network"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+var     = "/overlayer/syshub/var"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
