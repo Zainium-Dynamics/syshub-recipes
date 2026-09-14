@@ -6,6 +6,7 @@ makedepends="autoconf automake libtool pkgconf git readline-dev"
 needs_toolchain="dbus dbus-dev"
 
 build() {
+    git clone --branch 0.83 --depth 1 https://git.kernel.org/pub/scm/libs/ell/ell.git ell
     git clone --branch "$pkgver" --depth 1 https://git.kernel.org/pub/scm/network/wireless/iwd.git "iwd-$pkgver"
     cd "iwd-$pkgver"
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
