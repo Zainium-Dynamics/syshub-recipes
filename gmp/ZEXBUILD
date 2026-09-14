@@ -8,11 +8,12 @@ sha256sums="a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898  gm
 
 build() {
     unset LDFLAGS
-    CFLAGS="-O2" ./configure \
+    ./configure \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
-        --disable-static
+        --disable-static \
+        --disable-assembly
     make -j"$(nproc)" LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 }
 
