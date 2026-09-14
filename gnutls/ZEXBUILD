@@ -15,6 +15,7 @@ build() {
         --disable-static \
         --without-p11-kit \
         --without-idn \
+        --with-included-unistring \
         --disable-libdane \
         --disable-doc \
         --disable-tests \
