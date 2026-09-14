@@ -7,7 +7,6 @@ source="https://ftp.gnu.org/gnu/libtasn1/libtasn1-$pkgver.tar.gz"
 sha256sums="1d8a444a223cc5464240777346e125de51d8e6abf0b8bac742ac84609167dc87  libtasn1-$pkgver.tar.gz"
 
 build() {
-    cd "libtasn1-$pkgver"
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
     ./configure \
         --prefix=/overlayer/syshub \
