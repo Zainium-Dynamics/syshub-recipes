@@ -4,7 +4,7 @@ pkgver=1.58.1
 pkgrel=0
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
-makedepends="meson ninja pkgconf glib-dev dbus-dev libndp-dev util-linux-dev jansson-dev curl-dev libpsl-dev readline-dev gobject-introspection-dev vala gnutls-dev bluez-dev libteam-dev"
+makedepends="meson ninja pkgconf glib-dev dbus-dev libndp-dev util-linux-dev jansson-dev curl-dev libpsl-dev readline-dev gobject-introspection-dev vala gnutls-dev bluez-dev libteam-dev eudev-dev"
 needs_toolchain="systemd systemd-dev dbus dbus-dev util-linux"
 
 build() {
