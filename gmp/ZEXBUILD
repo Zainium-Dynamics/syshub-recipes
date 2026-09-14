@@ -14,7 +14,8 @@ build() {
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
-        --disable-static
+        --disable-static \
+    || { echo "---- config.log tail ----"; tail -150 config.log; exit 1; }
     make -j"$(nproc)" LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 }
 
