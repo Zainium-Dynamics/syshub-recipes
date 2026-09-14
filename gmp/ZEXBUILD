@@ -12,7 +12,7 @@ build() {
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
         --disable-static
-    make -j"$(nproc)"
+    make -j"$(nproc)" LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 }
 
 package() {
