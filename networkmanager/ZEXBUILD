@@ -75,4 +75,11 @@ package() {
         is_text_file "$f" || continue
         sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
     done
+
+    find "$PAYLOAD_DIR" -name '*.service' -exec sed -i \
+        -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
+        -e 's#/usr/bin/#/overlayer/syshub/bin/#g' \
+        -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
+        -e 's#/usr/#/overlayer/syshub/#g' \
+        {} +
 }
