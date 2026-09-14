@@ -6,8 +6,9 @@ subpackages="gmp-dev"
 source="https://ftp.gnu.org/gnu/gmp/gmp-$pkgver.tar.xz"
 sha256sums="a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898  gmp-$pkgver.tar.xz"
 
-# -std=gnu89: gmp's own configure-time probe calls void g(){} with args,
-# legal K&R C but a hard error under gcc 14+'s default dialect
+# -std=gnu89 only for configure's own probe (calls void g(){} with args,
+# legal K&R C but a hard error under gcc 14+'s default dialect) -- real
+# build needs C99+ back (compute_powtab.c uses for-loop declarations)
 build() {
     unset LDFLAGS
     CFLAGS="-O2 -std=gnu89" ./configure \
@@ -15,7 +16,9 @@ build() {
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
         --disable-static
-    make -j"$(nproc)" LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    make -j"$(nproc)" \
+        CFLAGS="-O2" \
+        LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 }
 
 package() {
