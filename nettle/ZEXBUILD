@@ -8,7 +8,6 @@ sha256sums="3addbc00da01846b232fb3bc453538ea5468da43033f21bb345cb1e9073f5094  ne
 needs_toolchain="gmp gmp-dev"
 
 build() {
-    cd "nettle-$pkgver"
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
     ./configure \
