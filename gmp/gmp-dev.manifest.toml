@@ -1,0 +1,29 @@
+[package]
+name             = "gmp-dev"
+version          = "6.3.0"
+description      = "gmp headers, pkgconfig"
+license          = "LGPL-3.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gmplib.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["gmp"]
+provides         = ["gmp-dev"]
+tags             = ["base", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
