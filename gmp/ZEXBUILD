@@ -6,16 +6,15 @@ subpackages="gmp-dev"
 source="https://ftp.gnu.org/gnu/gmp/gmp-$pkgver.tar.xz"
 sha256sums="a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898  gmp-$pkgver.tar.xz"
 
-# -fwrapv: gmp's own configure-time long-long probe has signed-overflow
-# UB that gcc 15+ optimizes into a wrong answer, failing the probe
+# -std=gnu89: gmp's own configure-time probe calls void g(){} with args,
+# legal K&R C but a hard error under gcc 14+'s default dialect
 build() {
     unset LDFLAGS
-    CFLAGS="-O2 -fwrapv" ./configure \
+    CFLAGS="-O2 -std=gnu89" ./configure \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
-        --disable-static \
-    || { echo "---- config.log tail ----"; tail -150 config.log; exit 1; }
+        --disable-static
     make -j"$(nproc)" LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
 }
 
