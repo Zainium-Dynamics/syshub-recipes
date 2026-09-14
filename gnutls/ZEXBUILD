@@ -1,0 +1,42 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=gnutls
+pkgver=3.8.13
+pkgrel=0
+subpackages="gnutls-dev"
+source="https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-$pkgver.tar.xz"
+sha256sums="ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e  gnutls-$pkgver.tar.xz"
+makedepends="gmp-dev nettle-dev libtasn1-dev zlib-dev"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --enable-shared \
+        --disable-static \
+        --without-p11-kit \
+        --without-idn \
+        --with-included-unistring \
+        --disable-libdane \
+        --disable-doc \
+        --disable-tests \
+        --disable-full-test-suite \
+        --disable-guile
+    make -j"$(nproc)" LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+}
+
+package() {
+    make install DESTDIR="$PAYLOAD_DIR"
+
+    mkdir -p "$STAGING_ROOT/_gnutls-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_gnutls-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_gnutls-dev/pkgconfig"
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* "$PAYLOAD_DIR/overlayer/syshub/bin/"* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_gnutls-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_gnutls-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
