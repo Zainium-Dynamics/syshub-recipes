@@ -45,6 +45,7 @@ build() {
         -Dintrospection=false \
         -Dvapi=false \
         -Ddocs=false \
+        -Dman=false \
         -Dtests=no
     ninja -C builddir
 }
