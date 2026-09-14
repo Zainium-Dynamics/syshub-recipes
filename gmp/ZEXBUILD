@@ -7,13 +7,7 @@ source="https://ftp.gnu.org/gnu/gmp/gmp-$pkgver.tar.xz"
 sha256sums="a3c2b80201b89e68616f4ad30bc66aee4927c3ce50e33929ca819d5c43538898  gmp-$pkgver.tar.xz"
 needs_toolchain="musl gcc-musl"
 
-# Alpine's own gcc fails GMP's own "long long reliability" self-test
-# (compiled-and-executed probe) under every ABI/flag combo it tries,
-# on this CI host -- switching to our own published gcc-musl-cross
-# (same toolchain binutils/gcc-16 use) and telling configure this is a
-# real --host cross-build skips that probe entirely (can't execute a
-# zainium-target binary as part of ./configure on an Alpine build
-# machine, so it falls back to GMP's own known-good ABI defaults).
+# real --host cross-build skips GMP's failing self-exec compiler probe
 build() {
     unset LDFLAGS
     local sysroot="/overlayer/syshub"
