@@ -1,0 +1,29 @@
+[package]
+name             = "networkmanager-dev"
+version          = "1.58.1"
+description      = "networkmanager headers, pkgconfig"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://networkmanager.dev/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["networkmanager"]
+provides         = ["networkmanager-dev"]
+tags             = ["base", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
