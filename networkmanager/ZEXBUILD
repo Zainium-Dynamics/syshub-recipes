@@ -2,6 +2,7 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=networkmanager
 pkgver=1.58.1
 pkgrel=0
+subpackages="networkmanager-dev"
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
 makedepends="meson ninja pkgconf glib-dev dbus-dev libndp-dev util-linux-dev jansson-dev curl-dev libpsl-dev readline-dev gnutls-dev bluez-dev libteam-dev eudev-dev"
@@ -82,4 +83,14 @@ package() {
         -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
         -e 's#/usr/#/overlayer/syshub/#g' \
         {} +
+
+    mkdir -p "$STAGING_ROOT/_networkmanager-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_networkmanager-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_networkmanager-dev/pkgconfig"
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_networkmanager-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_networkmanager-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
 }
