@@ -5,9 +5,10 @@ pkgrel=0
 subpackages="gnutls-dev"
 source="https://www.gnupg.org/ftp/gcrypt/gnutls/v3.8/gnutls-$pkgver.tar.xz"
 sha256sums="ffed8ec1bf09c2426d4f14aae377de4753b53e537d685e604e99a8b16ca9c97e  gnutls-$pkgver.tar.xz"
-makedepends="gmp-dev nettle-dev libtasn1-dev zlib-dev"
+needs_toolchain="gmp gmp-dev nettle nettle-dev libtasn1 libtasn1-dev zlib zlib-dev"
 
 build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     ./configure \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
