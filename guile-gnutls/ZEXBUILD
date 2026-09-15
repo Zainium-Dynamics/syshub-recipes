@@ -1,0 +1,23 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=guile-gnutls
+pkgver=5.0.2
+pkgrel=0
+source="guile-gnutls-v$pkgver-src.tar.gz"
+sha256sums="4ff6d57b9444c99b0d969eba52d51c80c4fcba7aec6b610c0ccc7d1613153bbc  guile-gnutls-v$pkgver-src.tar.gz"
+makedepends="autoconf automake libtool pkgconf gettext texinfo guile-dev gnutls-dev"
+needs_toolchain="gnutls gnutls-dev"
+
+build() {
+    cd "guile-gnutls-v$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    autoreconf -vif
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib
+    make -j"$(nproc)"
+}
+
+package() {
+    make install DESTDIR="$PAYLOAD_DIR"
+    find "$PAYLOAD_DIR" -name '*.la' -delete
+}

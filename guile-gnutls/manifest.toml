@@ -1,0 +1,29 @@
+[package]
+name             = "guile-gnutls"
+version          = "5.0.2"
+description      = "Guile bindings for GnuTLS"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://codeberg.org/guile-gnutls/guile-gnutls"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "gnutls"]
+provides         = ["guile-gnutls"]
+tags             = ["base", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
