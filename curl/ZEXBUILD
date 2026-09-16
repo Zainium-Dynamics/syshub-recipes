@@ -21,7 +21,7 @@ build() {
         -DCURL_ZSTD=ON \
         -DUSE_NGHTTP2=OFF \
         -DCURL_USE_LIBPSL=OFF \
-        -DCURL_USE_LIBIDN2=OFF \
+        -DUSE_LIBIDN2=OFF \
         -DENABLE_ARES=OFF \
         -DCURL_DISABLE_LDAP=ON \
         -DCURL_CA_BUNDLE=/overlayer/syshub/etc/ssl/certs/ca-certificates.crt \
