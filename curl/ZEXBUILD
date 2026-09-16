@@ -42,5 +42,4 @@ dev() {
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
-    cp -a "$inst"/lib/cmake "$PAYLOAD_DIR/lib/" 2>/dev/null || true
 }
