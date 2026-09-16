@@ -1,6 +1,6 @@
 [package]
 name             = "curl-dev"
-version          = "8.21.0"
+version          = "8.22.0"
 description      = "curl headers, pkgconfig"
 license          = "curl"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"

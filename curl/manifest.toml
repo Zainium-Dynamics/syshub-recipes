@@ -1,6 +1,6 @@
 [package]
 name             = "curl"
-version          = "8.21.0"
+version          = "8.22.0"
 description      = "URL retrieval utility and library"
 license          = "curl"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["openssl", "zlib"]
+depends          = ["openssl", "zlib", "zstd"]
 provides         = ["curl", "libcurl"]
 tags             = ["base", "network"]
 
