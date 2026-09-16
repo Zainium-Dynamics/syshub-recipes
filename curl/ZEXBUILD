@@ -1,16 +1,15 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=curl
-pkgver=8.21.0
+pkgver=8.22.0
 pkgrel=0
 subpackages="curl-dev"
-source="https://github.com/curl/curl/archive/refs/tags/curl-8_21_0.tar.gz"
-sha256sums="ec753aa6f408a3ca9f0d6d5f7a77417aecd1544db13c03ae5d443612bf367364  curl-8_21_0.tar.gz"
-makedepends="brotli-dev c-ares-dev libidn2-dev libpsl-dev nghttp2-dev openssl-dev zlib-dev zstd-dev cmake"
+source="https://github.com/curl/curl/releases/download/curl-8_22_0/curl-$pkgver.tar.gz"
+sha256sums="d54dd598bf05927a726deb38df31c6a255ba83ff1de57c5d1464dac3ed8f44a1  curl-$pkgver.tar.gz"
+makedepends="cmake"
+needs_toolchain="openssl openssl-dev zlib zlib-dev zstd zstd-dev"
 
-# GitHub tag archive has no pre-generated ./configure -- CMakeLists.txt
-# is real and shipped, use that instead of pulling in autoreconf.
 build() {
-    cd curl-curl-8_21_0
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     cmake -B builddir -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
         -DCMAKE_INSTALL_LIBDIR=lib \
@@ -18,15 +17,15 @@ build() {
         -DBUILD_CURL_EXE=ON \
         -DCURL_USE_OPENSSL=ON \
         -DCURL_ZLIB=ON \
-        -DCURL_BROTLI=ON \
+        -DCURL_BROTLI=OFF \
         -DCURL_ZSTD=ON \
-        -DUSE_NGHTTP2=ON \
-        -DCURL_USE_LIBPSL=ON \
-        -DCURL_USE_LIBIDN2=ON \
-        -DENABLE_ARES=ON \
+        -DUSE_NGHTTP2=OFF \
+        -DCURL_USE_LIBPSL=OFF \
+        -DCURL_USE_LIBIDN2=OFF \
+        -DENABLE_ARES=OFF \
         -DCURL_DISABLE_LDAP=ON \
-        -DCURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt \
-        -DCURL_CA_PATH=/etc/ssl/certs
+        -DCURL_CA_BUNDLE=/overlayer/syshub/etc/ssl/certs/ca-certificates.crt \
+        -DCURL_CA_PATH=/overlayer/syshub/etc/ssl
     ninja -C builddir
     DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
 }
@@ -43,5 +42,4 @@ dev() {
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
-    cp -a "$inst"/lib/cmake "$PAYLOAD_DIR/lib/" 2>/dev/null || true
 }
