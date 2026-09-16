@@ -1,0 +1,37 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libnl3
+pkgver=3.12.0
+pkgrel=0
+subpackages="libnl3-dev"
+source="https://github.com/thom311/libnl/archive/refs/tags/libnl3_12_0.tar.gz"
+sha256sums="a0dee52ff800a74cffbd02d64950ab7149a1df642dbdb4d601f66727b14ad021  libnl3_12_0.tar.gz"
+makedepends="autoconf automake libtool pkgconf flex bison"
+
+build() {
+    cd libnl-libnl3_12_0
+    ./autogen.sh
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --sysconfdir=/overlayer/syshub/etc \
+        --enable-shared \
+        --disable-static
+    make -j"$(nproc)"
+}
+
+package() {
+    make install DESTDIR="$PAYLOAD_DIR"
+
+    mkdir -p "$STAGING_ROOT/_libnl3-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_libnl3-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_libnl3-dev/pkgconfig"
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* "$PAYLOAD_DIR/overlayer/syshub/bin/"* "$PAYLOAD_DIR/overlayer/syshub/sbin/"* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_libnl3-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_libnl3-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
