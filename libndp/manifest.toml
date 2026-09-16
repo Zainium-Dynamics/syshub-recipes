@@ -1,0 +1,28 @@
+[package]
+name             = "libndp"
+version          = "1.9"
+description      = "IPv6 Neighbor Discovery Protocol library"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/jpirko/libndp"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["libndp"]
+tags             = ["base", "library", "network"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
