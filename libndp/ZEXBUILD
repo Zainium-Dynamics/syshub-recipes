@@ -12,6 +12,8 @@ build() {
     export CC="/overlayer/syshub/bin/x86_64-zainium-linux-musl-gcc"
     ./autogen.sh
     CFLAGS="-Wno-error=incompatible-pointer-types" ./configure \
+        --build="$(gcc -dumpmachine)" \
+        --host=x86_64-zainium-linux-musl \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
