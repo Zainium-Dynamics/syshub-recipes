@@ -3,11 +3,12 @@ pkgname=libpng
 pkgver=1.6.58
 pkgrel=0
 subpackages="libpng-dev"
-source="https://sourceforge.net/projects/libpng/files/libpng16/$pkgver/libpng-$pkgver.tar.xz"
-sha256sums="28eb403f51f0f7405249132cecfe82ea5c0ef97f1b32c5a65828814ae0d34775  libpng-$pkgver.tar.xz"
-makedepends="zlib-dev"
+source="https://github.com/pnggroup/libpng/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="a9d4df463d36a6e5f9c29bd6f4967312d17e996c1854f3511f833924eb1993cf  v$pkgver.tar.gz"
+needs_toolchain="zlib zlib-dev"
 
 build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
