@@ -1,0 +1,32 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=brotli
+pkgver=1.2.0
+pkgrel=0
+subpackages="brotli-dev"
+source="https://github.com/google/brotli/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="816c96e8e8f193b40151dad7e8ff37b1221d019dbcb9c35cd3fadbfe6477dfec  v$pkgver.tar.gz"
+makedepends="cmake"
+
+build() {
+    cmake -B builddir -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBROTLI_DISABLE_TESTS=ON
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name '*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp -a "$inst/bin/"* "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}
