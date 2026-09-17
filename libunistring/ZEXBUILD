@@ -1,0 +1,33 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libunistring
+pkgver=1.4.2
+pkgrel=0
+subpackages="libunistring-dev"
+source="https://ftp.gnu.org/gnu/libunistring/libunistring-$pkgver.tar.gz"
+sha256sums="e82664b170064e62331962126b259d452d53b227bb4a93ab20040d846fec01d8  libunistring-$pkgver.tar.gz"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --enable-shared \
+        --disable-static
+    make -j"$(nproc)"
+}
+
+package() {
+    make install DESTDIR="$PAYLOAD_DIR"
+
+    mkdir -p "$STAGING_ROOT/_libunistring-dev/pkgconfig"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_libunistring-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig/." "$STAGING_ROOT/_libunistring-dev/pkgconfig/" 2>/dev/null || true
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_libunistring-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_libunistring-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}

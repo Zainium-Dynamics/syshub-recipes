@@ -1,0 +1,40 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=p11-kit
+pkgver=0.26.5
+pkgrel=0
+subpackages="p11-kit-dev"
+source="https://github.com/p11-glue/p11-kit/releases/download/$pkgver/p11-kit-$pkgver.tar.xz"
+sha256sums="f2cc09111e44bf3fea58f023180b33acea90aa82d042d6fbb623fbc5ba033bb7  p11-kit-$pkgver.tar.xz"
+makedepends="meson ninja pkgconf libffi-dev"
+needs_toolchain="libtasn1 libtasn1-dev"
+
+build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dsystemd=disabled \
+        -Dbash_completion=disabled \
+        -Dzsh_completion=disabled \
+        -Dman=false \
+        -Dnls=false \
+        -Dgtk_doc=false
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+
+    mkdir -p "$STAGING_ROOT/_p11-kit-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_p11-kit-dev/include"
+    mv "$PAYLOAD_DIR/overlayer/syshub/lib/pkgconfig" "$STAGING_ROOT/_p11-kit-dev/pkgconfig"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* "$PAYLOAD_DIR/overlayer/syshub/bin/"* "$PAYLOAD_DIR/overlayer/syshub/libexec/"p11-kit/* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_p11-kit-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_p11-kit-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
