@@ -22,7 +22,6 @@ build() {
 }
 
 package() {
-    cd gettext-runtime
     make install DESTDIR="$PAYLOAD_DIR"
 
     mkdir -p "$STAGING_ROOT/_gettext-dev"
