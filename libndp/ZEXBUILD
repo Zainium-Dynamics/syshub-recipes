@@ -6,14 +6,10 @@ subpackages="libndp-dev"
 source="https://github.com/jpirko/libndp/archive/refs/tags/v$pkgver.tar.gz"
 sha256sums="e564f5914a6b1b799c3afa64c258824a801c1b79a29e2fe6525b682249c65261  v$pkgver.tar.gz"
 makedepends="autoconf automake libtool pkgconf"
-needs_toolchain="musl gcc-musl"
 
 build() {
-    export CC="/overlayer/syshub/bin/x86_64-zainium-linux-musl-gcc"
     ./autogen.sh
     CFLAGS="-Wno-error=incompatible-pointer-types" ./configure \
-        --build="$(gcc -dumpmachine)" \
-        --host=x86_64-zainium-linux-musl \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
         --enable-shared \
