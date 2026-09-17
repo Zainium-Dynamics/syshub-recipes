@@ -1,0 +1,38 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=gettext
+pkgver=1.0
+pkgrel=0
+subpackages="gettext-dev"
+source="https://ftp.gnu.org/gnu/gettext/gettext-$pkgver.tar.gz"
+sha256sums="85d99b79c981a404874c02e0342176cf75c7698e2b51fe41031cf6526d974f1a  gettext-$pkgver.tar.gz"
+
+build() {
+    cd gettext-runtime
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --enable-shared \
+        --disable-static \
+        --disable-java \
+        --disable-native-java \
+        --disable-openmp \
+        --disable-acl \
+        --disable-curses
+    make -j"$(nproc)"
+}
+
+package() {
+    make install DESTDIR="$PAYLOAD_DIR"
+
+    mkdir -p "$STAGING_ROOT/_gettext-dev"
+    mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_gettext-dev/include"
+
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* "$PAYLOAD_DIR/overlayer/syshub/bin/"* 2>/dev/null || true
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include"
+    cp -a "$STAGING_ROOT/_gettext-dev/include/." "$PAYLOAD_DIR/include/"
+}
