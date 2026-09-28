@@ -3,41 +3,24 @@ pkgname=elevate-privilege
 pkgver=1.0.1
 pkgrel=0
 _nightly=nightly-2026-05-24
-_commit=aa0bd25570be92d11d397c993c850d7bcce65ce6
+_commit=57ee7afb373559227a4a8f6e8b3d6e315f69b8f6
 source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/$_commit.tar.gz"
-sha256sums="6900003eafa66141073dfe52bb05a81bfda435276d50d2089d15c9c27c5be879  $_commit.tar.gz"
+sha256sums="90411eda3faa1298c92df1107225db3f9a89cac61394ac8a08b1ed772bf01b83  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
-# sudo/su + shadow-utils replacement, pure Rust, PAM-backed (elevate,
-# elev, vielev, elevate-umbra's user/group/passwd tools, elevate-pam's
-# ~26 modules, libelevate_pam.so, libelevate_crypto.so). Whole workspace
-# builds as ONE dynamic-musl artifact set against our own toolchain --
-# the custom x86_64-zainium-linux-musl target (crt-static-default=false,
-# see targets/x86_64-zainium-linux-musl.json) is what makes the PAM .so
-# modules possible at all; nightly + -Z build-std is required since no
-# prebuilt std ships for a custom target triple.
 build() {
     cd "elevate-privilege-$_commit"
 
     export PATH="/overlayer/syshub/bin:$PATH"
     export LD_LIBRARY_PATH=/usr/lib:/lib
 
-    # Alpine's rustup apk only ships rustup-init, not the rustup/cargo/
-    # rustc shims -- those only exist after the init run installs them
-    # into $HOME/.cargo/bin.
     rustup-init -y -q --default-toolchain none --profile minimal
     export PATH="$HOME/.cargo/bin:$PATH"
 
     rustup toolchain install "$_nightly" --profile minimal --component rust-src
 
-    # legacy_pamd is off by default in this workspace (elevate's own
-    # tools use TOML services under /etc/elevate-pam/services/) but is a
-    # real, working /etc/pam.d/<service> parser -- external consumers
-    # that don't know about elevate's TOML format (greetd, anything else
-    # linking pam-sys) need it on to have their /etc/pam.d/<service>
-    # files read at all.
-    cargo "+$_nightly" build --release --workspace \
+      cargo "+$_nightly" build --release --workspace \
         --features elevate-pam/legacy_pamd \
         -Z json-target-spec \
         --target targets/x86_64-zainium-linux-musl.json \
@@ -49,9 +32,6 @@ package() {
     local out="target/x86_64-zainium-linux-musl/release"
     mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/sbin" "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/etc"
 
-    # Every top-level executable cargo produced -- no hand-maintained
-    # allowlist, so nothing built ever silently goes missing. vielev and
-    # the PAM helper get their own destinations; everything else -> bin/.
     find "$out" -maxdepth 1 -type f -executable ! -name '*.so' ! -name '*.d' -print0 |
     while IFS= read -r -d '' f; do
         b="$(basename "$f")"
@@ -61,12 +41,8 @@ package() {
             *)            cp "$f" "$PAYLOAD_DIR/bin/$b" ;;
         esac
     done
-    # Every cdylib cargo produced. PAM modules (libpam_*.so) go to
-    # lib/security/ under the bare pam_*.so name modules are dlopen()'d
-    # by; libpam_misc.so is a real linked-against library (not a PAM
-    # module) despite matching that same glob, so it's special-cased
-    # ahead of it; the other library .so's stay under lib/.
-    find "$out" -maxdepth 1 -name '*.so' -print0 |
+ 
+ find "$out" -maxdepth 1 -name '*.so' -print0 |
     while IFS= read -r -d '' f; do
         b="$(basename "$f")"
         case "$b" in
@@ -74,16 +50,11 @@ package() {
                 cp "$f" "$PAYLOAD_DIR/lib/libelevate_pam.so.0"
                 ln -sf libelevate_pam.so.0 "$PAYLOAD_DIR/lib/libelevate_pam.so"
                 ;;
-            # libpam-abi: same C ABI as libelevate_pam.so, statically
-            # relinked under the real libpam.so.0 SONAME (baked in via
-            # libpam-abi's own build.rs) -- the actual drop-in for
-            # pam-sys/dlopen("libpam.so.0") consumers.
+                
             libpam.so)
                 cp "$f" "$PAYLOAD_DIR/lib/libpam.so.0"
                 ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
                 ;;
-            # libpam-misc: real Linux-PAM's misc_conv()/pam_misc_* helpers,
-            # ported from linux-pam-1.7.2 (see elevate-pam/libpam-misc).
             libpam_misc.so)
                 cp "$f" "$PAYLOAD_DIR/lib/libpam_misc.so.0"
                 ln -sf libpam_misc.so.0 "$PAYLOAD_DIR/lib/libpam_misc.so"
@@ -98,17 +69,9 @@ package() {
     mkdir -p "$PAYLOAD_DIR/etc/pam.d"
     cp elevate/pam.d/elev elevate/pam.d/elev-l elevate/pam.d/elevate "$PAYLOAD_DIR/etc/pam.d/"
 
-    # Real Linux-PAM's own public headers, vendored under
-    # elevate-pam/pam/include/security -- same ABI, so any C module
-    # (pam_systemd.c and friends) can #include these and link against
-    # libpam.so.0 directly, no Alpine linux-pam-dev borrowing needed.
     mkdir -p "$PAYLOAD_DIR/include/security"
     cp elevate-pam/pam/include/security/*.h "$PAYLOAD_DIR/include/security/"
 
-    # strip MUST run before chmod: the kernel silently clears setuid on
-    # ANY write to a file carrying that bit (unless the writer holds
-    # CAP_FSETID, which strip never does) -- stripping an already-setuid
-    # binary throws the bit away with no error. setuid goes on last.
     strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/sbin/"* "$PAYLOAD_DIR/lib/"*.so* "$PAYLOAD_DIR/lib/security/"* 2>/dev/null || true
     chmod 4755 "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/bin/elevate" 2>/dev/null || true
 }
