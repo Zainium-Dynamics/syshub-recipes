@@ -35,6 +35,18 @@ build() {
         -e 's#"/usr/lib/" n#"/overlayer/syshub/lib/" n#g' \
         src/shared/userdb-dropin.h
 
+    sed -i 's#"/usr/lib/modules"#"/overlayer/syshub/drivers/modules"#' src/core/namespace.c
+    sed -i 's#"\.\./usr/share/zoneinfo/"#"../share/zoneinfo/"#' src/basic/time-util.c
+    sed -i -E 's#"/(usr/)?s?bin/(nologin|false|true)"#"/overlayer/syshub/bin/\2"#g' src/basic/user-util.c src/basic/path-util.c
+    # remaining /etc, /usr/lib, /usr/share paths; image/container tools read other OSes, left as-is
+    find src -name '*.[ch]' |
+        grep -vE '(^|/)(test|fuzz)[^/]*/|/(test|fuzz)-|src/(boot|portable|nspawn|vmspawn|sysext|dissect|machine|import|mountfsd|nsresourced|home|kernel-install)/|discover-image|dissect-image|machine-bind-user' |
+        xargs grep -lE '"/(etc|usr/lib|usr/local/lib|usr/share|usr/local/share)/[^"]' |
+        xargs -r sed -i -E \
+            -e 's#"/etc/([^"])#"/overlayer/syshub/etc/\1#g' \
+            -e 's#"/usr/(local/)?lib/([^"])#"/overlayer/syshub/lib/\2#g' \
+            -e 's#"/usr/(local/)?share/([^"])#"/overlayer/syshub/share/\2#g'
+
     export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 
@@ -148,6 +160,8 @@ package() {
         # "/etcetera" is left alone either way.
         sed -i -E 's#/etc([[:space:],]|$)#/overlayer/syshub/etc\1#g' "$f"
     done
+
+    sed -i -e 's#^q /var #q /overlayer/syshub/var #' -e 's#^L /overlayer/syshub/var/run - - - - \.\./run$#L+ /overlayer/syshub/var/run - - - - /run#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/var.conf"
 
 
     unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"
