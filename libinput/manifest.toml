@@ -18,6 +18,9 @@ tags             = ["base", "library", "input"]
 
 [install]
 lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+bin     = "/overlayer/syshub/bin"
+libexec = "/overlayer/syshub/libexec"
 _syshub = true
 
 [remove]
