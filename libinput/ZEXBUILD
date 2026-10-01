@@ -9,7 +9,7 @@ makedepends="eudev-dev libevdev-dev mtdev-dev"
 
 build() {
     sed -i -e 's#/usr/lib/udev/hwdb.d#/overlayer/syshub/lib/udev/hwdb.d#' -e 's#/etc/udev/hwdb.d#/overlayer/syshub/etc/udev/hwdb.d#' tools/libinput-measure-fuzz.py tools/libinput-measure-touchpad-size.py
-    sed -i -e 's#/etc/libinput/plugins/#/overlayer/syshub/etc/libinput/plugins/#' -e 's#/usr/lib{64}/libinput/plugins/#/overlayer/syshub/lib/libinput/plugins/#' src/libinput.h
+    sed -i -e 's#/etc/libinput/plugins/#/overlayer/syshub/etc/libinput/plugins/#' -e 's#/usr/lib[{]64[}]/libinput/plugins/#/overlayer/syshub/lib/libinput/plugins/#' src/libinput.h
 
     meson setup builddir \
         --prefix=/overlayer/syshub \
