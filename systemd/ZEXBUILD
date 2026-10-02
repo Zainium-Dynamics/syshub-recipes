@@ -163,6 +163,9 @@ package() {
 
     sed -i -e 's#^q /var #q /overlayer/syshub/var #' -e 's#^L /overlayer/syshub/var/run - - - - \.\./run$#L+ /overlayer/syshub/var/run - - - - /run#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/var.conf"
     sed -i -E -e 's#^L /etc/os-release - - - - \.\./overlayer/syshub/lib/os-release$#L /overlayer/syshub/etc/os-release - - - - ../lib/os-release#' -e 's#^L\+ /etc/mtab - - - - \.\./proc/self/mounts$#L+ /overlayer/syshub/etc/mtab - - - - /proc/self/mounts#' -e 's#^C! /etc/([^ ]+) - - - -$#C! /overlayer/syshub/etc/\1 - - - - /overlayer/syshub/share/factory/etc/\1#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/etc.conf"
+    sed -i -E -e 's#([[:space:]])/etc/#\1/overlayer/syshub/etc/#g' -e 's#^(L!? /overlayer/syshub/etc/resolv\.conf .*) \.\./run/#\1 /run/#' "$PAYLOAD_DIR"/overlayer/syshub/lib/tmpfiles.d/*.conf
+    sed -i -e 's#^L /overlayer/syshub/var/lock - - - - \.\./run/lock$#L /overlayer/syshub/var/lock - - - - /run/lock#' -e 's#\.\./\.\./overlayer/syshub/share/doc/systemd/README\.logs$#/overlayer/syshub/share/doc/systemd/README.logs#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/legacy.conf"
+    sed -i '/^q \/srv /d' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/home.conf"
 
 
     unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"

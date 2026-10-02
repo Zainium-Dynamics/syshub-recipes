@@ -67,6 +67,8 @@ package() {
             "$f"
     done
 
+    sed -i 's# /etc/machine-id$# /overlayer/syshub/etc/machine-id#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/dbus.conf"
+
     # meson never auto-detected systemd here (no pkg-config/headers for
     # it during THIS package's own build, same bootstrap-ordering class
     # of problem util-linux/systemd have with each other) -- dbus.service
