@@ -1,0 +1,29 @@
+[package]
+name             = "polkit-dev"
+version          = "127"
+description      = "polkit headers, pkgconfig"
+license          = "LGPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/polkit-org/polkit"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["polkit"]
+provides         = ["polkit-dev"]
+tags             = ["base", "security", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
