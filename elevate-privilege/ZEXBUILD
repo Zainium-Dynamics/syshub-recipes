@@ -3,9 +3,9 @@ pkgname=elevate-privilege
 pkgver=1.0.1
 pkgrel=0
 _nightly=nightly-2026-05-24
-_commit=fa9677a235722396c67714642f07a2c24d9c5378
+_commit=1dcd4e08db3cc621a7cc38bba9d857c3c4c29866
 source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/$_commit.tar.gz"
-sha256sums="c2edf0904ae32dec50010dfbe2f8ddbbf5a411c20304e7bd35c993811ddcf9d9  $_commit.tar.gz"
+sha256sums="83387454c0e3061830376bbafd404f748d6c19e3635ecf03fc4beeeb83f53a72  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
