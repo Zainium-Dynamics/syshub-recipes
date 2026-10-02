@@ -57,6 +57,9 @@ password   required     pam_unix.so
 session    required     pam_unix.so
 EOF
 
+    mkdir -p "$p/libexec"
+    ln -sf ../lib/polkit-1/polkit-agent-helper-1 "$p/libexec/polkit-agent-helper-1"
+
     mkdir -p "$p/lib/systemd/system/sockets.target.wants"
     ln -sf ../polkit-agent-helper.socket "$p/lib/systemd/system/sockets.target.wants/polkit-agent-helper.socket"
 
