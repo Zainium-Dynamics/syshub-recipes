@@ -162,6 +162,7 @@ package() {
     done
 
     sed -i -e 's#^q /var #q /overlayer/syshub/var #' -e 's#^L /overlayer/syshub/var/run - - - - \.\./run$#L+ /overlayer/syshub/var/run - - - - /run#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/var.conf"
+    sed -i -E -e 's#^L /etc/os-release - - - - \.\./overlayer/syshub/lib/os-release$#L /overlayer/syshub/etc/os-release - - - - ../lib/os-release#' -e 's#^L\+ /etc/mtab - - - - \.\./proc/self/mounts$#L+ /overlayer/syshub/etc/mtab - - - - /proc/self/mounts#' -e 's#^C! /etc/([^ ]+) - - - -$#C! /overlayer/syshub/etc/\1 - - - - /overlayer/syshub/share/factory/etc/\1#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/etc.conf"
 
 
     unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"
