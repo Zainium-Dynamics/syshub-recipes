@@ -48,5 +48,9 @@ package() {
             "$f"
     done
 
-    strip "$PAYLOAD_DIR/overlayer/syshub/bin/"* "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* 2>/dev/null || true
+    unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"
+    mkdir -p "$unitdir/multi-user.target.wants"
+    ln -sf ../iwd.service "$unitdir/multi-user.target.wants/iwd.service"
+
+    strip "$PAYLOAD_DIR/overlayer/syshub/bin/"* "$PAYLOAD_DIR/overlayer/syshub/libexec/"* "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* 2>/dev/null || true
 }
