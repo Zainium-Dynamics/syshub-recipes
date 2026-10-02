@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=systemd
 pkgver=261.2
-pkgrel=0
+pkgrel=1
 subpackages="$pkgname-dev"
 source="https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz"
 sha256sums="ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec  v$pkgver.tar.gz"
