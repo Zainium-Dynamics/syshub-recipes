@@ -23,6 +23,8 @@ dev() {
     local inst="$SRCDIR/duktape-$pkgver/_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    # duk_config.h only mentions QNX toolchain paths (/opt/qnx650/.../usr/...) in comments
+    sed -i 's#/usr/#/#g' "$PAYLOAD_DIR"/include/*.h
     cp -P "$inst"/lib/libduktape.so "$PAYLOAD_DIR/lib/"
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
 }
