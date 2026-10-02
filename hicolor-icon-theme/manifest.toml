@@ -1,0 +1,28 @@
+[package]
+name             = "hicolor-icon-theme"
+version          = "0.18"
+description      = "Default fallback icon theme (hicolor index.theme and directory layout)"
+license          = "GPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/xdg/default-icon-theme"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["hicolor-icon-theme"]
+tags             = ["base", "data", "icons"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

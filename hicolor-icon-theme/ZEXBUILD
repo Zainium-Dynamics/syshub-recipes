@@ -1,0 +1,20 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=hicolor-icon-theme
+pkgver=0.18
+pkgrel=0
+source="https://gitlab.freedesktop.org/xdg/default-icon-theme/-/archive/v$pkgver/default-icon-theme-v$pkgver.tar.gz"
+sha256sums="9227ec70c6b59a715a18dcedbed590cb08edc9eadb73fb2b0a57034e15c18f36  default-icon-theme-v$pkgver.tar.gz"
+makedepends="meson ninja"
+
+build() {
+    cd "default-icon-theme-v$pkgver"
+    meson setup builddir --prefix=/overlayer/syshub
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/share/icons"
+    cp -a "$inst/share/icons/hicolor" "$PAYLOAD_DIR/share/icons/"
+}
