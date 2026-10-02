@@ -4,7 +4,6 @@ pkgver=3.14.8
 pkgrel=0
 subpackages="$pkgname-dev"
 source="https://www.python.org/ftp/python/$pkgver/Python-$pkgver.tar.xz"
-sha256sums="143b1dddefaec3bd2e21e3b839b34a2b7fb9842272883c576420d605e9f30c63  Python-$pkgver.tar.xz"
 makedepends="bzip2-dev expat-dev libffi-dev linux-headers mpdecimal-dev musl-libintl ncurses-dev openssl-dev readline-dev sqlite-dev xz-dev zlib-dev"
 
 build() {
