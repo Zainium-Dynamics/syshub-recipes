@@ -1,0 +1,32 @@
+[package]
+name             = "polkit"
+version          = "127"
+description      = "Authorization manager (polkitd, pkexec, agent helper) for unprivileged system actions"
+license          = "LGPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/polkit-org/polkit"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib", "expat", "duktape", "systemd", "dbus"]
+provides         = ["polkit", "polkitd", "pkexec", "pkaction", "pkcheck", "pkttyagent", "libpolkit-gobject-1", "libpolkit-agent-1"]
+tags             = ["base", "security", "authorization"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

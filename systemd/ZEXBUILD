@@ -76,7 +76,7 @@ build() {
         -Dsmack=false \
         -Dima=false \
         -Dipe=false \
-        -Dpolkit=disabled \
+        -Dpolkit=enabled \
         -Daudit=disabled \
         -Dxenctrl=disabled \
         -Dacl=disabled \

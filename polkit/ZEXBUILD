@@ -1,0 +1,95 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=polkit
+pkgver=127
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://github.com/polkit-org/polkit/archive/refs/tags/$pkgver.tar.gz"
+sha256sums="9b7bc16f086479dcc626c575976568ba4a85d34297a750d8ab3d2e57f6d8b988  $pkgver.tar.gz"
+makedepends="meson ninja pkgconf gettext glib-dev expat-dev duktape-dev linux-pam-dev"
+needs_toolchain="systemd systemd-dev dbus dbus-dev"
+
+build() {
+    sed -i \
+        -e 's#"/etc/polkit-1/polkitd.conf"#"/overlayer/syshub/etc/polkit-1/polkitd.conf"#' \
+        -e 's#"/usr/share/polkit-1/polkitd.conf"#"/overlayer/syshub/share/polkit-1/polkitd.conf"#' \
+        src/polkitbackend/polkitd.c
+    sed -i 's#"/usr/local/share#"/overlayer/zexlib/union/share#g' \
+        src/polkitbackend/polkitbackendduktapeauthority.c \
+        src/polkitbackend/polkitbackendinteractiveauthority.c
+    grep -rl -e '/usr/sbin:/usr/bin:/sbin:/bin' -e '/usr/bin:/bin:/usr/sbin:/sbin' src | xargs -r sed -i \
+        -e 's#/usr/sbin:/usr/bin:/sbin:/bin#/overlayer/syshub/bin#g' \
+        -e 's#/usr/bin:/bin:/usr/sbin:/sbin#/overlayer/syshub/bin#g'
+    sed -i -e 's#"/etc/shells"#"/overlayer/syshub/etc/shells"#' -e 's#"/bin/bash"#"/overlayer/syshub/bin/bash"#' src/programs/pkexec.c
+    sed -i 's# /etc/polkit-1/rules.d # /overlayer/syshub/etc/polkit-1/rules.d #' data/polkit-tmpfiles.conf.in
+
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    export LDFLAGS="-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -Wl,-rpath=/overlayer/syshub/lib"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --libdir=/overlayer/syshub/lib \
+        -Dsession_tracking=logind \
+        -Dsystemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        -Dpolkitd_user=polkitd \
+        -Dpolkitd_uid=203 \
+        -Dprivileged_group=wheel \
+        -Dauthfw=pam \
+        -Dpam_prefix=/overlayer/syshub/etc/pam.d \
+        -Dpam_module_dir=/overlayer/syshub/lib/security \
+        -Dexamples=false \
+        -Dtests=false \
+        -Dintrospection=false \
+        -Dgtk_doc=false \
+        -Dman=false \
+        -Dgettext=false
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+    local p="$PAYLOAD_DIR/overlayer/syshub"
+
+    cat > "$p/etc/pam.d/polkit-1" <<'EOF'
+auth       required     pam_unix.so
+account    required     pam_unix.so
+password   required     pam_unix.so
+session    required     pam_unix.so
+EOF
+
+    mkdir -p "$p/libexec"
+    ln -sf ../lib/polkit-1/polkit-agent-helper-1 "$p/libexec/polkit-agent-helper-1"
+
+    mkdir -p "$p/lib/systemd/system/sockets.target.wants"
+    ln -sf ../polkit-agent-helper.socket "$p/lib/systemd/system/sockets.target.wants/polkit-agent-helper.socket"
+
+    is_text_file() {
+        case "$(file -b --mime-type "$1")" in
+            text/*) return 0 ;;
+            *) return 1 ;;
+        esac
+    }
+
+    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        is_text_file "$f" || continue
+        sed -i \
+            -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
+            -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/bin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/share/#/overlayer/syshub/share/#g' \
+            -e 's#/usr/#/overlayer/syshub/#g' \
+            "$f"
+    done
+
+    mkdir -p "$STAGING_ROOT/_polkit-dev"
+    mv "$p/include" "$STAGING_ROOT/_polkit-dev/include"
+    mv "$p/lib/pkgconfig" "$STAGING_ROOT/_polkit-dev/pkgconfig"
+
+    chmod 4755 "$p/bin/pkexec" "$p/lib/polkit-1/polkit-agent-helper-1"
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_polkit-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_polkit-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}

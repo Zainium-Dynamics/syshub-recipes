@@ -1,0 +1,28 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=duktape
+pkgver=2.7.0
+pkgrel=0
+subpackages="duktape-dev"
+source="https://github.com/svaarala/duktape/releases/download/v$pkgver/duktape-$pkgver.tar.xz"
+sha256sums="90f8d2fa8b5567c6899830ddef2c03f3c27960b11aca222fa17aa7ac613c2890  duktape-$pkgver.tar.xz"
+makedepends="build-base"
+
+build() {
+    cd "$SRCDIR/duktape-$pkgver"
+    make -f Makefile.sharedlibrary INSTALL_PREFIX=/overlayer/syshub
+    make -f Makefile.sharedlibrary INSTALL_PREFIX=/overlayer/syshub DESTDIR="$(pwd)/_zexbuild-install" install
+}
+
+package() {
+    local inst="$SRCDIR/duktape-$pkgver/_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    cp -P "$inst"/lib/libduktape.so.* "$PAYLOAD_DIR/lib/"
+}
+
+dev() {
+    local inst="$SRCDIR/duktape-$pkgver/_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -P "$inst"/lib/libduktape.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
