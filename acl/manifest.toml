@@ -1,0 +1,29 @@
+[package]
+name             = "acl"
+version          = "2.3.2"
+description      = "POSIX access control list library and tools (libacl, getfacl, setfacl)"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://savannah.nongnu.org/projects/acl"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["attr"]
+provides         = ["acl", "libacl", "getfacl", "setfacl", "chacl"]
+tags             = ["base", "library", "security"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

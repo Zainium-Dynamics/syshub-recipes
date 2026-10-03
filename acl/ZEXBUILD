@@ -1,0 +1,36 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=acl
+pkgver=2.3.2
+pkgrel=0
+subpackages="acl-dev"
+source="https://download.savannah.gnu.org/releases/acl/acl-$pkgver.tar.xz"
+sha256sums="97203a72cae99ab89a067fe2210c1cbf052bc492b479eca7d226d9830883b0bd  acl-$pkgver.tar.xz"
+makedepends="build-base attr-dev"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --bindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --disable-static \
+        --disable-nls
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib"
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    find "$inst/lib" -maxdepth 1 -name 'libacl.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -P "$inst"/lib/libacl.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
