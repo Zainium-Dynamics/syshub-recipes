@@ -1,0 +1,29 @@
+[package]
+name             = "attr-dev"
+version          = "2.5.2"
+description      = "attr headers, pkgconfig"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://savannah.nongnu.org/projects/attr"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["attr"]
+provides         = ["attr-dev"]
+tags             = ["base", "library", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
