@@ -37,6 +37,7 @@ build() {
 
     sed -i 's#"/usr/lib/modules"#"/overlayer/syshub/drivers/modules"#' src/core/namespace.c
     sed -i 's#lstat("/usr/", &usr)#lstat("/overlayer/syshub/", \&usr)#' src/shared/condition.c
+    sed -i '/case SD_PATH_SYSTEM_CONFIGURATION:/{n;s#\*ret = "/etc";#*ret = "/overlayer/syshub/etc";#}' src/libsystemd/sd-path/sd-path.c
     sed -i -e 's#chase_and_stat("/usr", #chase_and_stat("/overlayer/syshub", #' -e 's#save_timestamp("/etc/", #save_timestamp("/overlayer/syshub/etc/", #' src/update-done/update-done.c
     sed -i 's#"\.\./usr/share/zoneinfo/"#"../share/zoneinfo/"#' src/basic/time-util.c
     sed -i -E 's#"/(usr/)?s?bin/(nologin|false|true)"#"/overlayer/syshub/bin/\2"#g' src/basic/user-util.c src/basic/path-util.c
