@@ -92,7 +92,7 @@ build() {
         -Dgnutls=enabled \
         -Dp11kit=enabled \
         -Dqrencode=disabled \
-        -Dmicrohttpd=enabled \
+        -Dmicrohttpd=disabled \
         -Dpwquality=disabled \
         -Dpasswdqc=disabled \
         -Dlibidn2=disabled \
