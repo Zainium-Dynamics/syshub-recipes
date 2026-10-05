@@ -9,7 +9,7 @@ makedepends="meson ninja pkgconf gperf python3 py3-jinja2 build-base linux-heade
     libcap-dev libseccomp-dev kmod-dev pcre2-dev
     xz-dev zstd-dev zlib-dev
     elfutils-dev libarchive-dev libxkbcommon-dev
-    curl-dev openssl-dev libapparmor-dev linux-pam-dev gnutls-dev"
+    curl-dev openssl-dev libapparmor-dev linux-pam-dev gnutls-dev acl-dev libmicrohttpd-dev"
 
 needs_toolchain="util-linux gnutls-dev p11-kit p11-kit-dev"
 
