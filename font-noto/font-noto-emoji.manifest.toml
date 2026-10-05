@@ -1,0 +1,28 @@
+[package]
+name             = "font-noto-emoji"
+version          = "2026.10.01"
+description      = "Noto Color Emoji 2.051"
+license          = "OFL-1.1"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/googlefonts/noto-emoji"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["font-noto-emoji"]
+tags             = ["base", "fonts"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
