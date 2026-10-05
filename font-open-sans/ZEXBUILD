@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=font-open-sans
+pkgver=3.003
+pkgrel=0
+_commit=bd7e37632246368c60fdcbd374dbf9bad11969b6
+_url="https://raw.githubusercontent.com/googlefonts/opensans/$_commit/fonts/ttf"
+source="$_url/OpenSans-Light.ttf
+$_url/OpenSans-LightItalic.ttf
+$_url/OpenSans-Regular.ttf
+$_url/OpenSans-Italic.ttf
+$_url/OpenSans-SemiBold.ttf
+$_url/OpenSans-SemiBoldItalic.ttf
+$_url/OpenSans-Bold.ttf
+$_url/OpenSans-BoldItalic.ttf
+$_url/OpenSans-ExtraBold.ttf
+$_url/OpenSans-ExtraBoldItalic.ttf"
+sha256sums="3472097ec4d9e57228cbfad3c9911e53923664d3df86568d0b05d674399e034e  OpenSans-Light.ttf
+548dc557bcef26267d16f1afaf0770814a329c9f04a0168d396ca9d1ceafb16f  OpenSans-LightItalic.ttf
+c53aceea2dcf5b4098099c0c4d0a061d17e178a049317b42a422b1a9f7f8eb59  OpenSans-Regular.ttf
+93bc1bb6abf4e6b7c75d7131714061d5b57cc478abcabe4cb3519bb38fb917aa  OpenSans-Italic.ttf
+4a413711684a9dd564ef0f1c10cb62b5d9f7eb6df2cff962f5341a6ecd5f64ae  OpenSans-SemiBold.ttf
+c646a9aefc0e964f66487260639e375685328a6280856faea3e012c43fe9c56d  OpenSans-SemiBoldItalic.ttf
+27da758f4dcac9a65abe914c13b463b42982b9909bc65713424099f4810bd1e6  OpenSans-Bold.ttf
+d672a770037104b6af45e1336b3d3c1729c8aea940f81e010f5a8a7319c29a21  OpenSans-BoldItalic.ttf
+22c3e66c8a0ae60bf10ee636bb8a54d61ff77c956f5c4ebe3058b793e56ee727  OpenSans-ExtraBold.ttf
+63f46cd436c572334203c297062acc012c117bf1413f0e40f6b5215637c05236  OpenSans-ExtraBoldItalic.ttf"
+
+build() {
+    return 0
+}
+
+package() {
+    mkdir -p "$PAYLOAD_DIR/share/fonts/open-sans"
+    cp OpenSans-*.ttf "$PAYLOAD_DIR/share/fonts/open-sans/"
+}
