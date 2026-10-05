@@ -1,0 +1,40 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=attr
+pkgver=2.5.2
+pkgrel=0
+subpackages="attr-dev"
+source="https://download.savannah.gnu.org/releases/attr/attr-$pkgver.tar.xz"
+sha256sums="f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b  attr-$pkgver.tar.xz"
+makedepends="build-base"
+
+build() {
+    # musl declares basename() in <libgen.h> only
+    sed -i 's/^#include "config.h"/&\n#include <libgen.h>/' tools/attr.c
+
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --bindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --disable-static \
+        --disable-nls
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/etc"
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    find "$inst/lib" -maxdepth 1 -name 'libattr.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp "$inst"/etc/xattr.conf "$PAYLOAD_DIR/etc/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -P "$inst"/lib/libattr.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
