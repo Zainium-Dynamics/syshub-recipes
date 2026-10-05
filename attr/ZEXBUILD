@@ -8,6 +8,9 @@ sha256sums="f2e97b0ab7ce293681ab701915766190d607a1dba7fae8a718138150b700a70b  at
 makedepends="build-base"
 
 build() {
+    # musl declares basename() in <libgen.h> only
+    sed -i '0,/#include/s//#include <libgen.h>\n#include/' tools/attr.c
+
     ./configure \
         --prefix=/overlayer/syshub \
         --bindir=/overlayer/syshub/bin \
