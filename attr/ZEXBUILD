@@ -9,7 +9,7 @@ makedepends="build-base"
 
 build() {
     # musl declares basename() in <libgen.h> only
-    sed -i '0,/#include/s//#include <libgen.h>\n#include/' tools/attr.c
+    sed -i 's/^#include "config.h"/&\n#include <libgen.h>/' tools/attr.c
 
     ./configure \
         --prefix=/overlayer/syshub \
