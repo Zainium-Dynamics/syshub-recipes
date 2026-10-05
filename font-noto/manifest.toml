@@ -1,0 +1,28 @@
+[package]
+name             = "font-noto"
+version          = "2026.10.01"
+description      = "Noto Sans, Noto Sans Mono (COSMIC's default monospace font) and Noto Serif"
+license          = "OFL-1.1"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://notofonts.github.io"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["font-noto"]
+tags             = ["base", "fonts"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
