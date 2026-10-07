@@ -46,4 +46,7 @@ build() {
 package() {
     make DESTDIR="$PAYLOAD_DIR" install
     rm -f "$PAYLOAD_DIR/overlayer/syshub/bin/bashbug"
+    # docs and info pages are upstream prose full of /usr paths (info files carry byte offsets, so no sed)
+    rm -rf "$PAYLOAD_DIR/overlayer/syshub/share/doc/bash" "$PAYLOAD_DIR/overlayer/syshub/share/info"
+    grep -rIl '/usr' "$PAYLOAD_DIR" | xargs -r sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g'
 }
