@@ -1,23 +1,15 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=bash
 pkgver=5.3
-pkgrel=0
+pkgrel=1
 needs_toolchain="musl gcc-musl ncurses ncurses-dev readline readline-dev"
-source="https://ftp.gnu.org/gnu/bash/bash-$pkgver.tar.gz"
+source="https://ftp.gnu.org/gnu/bash/bash-$pkgver.tar.gz
+0001-zainium-paths.patch"
 sha256sums="0d5cd86965f869a26cf64f4b71be7b96f90a3ba8b3d74e27e8e9d9d5550f31ba  bash-$pkgver.tar.gz"
 
-# Real autoconf cross-compile (--host set, --build left for config.guess,
-# same convention as xz/readline/ncurses). --enable-readline pulls in
-# readline+history at both compile time (readline-dev's headers) and
-# link time (readline's .so) — needs_toolchain covers both tiers of
-# both packages. CC_FOR_BUILD stays the CI host's own gcc: bash's build
-# compiles a handful of native helper generators (mksyntax, mksignames,
-# ...) that must run on the BUILD machine, not the target.
-#
-# The autoconf cache vars below are cross-compile answers autoconf can't
-# safely probe by running target-arch test binaries on the build host —
-# verified against a real musl target build already (not guesses).
 build() {
+    patch -p1 < ../0001-zainium-paths.patch
+
     local sysroot="/overlayer/syshub"
     local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
     local bindir="${sysroot}/bin"
@@ -53,4 +45,5 @@ build() {
 
 package() {
     make DESTDIR="$PAYLOAD_DIR" install
+    rm -f "$PAYLOAD_DIR/overlayer/syshub/bin/bashbug"
 }
