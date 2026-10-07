@@ -1,0 +1,85 @@
+--- a/config-top.h
++++ b/config-top.h
+@@ -58,7 +58,7 @@
+ /* The default value of the PATH variable. */
+ #ifndef DEFAULT_PATH_VALUE
+ #define DEFAULT_PATH_VALUE \
+-  "/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin:."
++  "/overlayer/syshub/bin:/overlayer/syshub/sbin:/overlayer/syshub/x86_64-zainium-linux-musl/bin:/overlayer/zexlib/union/bin"
+ #endif
+ 
+ /* If you want to unconditionally set a value for PATH in every restricted
+@@ -69,13 +69,13 @@
+    the Posix.2 confstr () function, or CS_PATH define are not present. */
+ #ifndef STANDARD_UTILS_PATH
+ #define STANDARD_UTILS_PATH \
+-  "/bin:/usr/bin:/sbin:/usr/sbin"
++  "/overlayer/syshub/bin:/overlayer/syshub/sbin"
+ #endif
+ 
+ /* The default path for enable -f */
+ #ifndef DEFAULT_LOADABLE_BUILTINS_PATH
+ #define DEFAULT_LOADABLE_BUILTINS_PATH \
+-  "/usr/local/lib/bash:/usr/lib/bash:/opt/local/lib/bash:/usr/pkg/lib/bash:/opt/pkg/lib/bash:."
++  "/overlayer/syshub/lib/bash:/overlayer/zexlib/union/lib/bash"
+ #endif
+ 
+ /* Default primary and secondary prompt strings. */
+@@ -92,10 +92,10 @@
+ #define DEFAULT_BASHRC "~/.bashrc"
+ 
+ /* System-wide .bashrc file for interactive shells. */
+-/* #define SYS_BASHRC "/etc/bash.bashrc" */
++#define SYS_BASHRC "/overlayer/syshub/etc/bash.bashrc"
+ 
+ /* System-wide .bash_logout for login shells. */
+-/* #define SYS_BASH_LOGOUT "/etc/bash.bash_logout" */
++#define SYS_BASH_LOGOUT "/overlayer/syshub/etc/bash.bash_logout"
+ 
+ /* Define this to make non-interactive shells begun with argv[0][0] == '-'
+    run the startup files when not in posix mode. */
+--- a/lib/readline/rlconf.h
++++ b/lib/readline/rlconf.h
+@@ -43,7 +43,7 @@
+ #define DEFAULT_INPUTRC "~/.inputrc"
+ 
+ /* The ultimate last-ditch filename for an init file -- system-wide. */
+-#define SYS_INPUTRC "/etc/inputrc"
++#define SYS_INPUTRC "/overlayer/syshub/etc/inputrc"
+ 
+ /* If defined, expand tabs to spaces. */
+ #define DISPLAY_TABS
+--- a/pathnames.h.in
++++ b/pathnames.h.in
+@@ -22,10 +22,10 @@
+ #define _PATHNAMES_H_
+ 
+ /* The default file for hostname completion. */
+-#define DEFAULT_HOSTS_FILE "/etc/hosts"
++#define DEFAULT_HOSTS_FILE "/overlayer/syshub/etc/hosts"
+ 
+ /* The default login shell startup file. */
+-#define SYS_PROFILE "/etc/profile"
++#define SYS_PROFILE "/overlayer/syshub/etc/profile"
+ 
+ /* The default location of the bash debugger initialization/startup file. */
+ #define DEBUGGER_START_FILE	"@DEBUGGER_START_FILE@"
+--- a/shell.c
++++ b/shell.c
+@@ -1891,14 +1891,14 @@
+ 	  current_user.user_name = savestring (entry->pw_name);
+ 	  current_user.shell = (entry->pw_shell && entry->pw_shell[0])
+ 				? savestring (entry->pw_shell)
+-				: savestring ("/bin/sh");
++				: savestring ("/overlayer/syshub/bin/sh");
+ 	  current_user.home_dir = savestring (entry->pw_dir);
+ 	}
+       else
+ 	{
+ 	  current_user.user_name = _("I have no name!");
+ 	  current_user.user_name = savestring (current_user.user_name);
+-	  current_user.shell = savestring ("/bin/sh");
++	  current_user.shell = savestring ("/overlayer/syshub/bin/sh");
+ 	  current_user.home_dir = savestring ("/");
+ 	}
+ #if defined (HAVE_GETPWENT)
