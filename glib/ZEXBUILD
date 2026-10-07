@@ -1,11 +1,11 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=glib
 pkgver=2.89.3
-pkgrel=1
+pkgrel=2
 subpackages="glib-dev"
 source="https://download.gnome.org/sources/glib/2.89/glib-$pkgver.tar.xz"
 sha256sums="09fd1e99f991067749ad66090e482ec4bd6514ad53abb4e9fbbdc2a4d2753532  glib-$pkgver.tar.xz"
-makedepends="libffi-dev pcre2-dev zlib-dev"
+makedepends="libffi-dev pcre2-dev zlib-dev gettext-dev"
 
 build() {
     meson setup builddir \

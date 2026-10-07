@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["libffi", "pcre2", "zlib"]
+depends          = ["gettext", "libffi", "pcre2", "zlib"]
 provides         = ["glib"]
 tags             = ["base", "library", "gnome", "cosmic"]
 
