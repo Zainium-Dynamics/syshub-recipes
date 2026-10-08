@@ -1,0 +1,30 @@
+[package]
+name             = "iproute2"
+version          = "7.2.0"
+description      = "IP routing utilities (ip, tc, ss, bridge) for Linux networking"
+license          = "GPL-2.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://wiki.linuxfoundation.org/networking/iproute2"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["iproute2", "ip", "tc", "ss", "bridge"]
+tags             = ["base", "network"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

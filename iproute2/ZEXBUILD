@@ -1,0 +1,23 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=iproute2
+pkgver=7.2.0
+pkgrel=0
+source="https://www.kernel.org/pub/linux/utils/net/iproute2/iproute2-$pkgver.tar.xz"
+sha256sums="4c2fa124c2cf0afd7ca34d1eeacba6ba048a56f6374e2aab93dafbdbd4eea9c0  iproute2-$pkgver.tar.xz"
+makedepends="bison flex linux-headers"
+
+build() {
+    local vars="PREFIX=/overlayer/syshub SBINDIR=/overlayer/syshub/bin CONF_ETC_DIR=/overlayer/syshub/etc/iproute2 NETNS_ETC_DIR=/overlayer/syshub/etc/netns NETNS_RUN_DIR=/run/netns ARPDDIR=/overlayer/syshub/var/lib/arpd KERNEL_INCLUDE=/usr/include"
+
+    ./configure --prefix /overlayer/syshub --libdir /overlayer/syshub/lib
+    make -j"$(nproc)" $vars
+    make install $vars DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    rm -rf "$PAYLOAD_DIR/include"
+    grep -rIl '/usr' "$PAYLOAD_DIR" | xargs -r sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g'
+}
