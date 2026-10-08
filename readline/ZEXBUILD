@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=readline
 pkgver=8.3
-pkgrel=0
+pkgrel=1
 needs_toolchain="musl gcc-musl ncurses ncurses-dev"
 subpackages="readline-dev"
 source="https://ftp.gnu.org/gnu/readline/readline-$pkgver.tar.gz"
@@ -25,6 +25,7 @@ build() {
     export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include -I${sysroot}/include/ncursesw"
     export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
 
+    export bash_cv_termcap_lib=libncurses
     ./configure \
         --host=x86_64-zainium-linux-musl \
         --prefix="$sysroot" \
@@ -33,7 +34,8 @@ build() {
         --disable-nls \
         --enable-shared \
         --enable-static
-    make -j"$(nproc)"
+    sed -i 's/-lncurses\b/-lncursesw/g' Makefile shlib/Makefile
+    make -j"$(nproc)" SHLIB_LIBS=-lncursesw TERMCAP_LIB=-lncursesw
 
     # Single shared install tree both package() and dev() slice from —
     # readline's `install` target runs install-shared + install-static
@@ -41,7 +43,8 @@ build() {
     # in headers/pkgconfig/docs each time — installing once and splitting
     # by copying afterward avoids ending up with those duplicated into
     # (or missing from) the wrong tier.
-    make install DESTDIR="$(pwd)/_zexbuild-install"
+    make install SHLIB_LIBS=-lncursesw TERMCAP_LIB=-lncursesw DESTDIR="$(pwd)/_zexbuild-install"
+    sed -i 's/^Requires.private: ncurses$/Requires.private: ncursesw/' _zexbuild-install/overlayer/syshub/lib/pkgconfig/readline.pc
 }
 
 # syshub tier: runtime only — libreadline.so.* + libhistory.so.* and
