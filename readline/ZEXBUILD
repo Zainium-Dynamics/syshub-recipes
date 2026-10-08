@@ -67,4 +67,5 @@ dev() {
     cp "$inst"/lib/libreadline.a "$inst"/lib/libhistory.a "$PAYLOAD_DIR/lib/"
     cp -P "$inst"/lib/libreadline.so "$inst"/lib/libhistory.so "$PAYLOAD_DIR/lib/"
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    grep -rIl '/usr' "$PAYLOAD_DIR" | xargs -r sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g'
 }
