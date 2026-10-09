@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=pipewire
 pkgver=1.6.8
-pkgrel=1
+pkgrel=2
 subpackages="pipewire-dev"
 source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
@@ -10,7 +10,8 @@ sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $p
 # CI container pull in transitively via glib-dev): "breaks:
 # gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
 # itself, so this still gets libintl.h without the conflict.
-makedepends="alsa-lib-dev eudev-dev gettext-dev"
+makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev"
+needs_toolchain="systemd systemd-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev mesa mesa-dev libdrm libdrm-dev"
 
 # Minimal first pass: core pipewire daemon + client library + ALSA
 # backend + udev device detection only. session-managers=[] -- the
@@ -30,7 +31,7 @@ Name: systemd
 Description: systemd
 Version: 261
 EOF
-    export PKG_CONFIG_PATH="$(pwd)/_pc${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    export PKG_CONFIG_PATH="$(pwd)/_pc:/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
@@ -44,7 +45,8 @@ EOF
         -Dinstalled_tests=disabled \
         -Dsession-managers=[] \
         -Dsystemd-user-service=enabled \
-        -Dsystemd-system-service=disabled \
+        -Dsystemd-system-service=enabled \
+        -Dsystemd-system-unit-dir=/overlayer/syshub/lib/systemd/system \
         -Dsystemd-user-unit-dir=/overlayer/syshub/lib/systemd/user \
         -Dalsa=enabled \
         -Dpipewire-alsa=enabled \
@@ -53,8 +55,8 @@ EOF
         -Daudiomixer=enabled \
         -Daudioconvert=enabled \
         -Dsupport=enabled \
-        -Dlibsystemd=disabled \
-        -Dlogind=disabled \
+        -Dlibsystemd=enabled \
+        -Dlogind=enabled \
         -Dselinux=disabled \
         -Dpipewire-jack=disabled \
         -Djack=disabled \
@@ -62,7 +64,7 @@ EOF
         -Dv4l2=disabled \
         -Dbluez5=disabled \
         -Dffmpeg=disabled \
-        -Ddbus=disabled \
+        -Ddbus=enabled \
         -Dsdl2=disabled \
         -Dsndfile=disabled \
         -Dlibpulse=disabled \
@@ -77,13 +79,13 @@ EOF
         -Dlibcanberra=disabled \
         -Davb=disabled \
         -Dflatpak=disabled \
-        -Dreadline=disabled \
+        -Dreadline=enabled \
         -Dgsettings=disabled \
         -Dopus=disabled \
         -Dlibffado=disabled \
         -Dfftw=disabled \
         -Donnxruntime=disabled \
-        -Dvulkan=disabled \
+        -Dvulkan=enabled \
         -Dgstreamer=disabled \
         -Dlibcamera=disabled
     ninja -C builddir
