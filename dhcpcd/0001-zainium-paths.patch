@@ -1,0 +1,169 @@
+--- a/hooks/10-wpa_supplicant
++++ b/hooks/10-wpa_supplicant
+@@ -7,10 +7,10 @@
+ 
+ if [ -z "$wpa_supplicant_conf" ]; then
+ 	for x in \
+-		/etc/wpa_supplicant/wpa_supplicant-"$interface".conf \
+-		/etc/wpa_supplicant/wpa_supplicant.conf \
+-		/etc/wpa_supplicant-"$interface".conf \
+-		/etc/wpa_supplicant.conf \
++		/overlayer/syshub/etc/wpa_supplicant/wpa_supplicant-"$interface".conf \
++		/overlayer/syshub/etc/wpa_supplicant/wpa_supplicant.conf \
++		/overlayer/syshub/etc/wpa_supplicant-"$interface".conf \
++		/overlayer/syshub/etc/wpa_supplicant.conf \
+ 	; do
+ 		if [ -s "$x" ]; then
+ 			wpa_supplicant_conf="$x"
+@@ -18,7 +18,7 @@
+ 		fi
+ 	done
+ fi
+-: ${wpa_supplicant_conf:=/etc/wpa_supplicant.conf}
++: ${wpa_supplicant_conf:=/overlayer/syshub/etc/wpa_supplicant.conf}
+ 
+ wpa_supplicant_ctrldir()
+ {
+--- a/hooks/15-timezone
++++ b/hooks/15-timezone
+@@ -1,6 +1,6 @@
+ # Configure timezone
+ 
+-: ${localtime:=/etc/localtime}
++: ${localtime:=/overlayer/syshub/etc/localtime}
+ 
+ set_zoneinfo()
+ {
+@@ -8,6 +8,7 @@
+ 
+ 	zoneinfo_dir=
+ 	for d in \
++		/overlayer/syshub/share/zoneinfo	\
+ 		/usr/share/zoneinfo	\
+ 		/usr/lib/zoneinfo	\
+ 		/var/share/zoneinfo	\
+--- a/hooks/20-resolv.conf
++++ b/hooks/20-resolv.conf
+@@ -1,4 +1,4 @@
+-# Generate /etc/resolv.conf
++# Generate /overlayer/syshub/etc/resolv.conf
+ # Support resolvconf(8) if available
+ # We can merge other dhcpcd resolv.conf files into one like resolvconf,
+ # but resolvconf is preferred as other applications like VPN clients
+@@ -58,19 +58,19 @@
+ 	[ -f "$cf" ] && rm -f "$cf"
+ 	[ -d "$resolv_conf_dir" ] || mkdir -p "$resolv_conf_dir"
+ 	echo "$header" > "$cf"
+-	if [ -f /etc/resolv.conf.head ]; then
+-		cat /etc/resolv.conf.head >> "$cf"
++	if [ -f /overlayer/syshub/etc/resolv.conf.head ]; then
++		cat /overlayer/syshub/etc/resolv.conf.head >> "$cf"
+ 	else
+-		echo "# /etc/resolv.conf.head can replace this line" >> "$cf"
++		echo "# /overlayer/syshub/etc/resolv.conf.head can replace this line" >> "$cf"
+ 	fi
+ 	printf %s "$domain$search$servers" >> "$cf"
+-	if [ -f /etc/resolv.conf.tail ]; then
+-		cat /etc/resolv.conf.tail >> "$cf"
++	if [ -f /overlayer/syshub/etc/resolv.conf.tail ]; then
++		cat /overlayer/syshub/etc/resolv.conf.tail >> "$cf"
+ 	else
+-		echo "# /etc/resolv.conf.tail can replace this line" >> "$cf"
++		echo "# /overlayer/syshub/etc/resolv.conf.tail can replace this line" >> "$cf"
+ 	fi
+-	if change_file /etc/resolv.conf "$cf"; then
+-		chmod 644 /etc/resolv.conf
++	if change_file /overlayer/syshub/etc/resolv.conf "$cf"; then
++		chmod 644 /overlayer/syshub/etc/resolv.conf
+ 	fi
+ 	rm -f "$cf"
+ }
+--- a/hooks/50-yp.conf
++++ b/hooks/50-yp.conf
+@@ -3,13 +3,13 @@
+ 
+ ypbind_pid()
+ {
+-	[ -s /var/run/ypbind.pid ] && cat /var/run/ypbind.pid
++	[ -s /run/ypbind.pid ] && cat /run/ypbind.pid
+ }
+ 
+ make_yp_conf()
+ {
+ 	[ -z "${new_nis_domain}${new_nis_servers}" ] && return 0
+-	cf=/etc/yp.conf."$ifname"
++	cf=/overlayer/syshub/etc/yp.conf."$ifname"
+ 	rm -f "$cf"
+ 	echo "$signature" > "$cf"
+ 	prefix=
+@@ -31,8 +31,8 @@
+ 	for x in $new_nis_servers; do
+ 		echo "$prefix$x" >> "$cf"
+ 	done
+-	save_conf /etc/yp.conf
+-	cat "$cf" > /etc/yp.conf
++	save_conf /overlayer/syshub/etc/yp.conf
++	cat "$cf" > /overlayer/syshub/etc/yp.conf
+ 	rm -f "$cf"
+ 	pid="$(ypbind_pid)"
+ 	if [ -n "$pid" ]; then
+@@ -43,7 +43,7 @@
+ restore_yp_conf()
+ {
+ 	[ -n "$old_nis_domain" ] && domainname ""
+-	restore_conf /etc/yp.conf || return 0
++	restore_conf /overlayer/syshub/etc/yp.conf || return 0
+ 	pid="$(ypbind_pid)"
+ 	if [ -n "$pid" ]; then
+ 		kill -HUP "$pid"
+--- a/hooks/dhcpcd-run-hooks.in
++++ b/hooks/dhcpcd-run-hooks.in
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/overlayer/syshub/bin/sh
+ # dhcpcd client configuration script 
+ 
+ # Handy variables and functions for our hooks to use
+@@ -231,10 +231,10 @@
+ 	# systems we try to detect them first.
+ 	status="@STATUSARG@"
+ 	: ${status:=status}
+-	if [ -x /bin/systemctl ] && [ -S /run/systemd/private ]; then
+-		_service_exists="/bin/systemctl --quiet is-enabled \$1.service"
+-		_service_status="/bin/systemctl --quiet is-active \$1.service"
+-		_service_cmd="/bin/systemctl \$2 --no-block \$1.service"
++	if [ -x /overlayer/syshub/bin/systemctl ] && [ -S /run/systemd/private ]; then
++		_service_exists="/overlayer/syshub/bin/systemctl --quiet is-enabled \$1.service"
++		_service_status="/overlayer/syshub/bin/systemctl --quiet is-active \$1.service"
++		_service_cmd="/overlayer/syshub/bin/systemctl \$2 --no-block \$1.service"
+ 	elif [ -x /usr/bin/systemctl ] && [ -S /run/systemd/private ]; then
+ 		_service_exists="/usr/bin/systemctl --quiet is-enabled \$1.service"
+ 		_service_status="/usr/bin/systemctl --quiet is-active \$1.service"
+--- a/src/if-linux.c
++++ b/src/if-linux.c
+@@ -414,12 +414,12 @@
+ 	if (stat("/proc/self/ns/net", &sb_self) == -1)
+ 		return NULL;
+ 
+-	dir = opendir("/var/run/netns");
++	dir = opendir("/run/netns");
+ 	if (dir == NULL)
+ 		return NULL;
+ 
+ 	while ((de = readdir(dir)) != NULL) {
+-		snprintf(file, sizeof(file), "/var/run/netns/%s", de->d_name);
++		snprintf(file, sizeof(file), "/run/netns/%s", de->d_name);
+ 		if (stat(file, &sb_netns) == -1)
+ 			continue;
+ 		if (sb_self.st_dev != sb_netns.st_dev ||
+--- a/src/script.c
++++ b/src/script.c
+@@ -57,7 +57,7 @@
+ #include "privsep.h"
+ #include "script.h"
+ 
+-#define DEFAULT_PATH	"/usr/bin:/usr/sbin:/bin:/sbin"
++#define DEFAULT_PATH	"/overlayer/syshub/bin:/overlayer/syshub/sbin"
+ 
+ static const char * const if_params[] = {
+ 	"interface",

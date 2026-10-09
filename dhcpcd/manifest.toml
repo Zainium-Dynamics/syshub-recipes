@@ -18,6 +18,7 @@ tags             = ["base", "network"]
 
 [install]
 sbin    = "/overlayer/syshub/sbin"
+libexec = "/overlayer/syshub/libexec"
 etc     = "/overlayer/syshub/etc"
 share   = "/overlayer/syshub/share"
 _syshub = true

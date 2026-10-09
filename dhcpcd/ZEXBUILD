@@ -1,19 +1,24 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=dhcpcd
 pkgver=10.3.2
-pkgrel=1
-source="https://github.com/NetworkConfiguration/dhcpcd/releases/download/v$pkgver/dhcpcd-$pkgver.tar.xz"
+pkgrel=2
+source="https://github.com/NetworkConfiguration/dhcpcd/releases/download/v$pkgver/dhcpcd-$pkgver.tar.xz
+0001-zainium-paths.patch"
 sha256sums="b6aa46932074906a9badef1bfe142b8aff9d041c2689e1ef8b74c12e9fd942bd  dhcpcd-$pkgver.tar.xz"
 
 needs_toolchain="openssl openssl-dev"
 
 build() {
+    # hook PATH, hooks' /etc files, the hooks shebang and systemctl live under /overlayer/syshub
+    patch -p1 < ../0001-zainium-paths.patch
+
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
     export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
     ./configure \
         --prefix=/overlayer/syshub \
         --sbindir=/overlayer/syshub/sbin \
+        --libexecdir=/overlayer/syshub/libexec \
         --sysconfdir=/overlayer/syshub/etc \
         --localstatedir=/overlayer/syshub/var \
         --dbdir=/overlayer/syshub/var/db/dhcpcd \
@@ -24,9 +29,9 @@ build() {
 
 package() {
     local inst="_zexbuild-install/overlayer/syshub"
-    mkdir -p "$PAYLOAD_DIR/sbin" "$PAYLOAD_DIR/etc" "$PAYLOAD_DIR/share"
+    mkdir -p "$PAYLOAD_DIR/sbin" "$PAYLOAD_DIR/libexec" "$PAYLOAD_DIR/etc" "$PAYLOAD_DIR/share"
     cp -a "$inst"/sbin/. "$PAYLOAD_DIR/sbin/"
+    cp -a "$inst"/libexec/. "$PAYLOAD_DIR/libexec/"
     cp -a "$inst"/etc/. "$PAYLOAD_DIR/etc/"
     cp -a "$inst"/share/. "$PAYLOAD_DIR/share/" 2>/dev/null || true
-    grep -rIl '/usr' "$PAYLOAD_DIR" | xargs -r sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g'
 }
