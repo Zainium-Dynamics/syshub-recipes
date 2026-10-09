@@ -1,0 +1,31 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=font-ibm-plex-mono
+pkgver=2.5.0
+pkgrel=0
+_url="https://raw.githubusercontent.com/IBM/plex/%40ibm/plex-mono%40$pkgver/packages/plex-mono/fonts/complete/ttf"
+source="$_url/IBMPlexMono-Regular.ttf
+$_url/IBMPlexMono-Italic.ttf
+$_url/IBMPlexMono-Bold.ttf
+$_url/IBMPlexMono-BoldItalic.ttf
+60-ibm-plex-mono.conf"
+sha256sums="7c6fbddca4b700be918f5f6183d9bd4464fa427fe435f0b480d77fe2bb8c5a43  IBMPlexMono-Regular.ttf
+a55368deb953f594ac18336a1029009ed820e2d9abbb57ad601f61e22bec072b  IBMPlexMono-Italic.ttf
+74e5eedcfa4596497d34e19023cabdabd3a8c852b903007a5654a59591a72ffb  IBMPlexMono-Bold.ttf
+c8b00068fd2fd69bbcf62059148623f09d19e9ada8bf9e8caf1aedd01347046a  IBMPlexMono-BoldItalic.ttf"
+
+build() {
+    return 0
+}
+
+package() {
+    mkdir -p "$PAYLOAD_DIR/share/fonts/ibm-plex-mono" "$PAYLOAD_DIR/etc/fonts/conf.d"
+    cp IBMPlexMono-*.ttf "$PAYLOAD_DIR/share/fonts/ibm-plex-mono/"
+    cp 60-ibm-plex-mono.conf "$PAYLOAD_DIR/etc/fonts/conf.d/"
+
+    # COSMIC defaults to Noto Sans Mono for the desktop, terminal and editor
+    local cosmic="$PAYLOAD_DIR/share/cosmic"
+    mkdir -p "$cosmic/com.system76.CosmicTk/v1" "$cosmic/com.system76.CosmicTerm/v1" "$cosmic/com.system76.CosmicEdit/v1"
+    printf '(family: "IBM Plex Mono", weight: Normal, stretch: Normal, style: Normal)\n' > "$cosmic/com.system76.CosmicTk/v1/monospace_font"
+    printf '"IBM Plex Mono"\n' > "$cosmic/com.system76.CosmicTerm/v1/font_name"
+    printf '"IBM Plex Mono"\n' > "$cosmic/com.system76.CosmicEdit/v1/font_name"
+}
