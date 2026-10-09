@@ -12,7 +12,7 @@ build() {
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     # musl has no gettext, libintl comes from the gettext package
     export CFLAGS="${CFLAGS:-} -I/overlayer/syshub/include"
-    export LDFLAGS="${LDFLAGS:-} -L/overlayer/syshub/lib"
+    export LDFLAGS="${LDFLAGS:-} -L/overlayer/syshub/lib -lintl"
 
     meson setup builddir \
         --prefix=/overlayer/syshub \
