@@ -18,6 +18,9 @@ Name: systemd
 Description: systemd
 Version: 261
 EOF
+    export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
+    export CFLAGS="-I/overlayer/syshub/include ${CFLAGS:-}"
+    export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
     export PKG_CONFIG_PATH="$(pwd)/_pc:/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
