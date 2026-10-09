@@ -1,0 +1,28 @@
+[package]
+name             = "vulkan-loader"
+version          = "1.4.363.0"
+description      = "Vulkan ICD loader (libvulkan.so.1)"
+license          = "Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/KhronosGroup/Vulkan-Loader"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "wayland"]
+provides         = ["vulkan-loader", "libvulkan.so.1"]
+tags             = ["base", "graphics", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

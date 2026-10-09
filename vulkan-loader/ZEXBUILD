@@ -1,0 +1,60 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=vulkan-loader
+pkgver=1.4.363.0
+pkgrel=0
+subpackages="vulkan-loader-dev"
+source="https://github.com/KhronosGroup/Vulkan-Loader/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
+sha256sums="941eff558fc74f248745fb7df367640cf89a8457f216dae498a74ae14b6ba6f7  vulkan-sdk-$pkgver.tar.gz"
+makedepends="cmake ninja python3"
+needs_toolchain="wayland wayland-dev libffi libffi-dev expat expat-dev"
+
+build() {
+    cd "$SRCDIR/Vulkan-Loader-vulkan-sdk-$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
+    wget -q -O "$SRCDIR/headers.tar.gz" "https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/vulkan-sdk-$pkgver.tar.gz"
+    echo "4a078be12bef21cfebc09d878b77a63cff9d68f899254a0b00d0e37ef73e7f7e  $SRCDIR/headers.tar.gz" | sha256sum -c -
+    tar -C "$SRCDIR" -xzf "$SRCDIR/headers.tar.gz"
+    cmake -S "$SRCDIR/Vulkan-Headers-vulkan-sdk-$pkgver" -B "$SRCDIR/headers-build" -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub
+    DESTDIR="$SRCDIR/headers-root" cmake --install "$SRCDIR/headers-build"
+
+    cmake -B builddir -G Ninja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_INSTALL_SYSCONFDIR=/overlayer/syshub/etc \
+        -DCMAKE_PREFIX_PATH="$SRCDIR/headers-root/overlayer/syshub" \
+        -DSYSCONFDIR=/overlayer/syshub/etc \
+        -DFALLBACK_CONFIG_DIRS=/overlayer/syshub/etc/xdg \
+        -DFALLBACK_DATA_DIRS=/overlayer/syshub/share \
+        -DBUILD_TESTS=OFF \
+        -DBUILD_WSI_WAYLAND_SUPPORT=ON \
+        -DBUILD_WSI_XCB_SUPPORT=OFF \
+        -DBUILD_WSI_XLIB_SUPPORT=OFF \
+        -DBUILD_WSI_DIRECTFB_SUPPORT=OFF
+    cmake --build builddir
+    DESTDIR="$(pwd)/_zexbuild-install" cmake --install builddir
+}
+
+package() {
+    local inst="$SRCDIR/Vulkan-Loader-vulkan-sdk-$pkgver/_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libvulkan.so.*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="$SRCDIR/Vulkan-Loader-vulkan-sdk-$pkgver/_zexbuild-install/overlayer/syshub"
+    local hdr="$SRCDIR/headers-root/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share"
+    cp -a "$hdr"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$hdr"/share/cmake "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    cp -P "$inst"/lib/libvulkan.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp -a "$inst"/lib/cmake "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
