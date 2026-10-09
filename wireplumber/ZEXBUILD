@@ -18,6 +18,7 @@ Name: systemd
 Description: systemd
 Version: 261
 EOF
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
     export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
     export CFLAGS="-I/overlayer/syshub/include ${CFLAGS:-}"
     export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
