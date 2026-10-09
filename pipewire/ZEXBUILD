@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=pipewire
 pkgver=1.6.8
-pkgrel=0
+pkgrel=1
 subpackages="pipewire-dev"
 source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
@@ -11,6 +11,7 @@ sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $p
 # gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
 # itself, so this still gets libintl.h without the conflict.
 makedepends="alsa-lib-dev eudev-dev gettext-dev"
+needs_toolchain="systemd systemd-dev"
 
 # Minimal first pass: core pipewire daemon + client library + ALSA
 # backend + udev device detection only. session-managers=[] -- the
@@ -20,6 +21,7 @@ makedepends="alsa-lib-dev eudev-dev gettext-dev"
 # systemd, dbus, x11, vulkan, codecs...) disabled -- optional, no
 # recipes published for their own deps yet, follow-up work.
 build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
@@ -32,6 +34,9 @@ build() {
         -Dtests=disabled \
         -Dinstalled_tests=disabled \
         -Dsession-managers=[] \
+        -Dsystemd-user-service=enabled \
+        -Dsystemd-system-service=disabled \
+        -Dsystemd-user-unit-dir=/overlayer/syshub/lib/systemd/user \
         -Dalsa=enabled \
         -Dpipewire-alsa=enabled \
         -Dudev=enabled \
@@ -85,12 +90,16 @@ package() {
     cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
     cp -a "$inst/share/pipewire" "$PAYLOAD_DIR/share/" 2>/dev/null || true
     cp -a "$inst"/share/alsa* "$PAYLOAD_DIR/share/" 2>/dev/null || true
-    # Both are commented-out example lines referencing /usr paths, not
-    # functionally needed (pulseaudio compat and the filter-chain
-    # rnnoise example are both features we didn't even build) -- but
-    # substrate's layout policy scans file *content*, not just paths.
-    rm -f "$PAYLOAD_DIR/share/pipewire/pipewire-pulse.conf"
-    rm -f "$PAYLOAD_DIR/share/pipewire/filter-chain/source-rnnoise.conf"
+    cp -a "$inst/lib/systemd" "$PAYLOAD_DIR/lib/"
+    cp -a "$inst/lib/udev" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    mkdir -p "$PAYLOAD_DIR/lib/systemd/user/sockets.target.wants"
+    ln -sf ../pipewire.socket "$PAYLOAD_DIR/lib/systemd/user/sockets.target.wants/pipewire.socket"
+    ln -sf ../pipewire-pulse.socket "$PAYLOAD_DIR/lib/systemd/user/sockets.target.wants/pipewire-pulse.socket"
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
 }
 
 dev() {

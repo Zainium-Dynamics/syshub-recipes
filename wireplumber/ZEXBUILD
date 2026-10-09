@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=wireplumber
 pkgver=0.5.15
-pkgrel=0
+pkgrel=1
 source="https://gitlab.freedesktop.org/pipewire/wireplumber/-/archive/$pkgver/wireplumber-$pkgver.tar.gz"
 sha256sums="baa121bc918df5fa0e0e70755bb1c99ffab0ab107225ecf99aa470e2c6ba5e7b  wireplumber-$pkgver.tar.gz"
 # pipewire-dev here is Alpine's own apk package (build-time only,
@@ -19,6 +19,9 @@ build() {
         -Dtests=false \
         -Ddbus-tests=false \
         -Dsystemd=disabled \
+        -Dsystemd-user-service=true \
+        -Dsystemd-system-service=false \
+        -Dsystemd-user-unit-dir=/overlayer/syshub/lib/systemd/user \
         -Delogind=disabled \
         -Dintrospection=disabled
     ninja -C builddir
@@ -32,4 +35,12 @@ package() {
     cp -a "$inst/lib/wireplumber-0.5" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
     cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
     cp -a "$inst/share/wireplumber" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    cp -a "$inst/lib/systemd" "$PAYLOAD_DIR/lib/"
+    mkdir -p "$PAYLOAD_DIR/lib/systemd/user/pipewire.service.wants"
+    ln -sf ../wireplumber.service "$PAYLOAD_DIR/lib/systemd/user/pipewire.service.wants/wireplumber.service"
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
 }
