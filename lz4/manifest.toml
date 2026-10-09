@@ -1,0 +1,30 @@
+
+[package]
+name             = "lz4"
+version          = "1.10.0"
+description      = "Extremely fast compression algorithm"
+license          = "BSD-2-Clause AND GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/lz4/lz4"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["lz4"]
+tags             = ["base", "compression", "library"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

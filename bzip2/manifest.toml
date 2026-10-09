@@ -1,0 +1,30 @@
+
+[package]
+name             = "bzip2"
+version          = "1.0.8"
+description      = "High-quality block-sorting file compressor"
+license          = "bzip2-1.0.6"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://sourceware.org/bzip2/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["bzip2"]
+tags             = ["base", "compression", "library"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
