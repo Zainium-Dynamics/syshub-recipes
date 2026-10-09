@@ -1,0 +1,28 @@
+[package]
+name             = "font-noto-symbols"
+version          = "2026.10.01"
+description      = "Noto Sans Symbols 2: check marks, arrows and other symbols"
+license          = "OFL-1.1"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://notofonts.github.io"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["font-noto-symbols"]
+tags             = ["base", "fonts"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
