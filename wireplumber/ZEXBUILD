@@ -1,15 +1,24 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=wireplumber
 pkgver=0.5.15
-pkgrel=1
+pkgrel=2
 source="https://gitlab.freedesktop.org/pipewire/wireplumber/-/archive/$pkgver/wireplumber-$pkgver.tar.gz"
 sha256sums="baa121bc918df5fa0e0e70755bb1c99ffab0ab107225ecf99aa470e2c6ba5e7b  wireplumber-$pkgver.tar.gz"
-# pipewire-dev here is Alpine's own apk package (build-time only,
-# native-Alpine convention) -- not the Zainium pipewire recipe, so this
-# doesn't need to wait on that one being merged/published first.
 makedepends="glib-dev pipewire-dev"
+needs_toolchain="systemd systemd-dev"
 
 build() {
+    mkdir -p "$(pwd)/_pc"
+    cat > "$(pwd)/_pc/systemd.pc" <<'EOF'
+prefix=/overlayer/syshub
+systemduserunitdir=${prefix}/lib/systemd/user
+systemdsystemunitdir=${prefix}/lib/systemd/system
+
+Name: systemd
+Description: systemd
+Version: 261
+EOF
+    export PKG_CONFIG_PATH="$(pwd)/_pc:/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
@@ -18,9 +27,10 @@ build() {
         -Ddoc=disabled \
         -Dtests=false \
         -Ddbus-tests=false \
-        -Dsystemd=disabled \
+        -Dsystemd=enabled \
         -Dsystemd-user-service=true \
-        -Dsystemd-system-service=false \
+        -Dsystemd-system-service=true \
+        -Dsystemd-system-unit-dir=/overlayer/syshub/lib/systemd/system \
         -Dsystemd-user-unit-dir=/overlayer/syshub/lib/systemd/user \
         -Delogind=disabled \
         -Dintrospection=disabled

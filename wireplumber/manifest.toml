@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["pipewire", "glib"]
+depends          = ["pipewire", "glib", "systemd"]
 provides         = ["wireplumber"]
 tags             = ["base", "audio", "multimedia"]
 
