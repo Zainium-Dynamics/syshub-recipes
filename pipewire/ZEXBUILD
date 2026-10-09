@@ -11,7 +11,6 @@ sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $p
 # gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
 # itself, so this still gets libintl.h without the conflict.
 makedepends="alsa-lib-dev eudev-dev gettext-dev"
-needs_toolchain="systemd systemd-dev"
 
 # Minimal first pass: core pipewire daemon + client library + ALSA
 # backend + udev device detection only. session-managers=[] -- the
@@ -21,7 +20,17 @@ needs_toolchain="systemd systemd-dev"
 # systemd, dbus, x11, vulkan, codecs...) disabled -- optional, no
 # recipes published for their own deps yet, follow-up work.
 build() {
-    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    mkdir -p "$(pwd)/_pc"
+    cat > "$(pwd)/_pc/systemd.pc" <<'EOF'
+prefix=/overlayer/syshub
+systemduserunitdir=${prefix}/lib/systemd/user
+systemdsystemunitdir=${prefix}/lib/systemd/system
+
+Name: systemd
+Description: systemd
+Version: 261
+EOF
+    export PKG_CONFIG_PATH="$(pwd)/_pc${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
