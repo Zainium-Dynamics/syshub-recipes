@@ -1,0 +1,26 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=xdg-user-dirs
+pkgver=0.20
+pkgrel=0
+source="https://user-dirs.freedesktop.org/releases/xdg-user-dirs-$pkgver.tar.xz"
+sha256sums="b8e34286278f4fef3e1bfe9685c395ccc0eb50c14d3a2fb4953dd00fbfd3af39  xdg-user-dirs-$pkgver.tar.xz"
+makedepends="meson gettext"
+needs_toolchain="gettext gettext-dev"
+
+# Creates Documents, Downloads, Pictures and the rest on each login (XDG autostart and a systemd user unit)
+build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # musl has no gettext, libintl comes from the gettext package
+    export CFLAGS="${CFLAGS:-} -I/overlayer/syshub/include"
+    export LDFLAGS="${LDFLAGS:-} -L/overlayer/syshub/lib"
+
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Ddocs=false
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+}
