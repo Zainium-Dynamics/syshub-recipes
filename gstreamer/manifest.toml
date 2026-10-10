@@ -1,0 +1,31 @@
+[package]
+name             = "gstreamer"
+version          = "1.28.8"
+description      = "GStreamer multimedia framework with base, good and bad plugins"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://gstreamer.freedesktop.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "alsa-lib", "libpng", "libjpeg-turbo", "zlib", "libdrm", "mesa", "wayland", "vulkan-loader"]
+provides         = ["gstreamer", "gst-plugins-base", "gst-plugins-good", "gst-plugins-bad"]
+tags             = ["base", "multimedia", "library"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

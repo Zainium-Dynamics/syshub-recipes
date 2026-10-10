@@ -1,0 +1,92 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=gstreamer
+pkgver=1.28.8
+pkgrel=1
+subpackages="gstreamer-dev"
+source="https://gitlab.freedesktop.org/gstreamer/gstreamer/-/archive/$pkgver/gstreamer-$pkgver.tar.gz"
+sha256sums="fd146dc03ea55ccfe78c1a91d35b71f20089209e173163f98237aad9f5ec7540  gstreamer-$pkgver.tar.gz"
+makedepends="meson ninja bison flex python3 pkgconf zlib zlib-dev"
+needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev gettext gettext-dev alsa-lib alsa-lib-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev libdrm libdrm-dev mesa mesa-dev wayland wayland-dev wayland-protocols expat expat-dev eudev eudev-dev libxkbcommon libxkbcommon-dev vulkan-loader vulkan-loader-dev"
+
+build() {
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
+    export PATH="/overlayer/syshub/bin:$PATH"
+    export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
+    export CFLAGS="-I/overlayer/syshub/include ${CFLAGS:-}"
+    export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --wrap-mode=nofallback \
+        -Dbuild-tools-source=system \
+        -Dbase=enabled \
+        -Dgood=enabled \
+        -Dbad=enabled \
+        -Dugly=disabled \
+        -Dlibav=disabled \
+        -Dges=disabled \
+        -Drtsp_server=disabled \
+        -Ddevtools=disabled \
+        -Dgst-examples=disabled \
+        -Dpython=disabled \
+        -Dsharp=disabled \
+        -Drs=disabled \
+        -Dgtk=disabled \
+        -Dqt5=disabled \
+        -Dqt6=disabled \
+        -Dtls=disabled \
+        -Dwebrtc=disabled \
+        -Dlibnice=disabled \
+        -Dorc=disabled \
+        -Dintrospection=disabled \
+        -Dnls=disabled \
+        -Dtests=disabled \
+        -Dexamples=disabled \
+        -Dbenchmarks=disabled \
+        -Ddoc=disabled \
+        -Dgtk_doc=disabled \
+        -Dgstreamer:ptp-helper-permissions=none \
+        -Dgst-plugins-base:gl=enabled \
+        -Dgst-plugins-base:gl_platform=egl \
+        -Dgst-plugins-base:gl_winsys=wayland,egl \
+        -Dgst-plugins-base:x11=disabled \
+        -Dgst-plugins-bad:gl=enabled \
+        -Dgst-plugins-bad:wayland=enabled \
+        -Dgst-plugins-bad:vulkan=enabled \
+        -Dgst-plugins-bad:drm=enabled \
+        -Dpackage-name="Zainium GStreamer" \
+        -Dpackage-origin="https://gitlab.freedesktop.org/gstreamer/gstreamer"
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/lib/gstreamer-1.0/include" "$PAYLOAD_DIR/share/gtk-doc"
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/lib/gstreamer-1.0"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    cp -a "$inst"/lib/gstreamer-1.0/include "$PAYLOAD_DIR/lib/gstreamer-1.0/" 2>/dev/null || true
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
