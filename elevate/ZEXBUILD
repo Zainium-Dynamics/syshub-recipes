@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=elevate
 pkgver=1.0.1
-pkgrel=0
+pkgrel=1
 _commit=f57fee0565362c3bc76b605c9ead347912ec25c1
 source="https://github.com/Zainium-Dynamics/elevate/archive/$_commit.tar.gz"
 sha256sums=""
