@@ -1,0 +1,34 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=elevate
+pkgver=1.0.1
+pkgrel=0
+_commit=62de2359ba5311ea910e3e79bf575a2baa2333c6
+source="https://github.com/Zainium-Dynamics/elevate/archive/$_commit.tar.gz"
+sha256sums=""
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+build() {
+    export PATH="/overlayer/syshub/bin:$PATH"
+    rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    # dynamic against Zainium musl: PAM is dlopen()ed at runtime, static musl can't dlopen
+    RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib" \
+        cargo build --release --target x86_64-unknown-linux-musl \
+        --config 'target.x86_64-unknown-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
+}
+
+package() {
+    local out="target/x86_64-unknown-linux-musl/release"
+    install -Dm4755 "$out/elevate" "$PAYLOAD_DIR/bin/elevate"
+    install -Dm4755 "$out/elev" "$PAYLOAD_DIR/bin/elev"
+    install -Dm755 "$out/vielev" "$PAYLOAD_DIR/sbin/vielev"
+    strip "$PAYLOAD_DIR/bin/elevate" "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/sbin/vielev" 2>/dev/null || true
+
+    install -Dm440 etc/elevators/elevate.toml "$PAYLOAD_DIR/etc/elevators/elevate.toml"
+    mkdir -p "$PAYLOAD_DIR/etc/elevators/elevate.toml.d"
+    for f in elevate elev elev-l; do
+        install -Dm644 "pam.d/$f" "$PAYLOAD_DIR/etc/pam.d/$f"
+    done
+}
