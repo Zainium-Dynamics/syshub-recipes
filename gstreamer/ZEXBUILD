@@ -10,6 +10,7 @@ needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev gettext gettext
 
 build() {
     [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
+    export PATH="/overlayer/syshub/bin:$PATH"
     export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
     export CFLAGS="-I/overlayer/syshub/include ${CFLAGS:-}"
     export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
