@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["musl", "glib", "alsa-lib", "libpng", "libjpeg-turbo", "zlib", "libdrm"]
+depends          = ["musl", "glib", "alsa-lib", "libpng", "libjpeg-turbo", "zlib", "libdrm", "mesa", "wayland", "vulkan-loader"]
 provides         = ["gstreamer", "gst-plugins-base", "gst-plugins-good", "gst-plugins-bad"]
 tags             = ["base", "multimedia", "library"]
 

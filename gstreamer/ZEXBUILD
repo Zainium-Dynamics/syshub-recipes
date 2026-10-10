@@ -1,12 +1,12 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=gstreamer
 pkgver=1.28.8
-pkgrel=0
+pkgrel=1
 subpackages="gstreamer-dev"
 source="https://gitlab.freedesktop.org/gstreamer/gstreamer/-/archive/$pkgver/gstreamer-$pkgver.tar.gz"
 sha256sums="fd146dc03ea55ccfe78c1a91d35b71f20089209e173163f98237aad9f5ec7540  gstreamer-$pkgver.tar.gz"
 makedepends="meson ninja bison flex python3 pkgconf"
-needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev alsa-lib alsa-lib-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev libdrm libdrm-dev"
+needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev alsa-lib alsa-lib-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev libdrm libdrm-dev mesa mesa-dev wayland wayland-dev wayland-protocols expat expat-dev eudev eudev-dev libxkbcommon libxkbcommon-dev vulkan-loader vulkan-loader-dev"
 
 build() {
     [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
@@ -51,6 +51,14 @@ build() {
         -Ddoc=disabled \
         -Dgtk_doc=disabled \
         -Dgstreamer:ptp-helper-permissions=none \
+        -Dgst-plugins-base:gl=enabled \
+        -Dgst-plugins-base:gl_platform=egl \
+        -Dgst-plugins-base:gl_winsys=wayland,egl \
+        -Dgst-plugins-base:x11=disabled \
+        -Dgst-plugins-bad:gl=enabled \
+        -Dgst-plugins-bad:wayland=enabled \
+        -Dgst-plugins-bad:vulkan=enabled \
+        -Dgst-plugins-bad:drm=enabled \
         -Dpackage-name="Zainium GStreamer" \
         -Dpackage-origin="https://gitlab.freedesktop.org/gstreamer/gstreamer"
     ninja -C builddir
