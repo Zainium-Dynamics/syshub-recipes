@@ -1,0 +1,39 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=gzip
+pkgver=1.14
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+source="https://ftp.gnu.org/gnu/gzip/gzip-$pkgver.tar.xz"
+sha256sums="01a7b881bd220bfdf615f97b8718f80bdfd3f6add385b993dcf6efd14e8c0ac6  gzip-$pkgver.tar.xz"
+
+# gzip, gunzip, zcat and the z* helper scripts; tar -z and .gz handling need them
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${sysroot}/bin/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -I${musl_sysroot}/include -I${sysroot}/include"
+    export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --mandir="$sysroot/share/man" \
+        --infodir="$sysroot/share/info" \
+        --disable-nls
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin"
+    cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    # the helper scripts start with #!/bin/sh, which Zainium doesn't have
+    for f in "$PAYLOAD_DIR"/bin/*; do
+        [ "$(head -c 2 "$f")" = "#!" ] || continue
+        sed -i '1s|^#![[:space:]]*/bin/sh|#!/overlayer/syshub/bin/sh|' "$f"
+    done
+}
