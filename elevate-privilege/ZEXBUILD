@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=elevate-privilege
 pkgver=1.0.1
-pkgrel=0
+pkgrel=1
 _nightly=nightly-2026-05-24
 _commit=1dcd4e08db3cc621a7cc38bba9d857c3c4c29866
 source="https://github.com/Zainium-Dynamics/elevate-privilege/archive/$_commit.tar.gz"
@@ -37,7 +37,7 @@ package() {
         b="$(basename "$f")"
         case "$b" in
             vielev)       cp "$f" "$PAYLOAD_DIR/sbin/$b" ;;
-            unix_chkpwd)  cp "$f" "$PAYLOAD_DIR/lib/security/$b" ;;
+            unix_chkpwd)  ;; # shipped by elevate-pam
             *)            cp "$f" "$PAYLOAD_DIR/bin/$b" ;;
         esac
     done
@@ -51,14 +51,7 @@ package() {
                 ln -sf libelevate_pam.so.0 "$PAYLOAD_DIR/lib/libelevate_pam.so"
                 ;;
                 
-            libpam.so)
-                cp "$f" "$PAYLOAD_DIR/lib/libpam.so.0"
-                ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
-                ;;
-            libpam_misc.so)
-                cp "$f" "$PAYLOAD_DIR/lib/libpam_misc.so.0"
-                ln -sf libpam_misc.so.0 "$PAYLOAD_DIR/lib/libpam_misc.so"
-                ;;
+            libpam.so|libpam_misc.so) ;; # shipped by elevate-pam
             libpam_*.so) cp "$f" "$PAYLOAD_DIR/lib/security/${b#lib}" ;;
             *) cp "$f" "$PAYLOAD_DIR/lib/$b" ;;
         esac
@@ -68,9 +61,6 @@ package() {
     cp elevate_privilege.toml "$PAYLOAD_DIR/etc/"
     mkdir -p "$PAYLOAD_DIR/etc/pam.d"
     cp elevate/pam.d/elev elevate/pam.d/elev-l elevate/pam.d/elevate "$PAYLOAD_DIR/etc/pam.d/"
-
-    mkdir -p "$PAYLOAD_DIR/include/security"
-    cp elevate-pam/pam/include/security/*.h "$PAYLOAD_DIR/include/security/"
 
     strip "$PAYLOAD_DIR/bin/"* "$PAYLOAD_DIR/sbin/"* "$PAYLOAD_DIR/lib/"*.so* "$PAYLOAD_DIR/lib/security/"* 2>/dev/null || true
     chmod 4755 "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/bin/elevate" 2>/dev/null || true

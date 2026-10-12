@@ -14,10 +14,9 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["musl"]
+depends          = ["musl", "elevate-pam"]
 provides         = [
-    "elevate", "elev", "vielev", "elevate-pam", "sudo",
-    "libpam", "libpam_misc", "libelevate_pam", "unix_chkpwd",
+    "elevate", "elev", "vielev", "sudo", "libelevate_pam",
     "useradd", "userdel", "usermod", "groupadd", "groupdel", "groupmod",
     "passwd", "chpasswd", "chgpasswd", "chage", "chfn", "chsh", "pwck",
     "grpck", "vipw", "umbra-sign", "gpasswd", "newusers", "groupmems",
@@ -31,7 +30,6 @@ bin     = "/overlayer/syshub/bin"
 sbin    = "/overlayer/syshub/sbin"
 lib     = "/overlayer/syshub/lib"
 etc     = "/overlayer/syshub/etc"
-include = "/overlayer/syshub/include"
 _syshub = true
 
 [remove]

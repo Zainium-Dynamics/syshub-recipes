@@ -1,0 +1,40 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=elevate-pam
+pkgver=1.0.1
+pkgrel=0
+_commit=886a1c93c48276ad8600e88ec129c70976138154
+source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz"
+sha256sums=""
+makedepends="rustup"
+needs_toolchain="musl gcc-musl"
+
+build() {
+    cd "elevate-pam-$_commit"
+
+    export PATH="/overlayer/syshub/bin:$PATH"
+    rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
+    export PATH="$HOME/.cargo/bin:$PATH"
+
+    # libpam and unix_chkpwd read this config; setuid programs ignore the env override
+    export ELEVATE_PAM_CONFIG_PATH=/overlayer/syshub/etc/elevate-pam/elevate-pam.toml
+    RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib" \
+        cargo build --release --target x86_64-unknown-linux-musl \
+        -p libpam-abi -p libpam-misc -p unix_chkpwd --features elevate-pam/legacy_pamd \
+        --config 'target.x86_64-unknown-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
+}
+
+package() {
+    local out="target/x86_64-unknown-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/include/security"
+
+    cp "$out/libpam.so" "$PAYLOAD_DIR/lib/libpam.so.0"
+    ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
+    cp "$out/libpam_misc.so" "$PAYLOAD_DIR/lib/libpam_misc.so.0"
+    ln -sf libpam_misc.so.0 "$PAYLOAD_DIR/lib/libpam_misc.so"
+    cp "$out/unix_chkpwd" "$PAYLOAD_DIR/lib/security/unix_chkpwd"
+    cp include/security/*.h "$PAYLOAD_DIR/include/security/"
+
+    strip "$PAYLOAD_DIR/lib/"*.so.0 "$PAYLOAD_DIR/lib/security/unix_chkpwd" 2>/dev/null || true
+    # pam_unix runs it to check passwords for callers that can't read shadow
+    chmod 4755 "$PAYLOAD_DIR/lib/security/unix_chkpwd"
+}
