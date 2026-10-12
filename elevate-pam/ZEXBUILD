@@ -4,9 +4,9 @@ pkgver=1.0.1
 pkgrel=0
 _commit=886a1c93c48276ad8600e88ec129c70976138154
 source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz"
-sha256sums="0f313279dfa594c89da6c1115efb8f1acf6d51d2cadbacbe01f601d4fae40657  $_commit.tar.gz"
+sha256sums=""
 makedepends="rustup"
-needs_toolchain="musl"
+needs_toolchain="musl gcc-musl"
 
 build() {
     cd "elevate-pam-$_commit"
@@ -17,10 +17,10 @@ build() {
 
     # libpam and unix_chkpwd read this config; setuid programs ignore the env override
     export ELEVATE_PAM_CONFIG_PATH=/overlayer/syshub/etc/elevate-pam/elevate-pam.toml
-    RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib -C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib" \
+    RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib" \
         cargo build --release --target x86_64-unknown-linux-musl \
         -p libpam-abi -p libpam-misc -p unix_chkpwd --features elevate-pam/legacy_pamd \
-        --config 'target.x86_64-unknown-linux-musl.linker="cc"'
+        --config 'target.x86_64-unknown-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
 }
 
 package() {
