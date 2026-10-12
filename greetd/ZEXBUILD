@@ -1,18 +1,15 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=greetd
 pkgver=0.10.3
-pkgrel=0
-source="https://github.com/kennylevinsen/greetd/archive/refs/tags/$pkgver.tar.gz"
-sha256sums="ee5cb70e0add4ca9c9fe57e47581ab0002d44c07743fb5492469f3b570db640b  $pkgver.tar.gz"
-makedepends="cargo linux-pam-dev"
+pkgrel=1
+_commit=4bcd1b1d883238c8eaf144ccdd5cf3ad84a0e0fc
+source="https://github.com/Zainium-Dynamics/greetd/archive/$_commit.tar.gz"
+sha256sums=""
+makedepends="cargo"
 
-# greetd's own auth path (pam-sys crate) hard-depends on PAM -- not
-# optional, no feature flag. Zainium has no published PAM package yet,
-# so build/link against Alpine's own linux-pam-dev and ship its .so +
-# modules straight into the payload (same musl-ABI-stable borrowing
-# already used for libzstd/libxml2/etc during systemd's build) rather
-# than block greetd on PAM getting published first.
+# Zainium's greetd fork: elevate-pam is compiled in (no libpam.so.0 needed)
 build() {
+    cd "greetd-$_commit"
     # RUSTFLAGS below applies to every rustc invocation, including cargo's
     # own build-script helper binaries that run right here on the CI host
     # -- they inherit the /overlayer/syshub/lib RPATH too and need a real
@@ -26,30 +23,22 @@ build() {
 }
 
 package() {
-    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/etc/pam.d" \
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc/pam.d" \
         "$PAYLOAD_DIR/etc/greetd" "$PAYLOAD_DIR/lib/systemd/system" "$PAYLOAD_DIR/lib/sysusers.d"
 
     cp target/release/greetd "$PAYLOAD_DIR/bin/greetd"
     cp target/release/agreety "$PAYLOAD_DIR/bin/agreety"
     strip "$PAYLOAD_DIR/bin/"*
 
-    for f in libpam.so.0 libpam.so.0.85.1; do
-        [ -e "/usr/lib/$f" ] && cp -L "/usr/lib/$f" "$PAYLOAD_DIR/lib/$f"
-    done
-    ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
-
-    for m in pam_unix.so pam_permit.so pam_deny.so pam_env.so pam_faildelay.so pam_nologin.so; do
-        [ -e "/usr/lib/security/$m" ] && cp -L "/usr/lib/security/$m" "$PAYLOAD_DIR/lib/security/$m"
-    done
-
     cat > "$PAYLOAD_DIR/etc/pam.d/greetd" <<'EOF'
-auth       required     pam_unix.so nullok
+auth       required     pam_unix.so
 auth       required     pam_env.so
 account    required     pam_unix.so
 account    required     pam_nologin.so
-password   required     pam_unix.so nullok
+password   required     pam_unix.so
 session    required     pam_unix.so
 session    required     pam_env.so
+session    optional     pam_systemd.so
 EOF
 
     # cosmic-greeter, not agreety+bash -- Zainium's actual default
@@ -66,34 +55,12 @@ vt = "1"
 service = "cosmic-greeter"
 
 [default_session]
-command = "cosmic-greeter-start"
+command = "/overlayer/syshub/bin/cosmic-greeter-start"
 user = "cosmic-greeter"
 EOF
 
-    cat > "$PAYLOAD_DIR/lib/systemd/system/greetd.service" <<'EOF'
-[Unit]
-Description=Greeter daemon
-After=systemd-user-sessions.service plymouth-quit-wait.service
-After=getty@tty1.service
-Conflicts=getty@tty1.service
-Before=graphical.target
-
-[Service]
-Type=simple
-ExecStart=/overlayer/syshub/bin/greetd
-IgnoreSIGPIPE=no
-SendSIGHUP=yes
-TimeoutStopSec=30s
-KeyringMode=shared
-Restart=always
-RestartSec=1
-StartLimitBurst=5
-StartLimitInterval=30
-
-[Install]
-WantedBy=graphical.target
-Alias=display-manager.service
-EOF
+    # the fork's unit keeps the plymouth splash up until the greeter window shows
+    cp greetd.service "$PAYLOAD_DIR/lib/systemd/system/greetd.service"
 
     cat > "$PAYLOAD_DIR/lib/sysusers.d/greetd.conf" <<'EOF'
 u greeter - "greetd greeter" -
