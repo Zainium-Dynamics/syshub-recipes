@@ -3,10 +3,10 @@ pkgname=elevate-pam
 pkgver=1.0.1
 pkgrel=0
 _nightly=nightly-2026-05-24
-_commit=886a1c93c48276ad8600e88ec129c70976138154
+_commit=1afb0719052ce54db3602ed2f2551a86a0c6c5ef
 source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz
 x86_64-zainium-linux-musl.json"
-sha256sums="0f313279dfa594c89da6c1115efb8f1acf6d51d2cadbacbe01f601d4fae40657  $_commit.tar.gz"
+sha256sums="9e3e34ea9f6bdd673e65e0190ac2151efee02902cd095aa58a83c49591efbf6e  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl"
 
