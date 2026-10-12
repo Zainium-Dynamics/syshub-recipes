@@ -22,7 +22,7 @@ build() {
     export ELEVATE_PAM_CONFIG_PATH=/overlayer/syshub/etc/elevate-pam/elevate-pam.toml
     RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib -C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib" \
         cargo "+$_nightly" build --release \
-        -p libpam-abi -p libpam-misc -p unix_chkpwd --features elevate-pam/legacy_pamd \
+        -p elevate-pam -p libpam-abi -p libpam-misc -p unix_chkpwd --features elevate-pam/legacy_pamd \
         -Z json-target-spec \
         --target "$target" \
         -Z build-std=core,alloc,std,panic_abort \
@@ -33,6 +33,9 @@ package() {
     local out="target/x86_64-zainium-linux-musl/release"
     mkdir -p "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/include/security"
 
+    # elevate dlopens libelevate_pam.so.0; classic libpam.so only with ELEVATE_ALLOW_LIBPAM=1
+    cp "$out/libelevate_pam.so" "$PAYLOAD_DIR/lib/libelevate_pam.so.0"
+    ln -sf libelevate_pam.so.0 "$PAYLOAD_DIR/lib/libelevate_pam.so"
     cp "$out/libpam.so" "$PAYLOAD_DIR/lib/libpam.so.0"
     ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
     cp "$out/libpam_misc.so" "$PAYLOAD_DIR/lib/libpam_misc.so.0"

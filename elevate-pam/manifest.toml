@@ -14,7 +14,7 @@ ed25519_sig      = ""
 ed25519_pubkey   = ""
 
 depends          = ["musl"]
-provides         = ["libpam", "libpam_misc", "unix_chkpwd"]
+provides         = ["libelevate_pam", "libpam", "libpam_misc", "unix_chkpwd"]
 tags             = ["base", "security", "auth"]
 
 [install]
