@@ -1,0 +1,41 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=elevate
+pkgver=1.0.1
+pkgrel=0
+_nightly=nightly-2026-05-24
+_commit=f57fee0565362c3bc76b605c9ead347912ec25c1
+source="https://github.com/Zainium-Dynamics/elevate/archive/$_commit.tar.gz
+x86_64-zainium-linux-musl.json"
+sha256sums="5bdf8b75fb1e0bd0b19989a7f42ec7999a2c405ec5d3b634c9c7da4f65db66eb  $_commit.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl"
+
+build() {
+    local target="$SRCDIR/x86_64-zainium-linux-musl.json"
+    cd "elevate-$_commit"
+
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install "$_nightly" --profile minimal --component rust-src
+
+    RUSTFLAGS="-C target-feature=-crt-static -C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib" \
+        cargo "+$_nightly" build --release \
+        -Z json-target-spec \
+        --target "$target" \
+        -Z build-std=core,alloc,std,panic_abort \
+        --config 'target.x86_64-zainium-linux-musl.linker="cc"'
+}
+
+package() {
+    local out="target/x86_64-zainium-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/sbin" "$PAYLOAD_DIR/etc/elevators" "$PAYLOAD_DIR/etc/pam.d"
+
+    cp "$out/elevate" "$out/elev" "$out/vielev" "$PAYLOAD_DIR/bin/"
+    ln -sf ../bin/vielev "$PAYLOAD_DIR/sbin/vielev"
+    cp etc/elevators/elevate.toml "$PAYLOAD_DIR/etc/elevators/"
+    cp pam.d/elev pam.d/elev-l pam.d/elevate "$PAYLOAD_DIR/etc/pam.d/"
+
+    strip "$PAYLOAD_DIR/bin/"* 2>/dev/null || true
+    chmod 4755 "$PAYLOAD_DIR/bin/elev" "$PAYLOAD_DIR/bin/elevate"
+}
