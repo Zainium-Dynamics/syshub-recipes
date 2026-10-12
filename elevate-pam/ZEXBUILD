@@ -1,0 +1,45 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=elevate-pam
+pkgver=1.0.1
+pkgrel=0
+_nightly=nightly-2026-05-24
+_commit=886a1c93c48276ad8600e88ec129c70976138154
+source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz
+x86_64-zainium-linux-musl.json"
+sha256sums="0f313279dfa594c89da6c1115efb8f1acf6d51d2cadbacbe01f601d4fae40657  $_commit.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl"
+
+build() {
+    local target="$SRCDIR/x86_64-zainium-linux-musl.json"
+    cd "elevate-pam-$_commit"
+
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install "$_nightly" --profile minimal --component rust-src
+
+    export ELEVATE_PAM_CONFIG_PATH=/overlayer/syshub/etc/elevate-pam/elevate-pam.toml
+    RUSTFLAGS="-C target-feature=-crt-static -L/overlayer/syshub/lib -C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib" \
+        cargo "+$_nightly" build --release \
+        -p libpam-abi -p libpam-misc -p unix_chkpwd --features elevate-pam/legacy_pamd \
+        -Z json-target-spec \
+        --target "$target" \
+        -Z build-std=core,alloc,std,panic_abort \
+        --config 'target.x86_64-zainium-linux-musl.linker="cc"'
+}
+
+package() {
+    local out="target/x86_64-zainium-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/lib/security" "$PAYLOAD_DIR/include/security"
+
+    cp "$out/libpam.so" "$PAYLOAD_DIR/lib/libpam.so.0"
+    ln -sf libpam.so.0 "$PAYLOAD_DIR/lib/libpam.so"
+    cp "$out/libpam_misc.so" "$PAYLOAD_DIR/lib/libpam_misc.so.0"
+    ln -sf libpam_misc.so.0 "$PAYLOAD_DIR/lib/libpam_misc.so"
+    cp "$out/unix_chkpwd" "$PAYLOAD_DIR/lib/security/unix_chkpwd"
+    cp include/security/*.h "$PAYLOAD_DIR/include/security/"
+
+    strip "$PAYLOAD_DIR/lib/"*.so.0 "$PAYLOAD_DIR/lib/security/unix_chkpwd" 2>/dev/null || true
+    chmod 4755 "$PAYLOAD_DIR/lib/security/unix_chkpwd"
+}
