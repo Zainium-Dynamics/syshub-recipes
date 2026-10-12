@@ -7,7 +7,7 @@ _commit=1dcd4e08db3cc621a7cc38bba9d857c3c4c29866
 source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz"
 sha256sums="6a73cdf24f5dab2ec3d779d0d591dbe502e64f1c170ff2b8b6318f22f6066963  $_commit.tar.gz"
 makedepends="rustup"
-needs_toolchain="musl"
+needs_toolchain="musl gcc-musl"
 
 build() {
     cd "elevate-pam-$_commit"
@@ -15,7 +15,6 @@ build() {
     export PATH="/overlayer/syshub/bin:$PATH"
     export LD_LIBRARY_PATH=/usr/lib:/lib
 
-    export CARGO_TARGET_X86_64_ZAINIUM_LINUX_MUSL_RUSTFLAGS="-C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib"
     rustup-init -y -q --default-toolchain none --profile minimal
     export PATH="$HOME/.cargo/bin:$PATH"
 
@@ -26,7 +25,7 @@ build() {
         -Z json-target-spec \
         --target targets/x86_64-zainium-linux-musl.json \
         -Z build-std=core,alloc,std,panic_abort \
-        --config 'target.x86_64-zainium-linux-musl.linker="cc"'
+        --config 'target.x86_64-zainium-linux-musl.linker="x86_64-zainium-linux-musl-gcc"'
 }
 
 package() {
