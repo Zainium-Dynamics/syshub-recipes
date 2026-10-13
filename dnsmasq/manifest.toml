@@ -1,0 +1,28 @@
+# manifest.toml — dnsmasq (syshub tier)
+
+[package]
+name             = "dnsmasq"
+version          = "2.93"
+description      = "Lightweight DNS forwarder and DHCP server (used by NetworkManager for hotspots and shared connections)"
+license          = "GPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://thekelleys.org.uk/dnsmasq/doc.html"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["dnsmasq"]
+tags             = ["base", "network"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

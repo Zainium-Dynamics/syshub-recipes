@@ -1,0 +1,29 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=dnsmasq
+pkgver=2.93
+pkgrel=0
+source="https://thekelleys.org.uk/dnsmasq/dnsmasq-$pkgver.tar.xz"
+sha256sums="0c00d4e5c97c8306e5fb932b348b34269c9c29a0e7df0e8e82958b407092bc19  dnsmasq-$pkgver.tar.xz"
+
+# NetworkManager runs dnsmasq for shared connections (Wi-Fi hotspot, sharing a connection);
+# it looks for it in its own prefix first, so /overlayer/syshub/bin/dnsmasq is found as is.
+build() {
+    # Zainium has no "dip" group; hosts/ethers live under syshub
+    sed -i -e 's|^#define CHGRP "dip"|#define CHGRP "nobody"|' \
+        -e 's|^#define HOSTSFILE "/etc/hosts"|#define HOSTSFILE "/overlayer/syshub/etc/hosts"|' \
+        -e 's|^#define ETHERSFILE "/etc/ethers"|#define ETHERSFILE "/overlayer/syshub/etc/ethers"|' \
+        src/config.h
+
+    # the Makefile sets its own empty LDFLAGS, so CI's loader/rpath flags must be passed here
+    make -j"$(nproc)" \
+        PREFIX=/overlayer/syshub \
+        BINDIR=/overlayer/syshub/bin \
+        LDFLAGS="${LDFLAGS:-}" \
+        COPTS='-DCONFFILE=\"/overlayer/syshub/etc/dnsmasq.conf\" -DRUNFILE=\"/run/dnsmasq.pid\" -DLEASEFILE=\"/overlayer/syshub/var/lib/misc/dnsmasq.leases\"'
+}
+
+package() {
+    mkdir -p "$PAYLOAD_DIR/bin"
+    install -m755 src/dnsmasq "$PAYLOAD_DIR/bin/dnsmasq"
+    strip "$PAYLOAD_DIR/bin/dnsmasq" 2>/dev/null || true
+}
