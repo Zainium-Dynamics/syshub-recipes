@@ -20,6 +20,7 @@ tags             = ["terminal", "library"]
 
 [install]
 lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
 _syshub = true
 
 [remove]
