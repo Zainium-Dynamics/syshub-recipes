@@ -1,0 +1,34 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=musl-fts
+pkgver=1.2.7
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://github.com/void-linux/musl-fts/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="49ae567a96dbab22823d045ffebe0d6b14b9b799925e9ca9274d47d26ff482a6  v$pkgver.tar.gz"
+makedepends="autoconf automake libtool"
+
+# fts(3) for musl, which doesn't have it: elfutils' libdw and others use it
+build() {
+    autoreconf -fi
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --disable-static
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    cp -P "$inst"/lib/libfts.so.* "$PAYLOAD_DIR/lib/"
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/fts.h "$PAYLOAD_DIR/include/"
+    cp -P "$inst"/lib/libfts.so "$PAYLOAD_DIR/lib/"
+    cp -a "$inst"/lib/pkgconfig/musl-fts.pc "$PAYLOAD_DIR/lib/pkgconfig/"
+}
