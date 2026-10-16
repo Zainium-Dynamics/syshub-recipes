@@ -17,8 +17,8 @@ build() {
     # subprocess shell, PATH fallback, os-release, mime.types and the REPL's terminfo under /overlayer
     patch -p1 < "$RECIPE_DIR/0002-zainium-paths.patch"
 
-    # OpenSSL 4 dropped TLSv1_method, TLSv1_1_method and TLSv1_2_method without defining their OPENSSL_NO_* guards
-    export CFLAGS_NODIST="${CFLAGS:-} -DTHREAD_STACK_SIZE=0x200000 -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_2_METHOD"
+    # OpenSSL 4 dropped SSLv3_method and TLSv1_method, TLSv1_1_method, TLSv1_2_method without defining their OPENSSL_NO_* guards
+    export CFLAGS_NODIST="${CFLAGS:-} -DTHREAD_STACK_SIZE=0x200000 -DOPENSSL_NO_SSL3_METHOD -DOPENSSL_NO_TLS1_METHOD -DOPENSSL_NO_TLS1_1_METHOD -DOPENSSL_NO_TLS1_2_METHOD"
     export LDFLAGS_NODIST="${LDFLAGS:-} -Wl,-z,stack-size=8388608"
     export LD_LIBRARY_PATH="/usr/lib:/lib"
     # the toolchain packages' headers, libraries and .pc files are under /overlayer/syshub
