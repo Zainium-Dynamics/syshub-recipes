@@ -54,13 +54,17 @@ is_clang_bin() {
     return 1
 }
 
-# the link each library's SONAME names (libclang.so.22.1), which the install doesn't always create
+# per library: the link its SONAME names (libclang.so.22.1) and the plain .so the linker
+# takes for -lclang, both of which the install doesn't always create
 soname_links() {
     for f in "$1"/*.so.*; do
         if [ -f "$f" ] && [ ! -L "$f" ]; then
             soname=$(readelf -d "$f" | sed -n 's/.*(SONAME).*\[\(.*\)\]/\1/p')
             if [ -n "$soname" ] && [ ! -e "$1/$soname" ]; then
                 ln -s "${f##*/}" "$1/$soname"
+            fi
+            if [ -n "$soname" ] && [ ! -e "$1/${soname%%.so*}.so" ]; then
+                ln -s "$soname" "$1/${soname%%.so*}.so"
             fi
         fi
     done
