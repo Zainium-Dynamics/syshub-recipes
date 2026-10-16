@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=llvm
 pkgver=22.1.8
-pkgrel=0
+pkgrel=1
 subpackages="llvm-dev"
 source="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-$pkgver.tar.gz"
 sha256sums="ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace  llvmorg-$pkgver.tar.gz"
@@ -50,6 +50,12 @@ package() {
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
     find "$inst/lib" -maxdepth 1 \( -name 'libLLVM*.so*' -o -name 'libclang*.so*' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    # the link each library's SONAME names (libclang.so.22.1), which the install doesn't always create
+    for f in "$PAYLOAD_DIR"/lib/*.so.*; do
+        [ -f "$f" ] && [ ! -L "$f" ] || continue
+        soname=$(readelf -d "$f" | sed -n 's/.*(SONAME).*\[\(.*\)\]/\1/p')
+        [ -n "$soname" ] && [ ! -e "$PAYLOAD_DIR/lib/$soname" ] && ln -s "${f##*/}" "$PAYLOAD_DIR/lib/$soname"
+    done
     cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/"
 }
 
