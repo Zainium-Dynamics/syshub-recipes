@@ -1,0 +1,33 @@
+[package]
+name             = "upower"
+version          = "1.91.5"
+description      = "Power device daemon (batteries, AC, UPS, peripherals) over D-Bus, with libupower-glib"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://upower.freedesktop.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "libgudev", "polkit", "systemd", "dbus"]
+provides         = ["upower", "upowerd", "libupower-glib"]
+tags             = ["base", "power", "hardware"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+var     = "/overlayer/syshub/var"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
