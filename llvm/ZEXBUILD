@@ -52,9 +52,12 @@ package() {
     find "$inst/lib" -maxdepth 1 \( -name 'libLLVM*.so*' -o -name 'libclang*.so*' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
     # the link each library's SONAME names (libclang.so.22.1), which the install doesn't always create
     for f in "$PAYLOAD_DIR"/lib/*.so.*; do
-        [ -f "$f" ] && [ ! -L "$f" ] || continue
-        soname=$(readelf -d "$f" | sed -n 's/.*(SONAME).*\[\(.*\)\]/\1/p')
-        [ -n "$soname" ] && [ ! -e "$PAYLOAD_DIR/lib/$soname" ] && ln -s "${f##*/}" "$PAYLOAD_DIR/lib/$soname"
+        if [ -f "$f" ] && [ ! -L "$f" ]; then
+            soname=$(readelf -d "$f" | sed -n 's/.*(SONAME).*\[\(.*\)\]/\1/p')
+            if [ -n "$soname" ] && [ ! -e "$PAYLOAD_DIR/lib/$soname" ]; then
+                ln -s "${f##*/}" "$PAYLOAD_DIR/lib/$soname"
+            fi
+        fi
     done
     cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/"
 }
