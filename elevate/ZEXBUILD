@@ -1,12 +1,12 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=elevate
 pkgver=1.0.1
-pkgrel=0
+pkgrel=1
 _nightly=nightly-2026-05-24
-_commit=f57fee0565362c3bc76b605c9ead347912ec25c1
+_commit=c17bcc281e450577f97fc17cf36550d4bca3658a
 source="https://github.com/Zainium-Dynamics/elevate/archive/$_commit.tar.gz
 x86_64-zainium-linux-musl.json"
-sha256sums="5bdf8b75fb1e0bd0b19989a7f42ec7999a2c405ec5d3b634c9c7da4f65db66eb  $_commit.tar.gz"
+sha256sums="5e15c524f5dd4590aa8b75ba7ef8e75bc734f2561c5dd4051bb363be0bf271a0  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl"
 
