@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["musl", "libffi", "expat", "openssl", "zlib", "bzip2", "xz", "readline", "ncurses", "util-linux", "sqlite"]
+depends          = ["musl", "libffi", "expat", "openssl", "zlib", "bzip2", "xz", "readline", "ncurses", "util-linux", "sqlite", "gettext"]
 provides         = ["python"]
 tags             = ["language", "runtime"]
 
