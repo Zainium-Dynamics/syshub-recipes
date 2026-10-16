@@ -1,15 +1,16 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=appstream
 pkgver=1.1.6
-pkgrel=1
+pkgrel=2
 subpackages="appstream-dev"
 source="https://www.freedesktop.org/software/appstream/releases/AppStream-$pkgver.tar.xz"
 sha256sums="e298929f39729e84a70f6be6941f3e7f3fc2ee3c83cb3ea1b1b5b280a8fe3a24  AppStream-$pkgver.tar.xz"
-makedepends="glib-dev libfyaml-dev libxmlb-dev wayland-dev gperf itstool gobject-introspection-dev"
+makedepends="glib-dev wayland-dev gperf itstool gobject-introspection-dev"
 # Real Zainium wayland package (not borrowed from Alpine) -- g-ir-scanner
 # needs a runnable libwayland-client.so.0 mid-build, and this is one we
 # already publish ourselves.
-needs_toolchain="wayland"
+# libxmlb and libfyaml are base packages: link those, not Alpine's
+needs_toolchain="wayland libxmlb libxmlb-dev libfyaml libfyaml-dev"
 
 # gnome-software's hard AppStream dependency. systemd is a real build
 # option here (unlike gnome-software's own optional flatpak-only use)
@@ -23,6 +24,7 @@ build() {
     patch -p1 < "$RECIPE_DIR/0001-skip-news-to-metainfo.patch"
     # catalog, cache, flatpak, os-release and machine-id paths are hardcoded to /usr, /var and /etc
     patch -p1 < "$RECIPE_DIR/0002-zainium-paths.patch"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
