@@ -1,0 +1,55 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=upower
+pkgver=1.91.5
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://gitlab.freedesktop.org/upower/upower/-/archive/v$pkgver/upower-v$pkgver.tar.bz2"
+sha256sums="c465a1c7fc05d00ac2bc7321c19b9b7e479410d8392bd7eb3e714275729629fd  upower-v$pkgver.tar.bz2"
+makedepends="meson ninja pkgconf gettext glib-dev libgudev-dev"
+needs_toolchain="systemd systemd-dev polkit polkit-dev"
+
+# Battery, AC and peripheral power for the desktop (COSMIC's battery applet and power page),
+# and the backend power-profiles-daemon reads. D-Bus activated, enabled for graphical.target.
+build() {
+    cd "$SRCDIR/upower-v$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        -Dos_backend=linux \
+        -Dsystemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        -Dudevrulesdir=/overlayer/syshub/lib/udev/rules.d \
+        -Dudevhwdbdir=/overlayer/syshub/lib/udev/hwdb.d \
+        -Dhistorydir=/overlayer/syshub/var/lib/upower \
+        -Dstatedir=/overlayer/syshub/var/lib/upower \
+        -Dpolkit=enabled \
+        -Didevice=disabled \
+        -Dintrospection=disabled \
+        -Dzshcompletiondir=no \
+        -Dinstalled_tests=false \
+        -Dgtk-doc=false \
+        -Dman=false
+    ninja -C builddir
+}
+
+package() {
+    cd "$SRCDIR/upower-v$pkgver"
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+    local p="$PAYLOAD_DIR/overlayer/syshub"
+
+    mkdir -p "$p/lib/systemd/system/graphical.target.wants"
+    ln -sf ../upower.service "$p/lib/systemd/system/graphical.target.wants/upower.service"
+
+    mkdir -p "$STAGING_ROOT/_upower-dev"
+    mv "$p/include" "$STAGING_ROOT/_upower-dev/include"
+    mv "$p/lib/pkgconfig" "$STAGING_ROOT/_upower-dev/pkgconfig"
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_upower-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_upower-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}

@@ -1,0 +1,29 @@
+[package]
+name             = "libgudev-dev"
+version          = "238"
+description      = "libgudev headers, pkgconfig"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.gnome.org/GNOME/libgudev"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libgudev"]
+provides         = ["libgudev-dev"]
+tags             = ["base", "hardware", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
