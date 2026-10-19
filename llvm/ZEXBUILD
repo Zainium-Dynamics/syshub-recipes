@@ -70,7 +70,6 @@ soname_links() {
     done
 }
 
-# text files only: the headers and scripts carry /usr in comments; ELF files are skipped (sed would break them)
 strip_usr() {
     find "$1" -type f | while read -r f; do
         grep -q '/usr' "$f" || continue
