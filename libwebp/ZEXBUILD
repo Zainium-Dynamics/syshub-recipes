@@ -1,14 +1,20 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=libwebp
 pkgver=1.6.0
-pkgrel=0
+pkgrel=1
 subpackages="libwebp-dev"
 source="https://github.com/webmproject/libwebp/archive/refs/tags/v$pkgver.tar.gz"
 sha256sums="93a852c2b3efafee3723efd4636de855b46f9fe1efddd607e1f42f60fc8f2136  v$pkgver.tar.gz"
-makedepends="cmake libpng-dev libjpeg-turbo-dev zlib-dev"
+# Zainium's own cmake and libraries, not Alpine's: Alpine's libjpeg-turbo is built in jpeg8
+# mode (libjpeg.so.8), Zainium's is libjpeg.so.62, so cwebp/img2webp built against Alpine's
+# had no libjpeg to load on Zainium.
+needs_toolchain="cmake libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev zlib zlib-dev"
 
 build() {
+    export PATH="/overlayer/syshub/bin:$PATH"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     cmake -B builddir \
+        -DCMAKE_PREFIX_PATH=/overlayer/syshub \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
         -DCMAKE_INSTALL_LIBDIR=/overlayer/syshub/lib \
         -DCMAKE_INSTALL_INCLUDEDIR=/overlayer/syshub/include \
@@ -24,6 +30,10 @@ build() {
         -DWEBP_BUILD_WEBPMUX=ON \
         -DWEBP_BUILD_EXTRAS=ON
     cmake --build builddir
+    if readelf -d builddir/cwebp | grep -q 'libjpeg\.so\.8'; then
+        echo "cwebp is linked against Alpine's libjpeg.so.8, not Zainium's libjpeg-turbo" >&2
+        return 1
+    fi
     DESTDIR="$(pwd)/_zexbuild-install" cmake --install builddir
 }
 
