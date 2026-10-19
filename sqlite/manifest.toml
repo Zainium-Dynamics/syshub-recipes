@@ -1,0 +1,29 @@
+[package]
+name             = "sqlite"
+version          = "3.54.0"
+description      = "SQLite database library (libsqlite3) and the sqlite3 shell"
+license          = "blessing"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.sqlite.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "readline"]
+provides         = ["sqlite", "sqlite3", "libsqlite3"]
+tags             = ["base", "database"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

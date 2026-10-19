@@ -1,0 +1,55 @@
+--- a/Lib/mimetypes.py
++++ b/Lib/mimetypes.py
+@@ -41,6 +41,8 @@
+ ]
+ 
+ knownfiles = [
++    "/overlayer/syshub/etc/mime.types",
++    "/overlayer/zexlib/union/etc/mime.types",
+     "/etc/mime.types",
+     "/etc/httpd/mime.types",                    # Mac OS X
+     "/etc/httpd/conf/mime.types",               # Apache
+--- a/Lib/platform.py
++++ b/Lib/platform.py
+@@ -1407,7 +1407,7 @@
+ # https://www.freedesktop.org/software/systemd/man/os-release.html
+ 
+ # /etc takes precedence over /usr/lib
+-_os_release_candidates = ("/etc/os-release", "/usr/lib/os-release")
++_os_release_candidates = ("/overlayer/syshub/etc/os-release", "/overlayer/syshub/lib/os-release")
+ _os_release_cache = None
+ 
+ 
+--- a/Lib/posixpath.py
++++ b/Lib/posixpath.py
+@@ -18,7 +18,7 @@
+ extsep = '.'
+ sep = '/'
+ pathsep = ':'
+-defpath = '/bin:/usr/bin'
++defpath = '/overlayer/syshub/bin:/overlayer/zexlib/union/bin'
+ altsep = None
+ devnull = '/dev/null'
+ 
+--- a/Lib/_pyrepl/terminfo.py
++++ b/Lib/_pyrepl/terminfo.py
+@@ -101,6 +101,8 @@
+ 
+     dirs.extend(
+         [
++            "/overlayer/syshub/share/terminfo",
++            "/overlayer/zexlib/union/share/terminfo",
+             "/etc/terminfo",
+             "/lib/terminfo",
+             "/usr/lib/terminfo",
+--- a/Lib/subprocess.py
++++ b/Lib/subprocess.py
+@@ -1847,7 +1847,7 @@
+             if shell:
+                 # On Android the default shell is at '/system/bin/sh'.
+                 unix_shell = ('/system/bin/sh' if
+-                          hasattr(sys, 'getandroidapilevel') else '/bin/sh')
++                          hasattr(sys, 'getandroidapilevel') else '/overlayer/syshub/bin/sh')
+                 args = [unix_shell, "-c"] + args
+                 if executable:
+                     args[0] = executable

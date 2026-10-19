@@ -1,0 +1,48 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=power-profiles-daemon
+pkgver=0.30
+pkgrel=0
+source="https://gitlab.freedesktop.org/upower/power-profiles-daemon/-/archive/$pkgver/power-profiles-daemon-$pkgver.tar.bz2"
+sha256sums="528ee5b8ca0a27d8d66128ebf850e23be9571dc130cf2a82dd2463dac7d3a92f  power-profiles-daemon-$pkgver.tar.bz2"
+makedepends="meson ninja pkgconf python3 glib-dev libgudev-dev upower-dev"
+# the base's polkit: its pkgconfig puts the policy under /overlayer/syshub/share/polkit-1/actions
+needs_toolchain="systemd systemd-dev polkit polkit-dev"
+
+# Power profiles (power saver / balanced / performance) for COSMIC Settings' "Power mode",
+# through ACPI platform_profile and amd/intel pstate. D-Bus activated, enabled for graphical.target.
+build() {
+    sed -i 's#"/var/lib/power-profiles-daemon/state.ini"#"/overlayer/syshub/var/lib/power-profiles-daemon/state.ini"#' \
+        src/power-profiles-daemon.c
+    grep -q '"/overlayer/syshub/var/lib/power-profiles-daemon/state.ini"' src/power-profiles-daemon.c
+    sed -i 's#^Exec=/bin/false#Exec=/overlayer/syshub/bin/false#' data/power-profiles-daemon.dbus.service.in
+
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        -Dsystemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        -Dtests=false \
+        -Dmanpage=disabled \
+        -Dbashcomp=disabled \
+        -Dpylint=disabled \
+        -Dgtk_doc=false
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+    local p="$PAYLOAD_DIR/overlayer/syshub"
+
+    # powerprofilesctl needs PyGObject (gi), which the base doesn't have; COSMIC talks D-Bus directly
+    rm -f "$p/bin/powerprofilesctl"
+    rmdir "$p/bin" 2>/dev/null || true
+
+    [ -e "$p/share/polkit-1/actions/power-profiles-daemon.policy" ]
+
+    mkdir -p "$p/lib/systemd/system/graphical.target.wants"
+    ln -sf ../power-profiles-daemon.service \
+        "$p/lib/systemd/system/graphical.target.wants/power-profiles-daemon.service"
+}

@@ -1,0 +1,28 @@
+
+[package]
+name             = "elevate-pam"
+version          = "1.0.1"
+description      = "Linux-PAM compatible libpam with builtin modules and the unix_chkpwd helper"
+license          = "MIT OR Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/Zainium-Dynamics/elevate-pam"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["libelevate_pam", "libpam", "libpam_misc", "unix_chkpwd"]
+tags             = ["base", "security", "auth"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+include = "/overlayer/syshub/include"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

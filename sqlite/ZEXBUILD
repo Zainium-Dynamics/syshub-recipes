@@ -1,0 +1,42 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=sqlite
+pkgver=3.54.0
+_srcver=3540000
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://www.sqlite.org/2026/sqlite-autoconf-$_srcver.tar.gz"
+sha256sums="134ec0802dda5795816e25d25872d20b312cb3973438c49b30bc40b7705ea9ed  sqlite-autoconf-$_srcver.tar.gz"
+makedepends="readline-dev"
+
+build() {
+    cd "$SRCDIR/sqlite-autoconf-$_srcver"
+    # --soname=legacy: libsqlite3.so.0, what every program built against sqlite (Python's _sqlite3, ...) loads
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --soname=legacy \
+        --disable-static \
+        --enable-fts3 \
+        --enable-fts4 \
+        --enable-fts5 \
+        --enable-rtree \
+        --enable-session \
+        --enable-column-metadata \
+        --enable-dbstat
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="$SRCDIR/sqlite-autoconf-$_srcver/_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libsqlite3.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    cp "$inst/bin/sqlite3" "$PAYLOAD_DIR/bin/"
+    [ -e "$PAYLOAD_DIR/lib/libsqlite3.so.0" ]
+}
+
+dev() {
+    local inst="$SRCDIR/sqlite-autoconf-$_srcver/_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}

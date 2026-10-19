@@ -1,0 +1,30 @@
+[package]
+name             = "power-profiles-daemon"
+version          = "0.30"
+description      = "Power profiles (power saver, balanced, performance) over D-Bus, used by COSMIC Settings"
+license          = "GPL-3.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/upower/power-profiles-daemon"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "libgudev", "upower", "polkit", "systemd", "dbus"]
+provides         = ["power-profiles-daemon"]
+tags             = ["base", "power"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

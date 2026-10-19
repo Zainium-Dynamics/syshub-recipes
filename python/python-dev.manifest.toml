@@ -1,6 +1,6 @@
 [package]
 name             = "python-dev"
-version          = "3.14.6"
+version          = "3.14.8"
 description      = "Python headers, static lib, pkgconfig"
 license          = "PSF-2.0"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"

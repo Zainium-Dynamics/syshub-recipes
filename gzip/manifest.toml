@@ -1,0 +1,30 @@
+# manifest.toml — gzip (syshub tier)
+
+[package]
+name             = "gzip"
+version          = "1.14"
+description      = "GNU gzip — gzip, gunzip, zcat and the z* helper scripts"
+license          = "GPL-3.0-or-later"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.gnu.org/software/gzip/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["gzip", "gunzip", "zcat", "zgrep", "zdiff", "zless", "zmore", "znew", "zforce", "gzexe", "uncompress"]
+tags             = ["base", "compression"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["glib", "cairo", "freetype", "fontconfig"]
+depends          = ["glib", "cairo", "freetype", "fontconfig", "harfbuzz", "fribidi"]
 provides         = ["pango"]
 tags             = ["base", "library", "gnome", "text"]
 

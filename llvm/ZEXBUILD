@@ -1,8 +1,8 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=llvm
 pkgver=22.1.8
-pkgrel=0
-subpackages="llvm-dev"
+pkgrel=1
+subpackages="llvm-dev clang"
 source="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-$pkgver.tar.gz"
 sha256sums="ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace  llvmorg-$pkgver.tar.gz"
 makedepends="libffi-dev zlib-dev zstd-dev binutils-dev curl-dev libxml2-dev cmake python3 samurai"
@@ -46,11 +46,81 @@ build() {
     LD_LIBRARY_PATH=/usr/lib:/lib DESTDIR="$(pwd)/_zexbuild-install" cmake --install build
 }
 
+# clang's programs (the clang family, its analyzers and arch probes)
+is_clang_bin() {
+    case "$1" in
+        clang|clang-*|clang++*|git-clang-*|c-index-test|diagtool|hmaptool|scan-build*|scan-view|analyze-build|intercept-build|*-arch) return 0 ;;
+    esac
+    return 1
+}
+
+# per library: the link its SONAME names (libclang.so.22.1) and the plain .so the linker
+# takes for -lclang, both of which the install doesn't always create
+soname_links() {
+    for f in "$1"/*.so.*; do
+        if [ -f "$f" ] && [ ! -L "$f" ]; then
+            soname=$(readelf -d "$f" | sed -n 's/.*(SONAME).*\[\(.*\)\]/\1/p')
+            if [ -n "$soname" ] && [ ! -e "$1/$soname" ]; then
+                ln -s "${f##*/}" "$1/$soname"
+            fi
+            if [ -n "$soname" ] && [ ! -e "$1/${soname%%.so*}.so" ]; then
+                ln -s "$soname" "$1/${soname%%.so*}.so"
+            fi
+        fi
+    done
+}
+
+strip_usr() {
+    find "$1" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
+
+# base: libLLVM (mesa needs it) and the llvm-* tools; clang is the userland clang package
 package() {
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
-    find "$inst/lib" -maxdepth 1 \( -name 'libLLVM*.so*' -o -name 'libclang*.so*' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
-    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/"
+    find "$inst/lib" -maxdepth 1 \( -name 'libLLVM*.so*' -o -name 'libLTO.so*' -o -name 'libRemarks.so*' \) -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    soname_links "$PAYLOAD_DIR/lib"
+    for f in "$inst"/bin/*; do
+        if ! is_clang_bin "${f##*/}"; then
+            cp -P "$f" "$PAYLOAD_DIR/bin/"
+        fi
+    done
+    strip_usr "$PAYLOAD_DIR"
+}
+
+# userland: clang, its libraries and its builtin headers (lib/clang/<ver>/include)
+clang() {
+    local inst="$SRCDIR/llvm-project-llvmorg-$pkgver/_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
+    find "$inst/lib" -maxdepth 1 -name 'libclang*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    soname_links "$PAYLOAD_DIR/lib"
+    cp -a "$inst/lib/clang" "$PAYLOAD_DIR/lib/"
+    for f in "$inst"/bin/*; do
+        if is_clang_bin "${f##*/}"; then
+            cp -P "$f" "$PAYLOAD_DIR/bin/"
+        fi
+    done
+    # the names people run: clang-<major> is the real binary
+    local real
+    real=$(cd "$PAYLOAD_DIR/bin" && ls clang-[0-9]* | head -n 1)
+    for n in clang clang++ clang-cpp clang-cl; do
+        if [ ! -e "$PAYLOAD_DIR/bin/$n" ]; then
+            ln -s "$real" "$PAYLOAD_DIR/bin/$n"
+        fi
+    done
+    if [ -d "$inst/libexec" ]; then
+        cp -a "$inst/libexec" "$PAYLOAD_DIR/"
+    fi
+    if [ -d "$inst/share/clang" ]; then
+        mkdir -p "$PAYLOAD_DIR/share"
+        cp -a "$inst/share/clang" "$PAYLOAD_DIR/share/"
+    fi
+    strip_usr "$PAYLOAD_DIR"
+    [ -e "$PAYLOAD_DIR/bin/clang" ] && [ -d "$PAYLOAD_DIR/lib/clang" ]
 }
 
 dev() {
@@ -58,4 +128,5 @@ dev() {
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/cmake"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     cp -a "$inst"/lib/cmake/. "$PAYLOAD_DIR/lib/cmake/" 2>/dev/null || true
+    strip_usr "$PAYLOAD_DIR"
 }

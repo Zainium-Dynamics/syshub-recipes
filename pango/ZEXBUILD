@@ -1,15 +1,18 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=pango
 pkgver=1.58.2
-pkgrel=0
+pkgrel=1
 subpackages="pango-dev"
 source="https://download.gnome.org/sources/pango/${pkgver%.*}/pango-$pkgver.tar.xz"
 sha256sums="342385b6ca3b7c73455d7c80a13b7dbe4489e00bc3bd4c5bd6ed4dce421e374a  pango-$pkgver.tar.xz"
-makedepends="cairo-dev expat-dev fontconfig-dev fribidi-dev glib-dev harfbuzz-dev"
+makedepends="cairo-dev expat-dev fontconfig-dev glib-dev harfbuzz-dev"
+# the base ships fribidi itself: link that one, not Alpine's
+needs_toolchain="fribidi fribidi-dev"
 
 # gir/xft disabled -- gir needs gobject-introspection (own dependency
 # chain, see appstream), xft is X11-only and Zainium is wayland-first.
 build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
         --libdir=/overlayer/syshub/lib \
