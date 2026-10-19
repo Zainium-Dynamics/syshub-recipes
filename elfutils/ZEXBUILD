@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=elfutils
 pkgver=0.195
-pkgrel=0
+pkgrel=1
 subpackages="elfutils-dev"
 # musl-compat patches from Alpine's own elfutils APKBUILD (their
 # musl-macros.patch + fix-uninitialized.patch, both x86-relevant;
@@ -12,12 +12,16 @@ source="https://sourceware.org/elfutils/ftp/$pkgver/elfutils-$pkgver.tar.bz2
 0001-musl-macros.patch
 0002-fix-uninitialized-x86-disasm.patch"
 sha256sums="37629fdf7f1f3dc2818e138fca2b8094177d6c2d0f701d3bb650a561218dc026  elfutils-$pkgver.tar.bz2"
-makedepends="argp-standalone bsd-compat-headers musl-fts-dev musl-libintl musl-obstack-dev xz-dev bzip2-dev"
+makedepends="argp-standalone bsd-compat-headers musl-libintl xz-dev bzip2-dev"
+# musl has no fts or obstack: link the base's own musl-fts and musl-obstack, not Alpine's
+needs_toolchain="musl-fts musl-fts-dev musl-obstack musl-obstack-dev"
 
 build() {
     patch -p1 < ../0001-musl-macros.patch
     patch -p1 < ../0002-fix-uninitialized-x86-disasm.patch
 
+    CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}" \
+    LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}" \
     CFLAGS="${CFLAGS:-} -D_GNU_SOURCE -Wno-error -Wno-null-dereference" \
     CXXFLAGS="${CXXFLAGS:-} -Wno-error" \
     ./configure \
@@ -42,6 +46,11 @@ package() {
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
     find "$inst/lib" -maxdepth 1 -name '*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
     cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
 }
 
 dev() {
@@ -50,4 +59,9 @@ dev() {
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     find "$inst/lib" -maxdepth 1 -name '*.a' -exec cp {} "$PAYLOAD_DIR/lib/" \;
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
 }
