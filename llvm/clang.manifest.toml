@@ -1,0 +1,31 @@
+[package]
+name             = "clang"
+version          = "22.1.8"
+description      = "C/C++ compiler (clang, clang++), libclang and clang's builtin headers"
+license          = "Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://llvm.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["llvm"]
+provides         = ["clang", "clang++", "libclang"]
+tags             = ["toolchain", "compiler"]
+
+[install]
+lib     = "/overlayer/zexlib/union/lib"
+bin     = "/overlayer/zexlib/union/bin"
+libexec = "/overlayer/zexlib/union/libexec"
+share   = "/overlayer/zexlib/union/share"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
