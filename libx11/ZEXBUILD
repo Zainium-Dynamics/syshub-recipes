@@ -1,0 +1,24 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libx11
+pkgver=1.8.13
+pkgrel=0
+source="https://xorg.freedesktop.org/archive/individual/lib/libX11-$pkgver.tar.xz"
+sha256sums="69606f485c2c07c14ef64f75b7bb326d48587af33795d9ab3e607c0b5f94f11c  libX11-$pkgver.tar.xz"
+makedepends="build-base"
+
+build() {
+    cd "libX11-$pkgver"
+    X11_CFLAGS=" " X11_LIBS=" " ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --disable-static \
+        --disable-specs
+    make -C nls
+    make -C nls DESTDIR="$(pwd)/_zexbuild-install" install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/share/X11"
+    cp -a "$inst/share/X11/locale" "$PAYLOAD_DIR/share/X11/"
+}

@@ -1,0 +1,28 @@
+[package]
+name             = "libx11"
+version          = "1.8.13"
+description      = "X11 locale data (Compose tables used by libxkbcommon)"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/xorg/lib/libx11"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["libx11"]
+tags             = ["base", "data", "input"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
