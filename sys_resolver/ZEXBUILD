@@ -1,10 +1,10 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=sys_resolver
-pkgver=0.1.0
+pkgver=0.2.0
 pkgrel=0
-_commit=e2a582c3dfa8c342ad74d9031e3ca83eeaee99d2
+_commit=1f4fc406b09b6623d5ca605c67cda912deb88f37
 source="https://github.com/Zainium-Dynamics/sys_resolver/archive/$_commit.tar.gz"
-sha256sums="c1bf6b5a5c98fc8336504c47b6ce86d673db33bb9d6b299f95640da376659c3e  $_commit.tar.gz"
+sha256sums="4f2b1477a5f6c2330eb18a56c950b03ba0a2f181a94763d1d8a7f07d538fafe5  $_commit.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
@@ -14,19 +14,18 @@ build() {
     rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
     export PATH="$HOME/.cargo/bin:$PATH"
 
+    # the CLI is an ordinary dynamic musl program
     RUSTFLAGS="-C target-feature=-crt-static -C linker=x86_64-zainium-linux-musl-gcc -L/overlayer/syshub/lib" \
-        cargo build --release --target x86_64-unknown-linux-musl
+        cargo build --release --bin sys-resolver --target x86_64-unknown-linux-musl
 
-    local out="target/x86_64-unknown-linux-musl/release"
-    x86_64-zainium-linux-musl-gcc -shared -o "$out/libsys_resolver.so" \
-        -Wl,--whole-archive "$out/libsys_resolver.a" -Wl,--no-whole-archive \
-        -lpthread -ldl
+    # the preload library is linked with no libc of its own, so it also works in glibc programs
+    CC=x86_64-zainium-linux-musl-gcc ./build-so.sh
 }
 
 package() {
-    local out="target/x86_64-unknown-linux-musl/release"
+    # still in sys_resolver-$_commit from build()
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin"
-    cp "$out/libsys_resolver.so" "$PAYLOAD_DIR/lib/"
-    cp "$out/sys-resolver" "$PAYLOAD_DIR/bin/"
+    cp target/libsys_resolver.so "$PAYLOAD_DIR/lib/"
+    cp target/x86_64-unknown-linux-musl/release/sys-resolver "$PAYLOAD_DIR/bin/"
     strip "$PAYLOAD_DIR/lib/libsys_resolver.so" "$PAYLOAD_DIR/bin/sys-resolver" 2>/dev/null || true
 }
