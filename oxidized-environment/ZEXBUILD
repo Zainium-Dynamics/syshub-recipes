@@ -1,9 +1,9 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=oxidized-environment
-pkgver=1.0.0
+pkgver=1.0.1
 pkgrel=0
 source="https://github.com/Zainium-Dynamics/oxidized-environment/archive/refs/tags/v$pkgver.tar.gz"
-sha256sums="b1dcaf175b0575b3952395ecb2acacd18ed0c996b9fbe828ef6d1dfd60df9216  v$pkgver.tar.gz"
+sha256sums="79924c6fb817d535bed6a8b0dd24076fd10c5c438f67ca34f4d6fcfeaa83e725  v$pkgver.tar.gz"
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 

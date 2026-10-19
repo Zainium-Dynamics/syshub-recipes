@@ -2,7 +2,7 @@
 
 [package]
 name             = "oxidized-environment"
-version          = "1.0.0"
+version          = "1.0.1"
 description      = "Zainium OS environment resolver CLI (oxienv.toml)"
 license          = "MIT"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
