@@ -70,6 +70,7 @@ package() {
     local inst="_zexbuild-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR"
     cp -a "$inst"/. "$PAYLOAD_DIR/"
+    rm -f "$PAYLOAD_DIR/libexec/gstreamer-1.0/gst-ptp-helper"
     rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/lib/gstreamer-1.0/include" "$PAYLOAD_DIR/share/gtk-doc"
     find "$PAYLOAD_DIR" -type f | while read -r f; do
         grep -q '/usr' "$f" || continue
