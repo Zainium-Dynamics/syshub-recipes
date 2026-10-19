@@ -5,10 +5,8 @@ pkgrel=1
 subpackages="libwebp-dev"
 source="https://github.com/webmproject/libwebp/archive/refs/tags/v$pkgver.tar.gz"
 sha256sums="93a852c2b3efafee3723efd4636de855b46f9fe1efddd607e1f42f60fc8f2136  v$pkgver.tar.gz"
-# Zainium's own cmake and libraries, not Alpine's: Alpine's libjpeg-turbo is built in jpeg8
-# mode (libjpeg.so.8), Zainium's is libjpeg.so.62, so cwebp/img2webp built against Alpine's
-# had no libjpeg to load on Zainium.
-needs_toolchain="cmake libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev zlib zlib-dev"
+makedepends="cmake"
+needs_toolchain="libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev zlib zlib-dev"
 
 build() {
     export PATH="/overlayer/syshub/bin:$PATH"
