@@ -70,6 +70,15 @@ soname_links() {
     done
 }
 
+# text files only: the headers and scripts carry /usr in comments; ELF files are skipped (sed would break them)
+strip_usr() {
+    find "$1" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
+
 # base: libLLVM (mesa needs it) and the llvm-* tools; clang is the userland clang package
 package() {
     local inst="_zexbuild-install/overlayer/syshub"
@@ -81,6 +90,7 @@ package() {
             cp -P "$f" "$PAYLOAD_DIR/bin/"
         fi
     done
+    strip_usr "$PAYLOAD_DIR"
 }
 
 # userland: clang, its libraries and its builtin headers (lib/clang/<ver>/include)
@@ -110,6 +120,7 @@ clang() {
         mkdir -p "$PAYLOAD_DIR/share"
         cp -a "$inst/share/clang" "$PAYLOAD_DIR/share/"
     fi
+    strip_usr "$PAYLOAD_DIR"
     [ -e "$PAYLOAD_DIR/bin/clang" ] && [ -d "$PAYLOAD_DIR/lib/clang" ]
 }
 
@@ -118,4 +129,5 @@ dev() {
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/cmake"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
     cp -a "$inst"/lib/cmake/. "$PAYLOAD_DIR/lib/cmake/" 2>/dev/null || true
+    strip_usr "$PAYLOAD_DIR"
 }
