@@ -13,6 +13,10 @@ needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev d
 # "org.a11y.Bus was not provided by any .service files". Built without X11
 # and on Zainium's dbus-daemon (no dbus-broker).
 build() {
+    mkdir -p /overlayer/syshub/bin
+    [ -e /overlayer/syshub/bin/python3 ] || ln -s /usr/bin/python3 /overlayer/syshub/bin/python3
+    [ -e /overlayer/syshub/bin/python ] || ln -s /usr/bin/python3 /overlayer/syshub/bin/python
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     meson setup builddir \
         --prefix=/overlayer/syshub \
