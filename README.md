@@ -26,3 +26,7 @@ Some packages install elsewhere:
 ## CI
 
 GitHub Actions builds each changed package in an Alpine container. Pull requests are build-only. Every push to `master` builds, verifies the musl interpreter, packs with [substrate](https://crates.io/crates/substrate-zainium) and publishes to `core/syshub/x86_64/`.
+
+## License
+
+The recipes in this repository are licensed under GPL-3.0-only. See `LICENSE`. Upstream software keeps its own license.
