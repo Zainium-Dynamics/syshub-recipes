@@ -1,0 +1,57 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=at-spi2-core
+pkgver=2.62.1
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://download.gnome.org/sources/at-spi2-core/${pkgver%.*}/at-spi2-core-$pkgver.tar.xz"
+sha256sums="cca6b6a86e4389d89b370288761ce2385ddeceb10c4412da78689bc30c88af2d  at-spi2-core-$pkgver.tar.xz"
+makedepends="meson ninja pkgconf gettext python3"
+needs_toolchain="glib glib-dev gettext gettext-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev dbus dbus-dev libxml2 libxml2-dev systemd systemd-dev"
+
+# The accessibility bus (org.a11y.Bus) and libatspi/atk/atk-bridge: screen readers
+# and the desktop's accessibility features. Without it every app logs
+# "org.a11y.Bus was not provided by any .service files". Built without X11
+# and on Zainium's dbus-daemon (no dbus-broker).
+build() {
+    mkdir -p /overlayer/syshub/bin
+    [ -e /overlayer/syshub/bin/python3 ] || ln -s /usr/bin/python3 /overlayer/syshub/bin/python3
+    [ -e /overlayer/syshub/bin/python ] || ln -s /usr/bin/python3 /overlayer/syshub/bin/python
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --sysconfdir=/overlayer/syshub/etc \
+        --wrap-mode=nofallback \
+        -Ddefault_bus=dbus-daemon \
+        -Ddbus_daemon=/overlayer/syshub/bin/dbus-daemon \
+        -Ddbus_services_dir=/overlayer/syshub/share/dbus-1/services \
+        -Dsystemd_user_dir=/overlayer/syshub/lib/systemd/user \
+        -Duse_systemd=true \
+        -Dx11=disabled \
+        -Dintrospection=disabled \
+        -Dgtk2_atk_adaptor=false \
+        -Ddocs=false
+    ninja -C builddir
+}
+
+package() {
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+    local p="$PAYLOAD_DIR/overlayer/syshub"
+
+    # substrate's layout check rejects any /usr in file content, comments too
+    # (atkutil.h documents "/usr/X11/include/keysymdef.h")
+    grep -rIl '/usr/' "$p/include" "$p/lib/pkgconfig" 2>/dev/null |
+        xargs -r sed -i 's#/usr/#/overlayer/syshub/#g'
+
+    mkdir -p "$STAGING_ROOT/_at-spi2-core-dev"
+    mv "$p/include" "$STAGING_ROOT/_at-spi2-core-dev/include"
+    mv "$p/lib/pkgconfig" "$STAGING_ROOT/_at-spi2-core-dev/pkgconfig"
+}
+
+dev() {
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$STAGING_ROOT/_at-spi2-core-dev/include/." "$PAYLOAD_DIR/include/"
+    cp -a "$STAGING_ROOT/_at-spi2-core-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+}
