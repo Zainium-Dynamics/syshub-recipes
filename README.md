@@ -30,3 +30,7 @@ GitHub Actions builds each changed package in an Alpine container. Pull requests
 ## License
 
 The recipes in this repository are licensed under GPL-3.0-only. See `LICENSE`. Upstream software keeps its own license.
+
+## License
+
+The recipes in this repository are licensed under GPL-3.0-only. See `LICENSE`. Upstream software keeps its own license.
