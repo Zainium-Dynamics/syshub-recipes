@@ -6,7 +6,7 @@ subpackages="$pkgname-dev"
 source="https://download.gnome.org/sources/at-spi2-core/${pkgver%.*}/at-spi2-core-$pkgver.tar.xz"
 sha256sums="cca6b6a86e4389d89b370288761ce2385ddeceb10c4412da78689bc30c88af2d  at-spi2-core-$pkgver.tar.xz"
 makedepends="meson ninja pkgconf gettext python3"
-needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev dbus dbus-dev libxml2 libxml2-dev systemd systemd-dev"
+needs_toolchain="glib glib-dev gettext gettext-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev dbus dbus-dev libxml2 libxml2-dev systemd systemd-dev"
 
 # The accessibility bus (org.a11y.Bus) and libatspi/atk/atk-bridge: screen readers
 # and the desktop's accessibility features. Without it every app logs
