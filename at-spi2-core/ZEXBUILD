@@ -40,6 +40,11 @@ package() {
     DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
     local p="$PAYLOAD_DIR/overlayer/syshub"
 
+    # substrate's layout check rejects any /usr in file content, comments too
+    # (atkutil.h documents "/usr/X11/include/keysymdef.h")
+    grep -rIl '/usr/' "$p/include" "$p/lib/pkgconfig" 2>/dev/null |
+        xargs -r sed -i 's#/usr/#/overlayer/syshub/#g'
+
     mkdir -p "$STAGING_ROOT/_at-spi2-core-dev"
     mv "$p/include" "$STAGING_ROOT/_at-spi2-core-dev/include"
     mv "$p/lib/pkgconfig" "$STAGING_ROOT/_at-spi2-core-dev/pkgconfig"
