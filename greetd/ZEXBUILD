@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=greetd
 pkgver=0.10.3
-pkgrel=1
+pkgrel=2
 _commit=4bcd1b1d883238c8eaf144ccdd5cf3ad84a0e0fc
 source="https://github.com/Zainium-Dynamics/greetd/archive/$_commit.tar.gz"
 sha256sums=""
@@ -70,4 +70,9 @@ EOF
     # marked executable" warning at every boot otherwise (same bug
     # class already hit and fixed for systemd's own units, 2026-09-04).
     chmod 644 "$PAYLOAD_DIR/lib/systemd/system/greetd.service"
+
+    # enabled by default: greetd is the base's only login path (WantedBy=graphical.target)
+    mkdir -p "$PAYLOAD_DIR/etc/systemd/system/graphical.target.wants"
+    ln -sf /overlayer/syshub/lib/systemd/system/greetd.service \
+        "$PAYLOAD_DIR/etc/systemd/system/graphical.target.wants/greetd.service"
 }
