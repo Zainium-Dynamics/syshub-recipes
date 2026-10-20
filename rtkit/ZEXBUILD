@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=rtkit
+pkgver=0.14
+pkgrel=0
+source="https://gitlab.freedesktop.org/pipewire/rtkit/-/archive/v$pkgver/rtkit-v$pkgver.tar.bz2"
+sha256sums="bd6c1a236e479c59658b1e7be072e5990ad97439a2ecac433b0edfeb2531b52c  rtkit-v$pkgver.tar.bz2"
+makedepends="meson ninja pkgconf xxd"
+needs_toolchain="dbus dbus-dev libcap libcap-dev systemd systemd-dev"
+
+# RealtimeKit: grants realtime scheduling to PipeWire and WirePlumber over D-Bus
+# (their "RTKit error: ServiceUnknown" otherwise). D-Bus activated through
+# SystemdService=rtkit-daemon.service, so nothing to enable; the rtkit user comes
+# from its sysusers.d entry.
+build() {
+    cd "$SRCDIR/rtkit-v$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --sbindir=/overlayer/syshub/bin \
+        -Dlibsystemd=enabled \
+        -Dinstalled_tests=false \
+        -Dsystemd_systemunitdir=/overlayer/syshub/lib/systemd/system \
+        -Ddbus_systemservicedir=/overlayer/syshub/share/dbus-1/system-services \
+        -Ddbus_rulesdir=/overlayer/syshub/share/dbus-1/system.d \
+        -Ddbus_interfacedir=/overlayer/syshub/share/dbus-1/interfaces \
+        -Dpolkit_actiondir=/overlayer/syshub/share/polkit-1/actions
+    ninja -C builddir
+}
+
+package() {
+    cd "$SRCDIR/rtkit-v$pkgver"
+    DESTDIR="$PAYLOAD_DIR" ninja -C builddir install
+}
