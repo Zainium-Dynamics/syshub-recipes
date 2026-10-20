@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=networkmanager
 pkgver=1.58.1
-pkgrel=1
+pkgrel=2
 subpackages="networkmanager-dev"
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
@@ -79,11 +79,15 @@ package() {
         sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
     done
 
+    # ProtectSystem=true/full makes systemd mount /usr read-only and fails the whole unit
+    # (226/NAMESPACE) when /usr doesn't exist, as on Zainium
     find "$PAYLOAD_DIR" -name '*.service' -exec sed -i \
         -e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
         -e 's#/usr/bin/#/overlayer/syshub/bin/#g' \
         -e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
         -e 's#/usr/#/overlayer/syshub/#g' \
+        -e 's#^ProtectSystem=true$#ProtectSystem=false#' \
+        -e 's#^ProtectSystem=full$#ProtectSystem=false#' \
         {} +
 
     mkdir -p "$STAGING_ROOT/_networkmanager-dev"
