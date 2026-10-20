@@ -1,0 +1,11 @@
+# elevate-pam on Zainium OS
+#
+# Auth stacks:  etc/elevate-pam/services/*.toml (native, preferred)
+# Classic:      etc/pam.d/<service>, then lib/pam.d/<service>, for services
+#               with no native stack (greetd, cosmic-greeter, polkit-1,
+#               systemd-user, elevate) -- elevate-pam is built with legacy_pamd
+# Password:     elevate-crypto (Argon2id) via module "unix"
+# Privilege:    /bin/elevate  (elevate-sudo)
+# Sessions:     quantra-logind  /run/quantra-logind/control  + login1 D-Bus
+#
+# Prefer a native services/<name>.toml for new services.

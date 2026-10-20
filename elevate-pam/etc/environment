@@ -1,0 +1,3 @@
+# /overlayer/syshub/etc/environment
+PATH="/overlayer/syshub/bin:/overlayer/syshub/sbin:/overlayer/syshub/x86_64-zainium-linux-musl/bin:/overlayer/zexlib/union/bin"
+LD_PRELOAD="/overlayer/syshub/lib/libsys_resolver.so"

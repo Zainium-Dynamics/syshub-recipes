@@ -20,6 +20,7 @@ tags             = ["base", "security", "auth"]
 [install]
 lib     = "/overlayer/syshub/lib"
 include = "/overlayer/syshub/include"
+etc     = "/overlayer/syshub/etc"
 _syshub = true
 
 [remove]

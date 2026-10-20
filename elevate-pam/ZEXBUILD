@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=elevate-pam
 pkgver=1.0.1
-pkgrel=0
+pkgrel=1
 _nightly=nightly-2026-05-24
 _commit=1afb0719052ce54db3602ed2f2551a86a0c6c5ef
 source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz
@@ -45,4 +45,12 @@ package() {
 
     strip "$PAYLOAD_DIR/lib/"*.so.0 "$PAYLOAD_DIR/lib/security/unix_chkpwd" 2>/dev/null || true
     chmod 4755 "$PAYLOAD_DIR/lib/security/unix_chkpwd"
+
+    # Zainium's tested PAM configuration, kept next to this recipe (etc/):
+    # elevate-pam's own config and service stacks, pam_env/limits data,
+    # /etc/environment, and the classic pam.d files of services no other
+    # package configures. pam.d/systemd-user overrides systemd's lib/pam.d
+    # copy, whose empty auth stack fails pam_setcred, so a systemd upgrade
+    # can't bring that back.
+    cp -a "$RECIPE_DIR/etc" "$PAYLOAD_DIR/"
 }

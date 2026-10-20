@@ -1,0 +1,14 @@
+# Zainium: systemd's own lib/pam.d/systemd-user plus an auth line. systemd calls
+# pam_setcred() when it starts a user's systemd --user, and an empty auth stack fails
+# that call ("no modules loaded ... (setcred)"). pam_unix's setcred is a no-op success,
+# and it still asks for the password if anything ever authenticates against this service.
+
+auth     required   pam_unix.so
+
+account  required   pam_unix.so no_pass_expiry
+
+session  required   pam_loginuid.so
+session  optional   pam_keyinit.so force revoke
+session  required   pam_namespace.so
+session  optional   pam_umask.so silent
+session  optional   pam_systemd.so

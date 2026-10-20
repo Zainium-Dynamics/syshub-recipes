@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=networkmanager
 pkgver=1.58.1
-pkgrel=2
+pkgrel=3
 subpackages="networkmanager-dev"
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
@@ -89,6 +89,20 @@ package() {
         -e 's#^ProtectSystem=true$#ProtectSystem=false#' \
         -e 's#^ProtectSystem=full$#ProtectSystem=false#' \
         {} +
+
+    # Zainium's tested config: keyfile connections under the Zainium etc, and
+    # NetworkManager enabled by default (the base has no other network service)
+    local sh="$PAYLOAD_DIR/overlayer/syshub"
+    mkdir -p "$sh/etc/NetworkManager" "$sh/etc/systemd/system/multi-user.target.wants"
+    cat > "$sh/etc/NetworkManager/NetworkManager.conf" <<'EOF'
+[main]
+plugins=keyfile
+
+[keyfile]
+path=/overlayer/syshub/etc/NetworkManager/system-connections
+EOF
+    ln -sf /overlayer/syshub/lib/systemd/system/NetworkManager.service \
+        "$sh/etc/systemd/system/multi-user.target.wants/NetworkManager.service"
 
     mkdir -p "$STAGING_ROOT/_networkmanager-dev"
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_networkmanager-dev/include"
