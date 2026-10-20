@@ -8,6 +8,7 @@ makedepends="rustup"
 needs_toolchain="musl gcc-musl"
 
 build() {
+    cd userutiles-*/
     export PATH="/overlayer/syshub/bin:$PATH"
     rustup-init -y -q --profile minimal --default-toolchain stable --target x86_64-unknown-linux-musl
     export PATH="$HOME/.cargo/bin:$PATH"
