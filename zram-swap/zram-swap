@@ -1,0 +1,35 @@
+#!/overlayer/syshub/bin/sh
+# zram-swap — compressed swap in RAM: one zram device the size of RAM (at most
+# 8 GiB), zstd, used before any swap on disk.
+PATH=/overlayer/syshub/bin:/overlayer/syshub/sbin
+state=/run/zram-swap.dev
+
+case "${1:-}" in
+start)
+	modprobe zram || exit 1
+	kib=0
+	while read -r key val _; do
+		[ "$key" = MemTotal: ] && { kib=$val; break; }
+	done < /proc/meminfo
+	[ "$kib" -gt 0 ] || exit 1
+	bytes=$((kib * 1024))
+	max=$((8 * 1024 * 1024 * 1024))
+	[ "$bytes" -gt "$max" ] && bytes=$max
+	dev=$(zramctl --find --size "$bytes" --algorithm zstd) || exit 1
+	if ! mkswap "$dev" >/dev/null || ! swapon --priority 100 "$dev"; then
+		zramctl --reset "$dev"
+		exit 1
+	fi
+	echo "$dev" > "$state"
+	;;
+stop)
+	[ -f "$state" ] || exit 0
+	dev=$(cat "$state")
+	swapoff "$dev" && zramctl --reset "$dev"
+	rm -f "$state"
+	;;
+*)
+	echo "usage: zram-swap start|stop" >&2
+	exit 2
+	;;
+esac
