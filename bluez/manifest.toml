@@ -1,0 +1,35 @@
+# manifest.toml — bluez (syshub tier)
+
+[package]
+name             = "bluez"
+version          = "5.87"
+description      = "Bluetooth daemon and tools (bluetoothd, bluetoothctl, btmon)"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.bluez.org/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "dbus", "readline", "systemd"]
+provides         = ["bluez", "bluetoothd", "bluetoothctl", "btmon"]
+tags             = ["base", "bluetooth"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+var     = "/overlayer/syshub/var"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

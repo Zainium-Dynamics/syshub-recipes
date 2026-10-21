@@ -1,0 +1,63 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=bluez
+pkgver=5.87
+pkgrel=0
+source="https://www.kernel.org/pub/linux/bluetooth/bluez-$pkgver.tar.xz"
+sha256sums="26bdcf2cebd7310c6f598850606b037ef0c515fe6608ebc54d22c50c4c32b35f  bluez-$pkgver.tar.xz"
+makedepends="pkgconf"
+needs_toolchain="systemd systemd-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev"
+
+# bluetoothd, bluetoothctl and btmon: the org.bluez D-Bus service COSMIC's Bluetooth
+# applet and settings page talk to. Started through bluetooth.target, which udev
+# pulls in when an adapter appears, and by D-Bus activation.
+# OBEX needs libical, which the base does not have.
+build() {
+    cd "$SRCDIR/bluez-$pkgver"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
+    export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --mandir=/overlayer/syshub/share/man \
+        --with-dbusconfdir=/overlayer/syshub/share \
+        --with-dbussystembusdir=/overlayer/syshub/share/dbus-1/system-services \
+        --with-dbussessionbusdir=/overlayer/syshub/share/dbus-1/services \
+        --with-systemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        --with-systemduserunitdir=/overlayer/syshub/lib/systemd/user \
+        --disable-obex \
+        --disable-cups \
+        --disable-udev \
+        --disable-manpages
+    make -j"$(nproc)"
+}
+
+package() {
+    cd "$SRCDIR/bluez-$pkgver"
+    make install DESTDIR="$PAYLOAD_DIR"
+    root="$PAYLOAD_DIR/overlayer/syshub"
+
+    # pairings live in /overlayer/syshub/var/lib/bluetooth and the config in
+    # /overlayer/syshub/etc/bluetooth; the unit's lockdown and State/ConfigurationDirectory
+    # point at systemd's own /var/lib and /etc and would leave bluetoothd read-only
+    sed -i -e 's/^ProtectSystem=.*/ProtectSystem=false/' \
+        -e '/^StateDirectory/d' -e '/^ConfigurationDirectory/d' \
+        "$root/lib/systemd/system/bluetooth.service"
+    mkdir -p "$root/var/lib/bluetooth"
+    chmod 0700 "$root/var/lib/bluetooth"
+
+    mkdir -p "$root/etc/systemd/system/bluetooth.target.wants"
+    ln -sf /overlayer/syshub/lib/systemd/system/bluetooth.service \
+        "$root/etc/systemd/system/bluetooth.target.wants/bluetooth.service"
+    ln -sf /overlayer/syshub/lib/systemd/system/bluetooth.service \
+        "$root/etc/systemd/system/dbus-org.bluez.service"
+
+    rm -rf "$root/share/man"
+    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        sed -i -e 's#/usr/lib/#/overlayer/syshub/lib/#g' -e 's#/usr/s\?bin/#/overlayer/syshub/bin/#g' \
+            -e 's#/usr/share/#/overlayer/syshub/share/#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
