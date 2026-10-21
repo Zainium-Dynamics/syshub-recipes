@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=networkmanager
 pkgver=1.58.1
-pkgrel=3
+pkgrel=4
 subpackages="networkmanager-dev"
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
@@ -97,12 +97,16 @@ package() {
     cat > "$sh/etc/NetworkManager/NetworkManager.conf" <<'EOF'
 [main]
 plugins=keyfile
+rc-manager=unmanaged
 
 [keyfile]
 path=/overlayer/syshub/etc/NetworkManager/system-connections
 EOF
     ln -sf /overlayer/syshub/lib/systemd/system/NetworkManager.service \
         "$sh/etc/systemd/system/multi-user.target.wants/NetworkManager.service"
+    # DNS from the active connections: NetworkManager always writes its resolv.conf into
+    # its run dir; its rc-manager path is /etc/resolv.conf, which Zainium doesn't have
+    ln -sf /overlayer/syshub/var/run/NetworkManager/resolv.conf "$sh/etc/resolv.conf"
 
     mkdir -p "$STAGING_ROOT/_networkmanager-dev"
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_networkmanager-dev/include"
