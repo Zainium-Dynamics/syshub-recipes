@@ -1,0 +1,32 @@
+# manifest.toml — xdg-portal (syshub tier)
+
+[package]
+name             = "xdg-portal"
+version          = "1.22.1"
+description      = "Desktop portal service (xdg-desktop-portal): screenshots, file chooser and other portals for apps and Flatpak"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://flatpak.github.io/xdg-desktop-portal/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "json-glib", "fuse3", "gdk-pixbuf", "pipewire", "gstreamer", "systemd"]
+provides         = ["xdg-portal", "xdg-desktop-portal"]
+tags             = ["base", "desktop", "portal"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

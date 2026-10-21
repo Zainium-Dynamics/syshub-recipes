@@ -1,0 +1,43 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=xdg-portal
+pkgver=1.22.1
+pkgrel=0
+source="https://github.com/flatpak/xdg-desktop-portal/releases/download/$pkgver/xdg-desktop-portal-$pkgver.tar.xz"
+sha256sums="d4879ddb3d65ff1a8f19187497e6f13dc5d267bcac404a5d501218be355753d3  xdg-desktop-portal-$pkgver.tar.xz"
+makedepends="meson gettext"
+needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev json-glib json-glib-dev fuse3 fuse3-dev gdk-pixbuf gdk-pixbuf-dev libpng libjpeg-turbo pipewire pipewire-dev gstreamer gstreamer-dev libdrm libdrm-dev systemd systemd-dev"
+
+# xdg-desktop-portal: the org.freedesktop.portal.Desktop service COSMIC's screenshot
+# tool and Flatpak apps (file chooser, open with, ...) talk to; it hands the requests
+# to xdg-desktop-portal-cosmic. Started on demand by D-Bus.
+build() {
+    cd "$SRCDIR/xdg-desktop-portal-$pkgver"
+    # glib-dev's python tools (gdbus-codegen) start with #!/overlayer/syshub/bin/env
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Ddbus-service-dir=/overlayer/syshub/share/dbus-1/services \
+        -Dsystemd-user-unit-dir=/overlayer/syshub/lib/systemd/user \
+        -Dsystemd=enabled \
+        -Dflatpak-interfaces=disabled \
+        -Dgeoclue=disabled \
+        -Dgudev=disabled \
+        -Dsandboxed-image-validation=disabled \
+        -Dsandboxed-sound-validation=disabled \
+        -Ddocumentation=disabled \
+        -Dman-pages=disabled \
+        -Dtests=disabled \
+        -Dinstalled-tests=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    cd "$SRCDIR/xdg-desktop-portal-$pkgver"
+    cp -a _zexbuild-install/overlayer/syshub/. "$PAYLOAD_DIR/"
+    rm -rf "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/man"
+}
