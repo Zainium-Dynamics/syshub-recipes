@@ -1,0 +1,41 @@
+diff --git a/daemon/src/lib.rs b/daemon/src/lib.rs
+index b71938a..f3478d8 100644
+--- a/daemon/src/lib.rs
++++ b/daemon/src/lib.rs
+@@ -237,7 +237,6 @@ impl UserData {
+             }
+         }
+ 
+-        //TODO: fallback to background config if background state is not set?
+         match cosmic_bg_config::state::State::state() {
+             Ok(helper) => match cosmic_bg_config::state::State::get_entry(&helper) {
+                 Ok(state) => {
+@@ -252,6 +251,14 @@ impl UserData {
+                 tracing::error!("failed to create cosmic-bg state helper: {:?}", err);
+             }
+         }
++        // no wallpaper state yet (the user has never logged in): the user's background
++        // config, which falls back to the system's default wallpaper
++        if self.bg_state.wallpapers.is_empty() {
++            if let Ok(context) = cosmic_bg_config::context() {
++                let entry = context.default_background();
++                self.bg_state.wallpapers.push((entry.output, entry.source));
++            }
++        }
+         if self.bg_state.wallpapers.is_empty() {
+             self.bg_state.wallpapers.push((
+                 String::new(),
+diff --git a/src/common.rs b/src/common.rs
+index 442a5a1..bb79c4c 100644
+--- a/src/common.rs
++++ b/src/common.rs
+@@ -167,7 +167,8 @@ impl<M: From<Message> + Send + 'static> Common<M> {
+             tracing::info!("updating wallpaper for {:?}", output_name);
+ 
+             for (wallpaper_output_name, wallpaper_source) in user_data.bg_state.wallpapers.iter() {
+-                if wallpaper_output_name == output_name {
++                // "all": one wallpaper for every output (the background config's default)
++                if wallpaper_output_name == output_name || wallpaper_output_name == "all" {
+                     match wallpaper_source {
+                         BgSource::Path(path) => {
+                             match user_data.bg_path_data.get(path) {

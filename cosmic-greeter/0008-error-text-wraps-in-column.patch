@@ -1,0 +1,42 @@
+--- a/src/locker.rs	2026-10-14 00:44:53.512432256 +0500
++++ b/src/locker.rs	2026-10-14 00:44:53.595984239 +0500
+@@ -632,9 +632,16 @@
+                     .align_x(Alignment::Center),
+                 );
+             } else if let Some(error) = &self.common.error_opt {
++                // full width and centered like the rows above, so a long message wraps inside the column
+                 column = column.push(
+-                    widget::text(error)
+-                        .class(theme::Text::Color(iced::Color::from_rgb(1.0, 0.0, 0.0))),
++                    widget::container(
++                        widget::text(error)
++                            .class(theme::Text::Color(iced::Color::from_rgb(1.0, 0.0, 0.0)))
++                            .align_x(iced::alignment::Horizontal::Center)
++                            .width(Length::Fill),
++                    )
++                    .width(Length::Fill)
++                    .align_x(Alignment::Center),
+                 );
+                 if !self.common.caps_lock {
+                     column = column.push(widget::text(""));
+--- a/src/greeter.rs	2026-10-14 00:44:53.513432300 +0500
++++ b/src/greeter.rs	2026-10-14 00:44:53.597745996 +0500
+@@ -961,9 +961,16 @@
+                     .align_x(Alignment::Center),
+                 );
+             } else if let Some(error) = &self.common.error_opt {
++                // full width and centered like the rows above, so a long message wraps inside the column
+                 column = column.push(
+-                    widget::text(error)
+-                        .class(theme::Text::Color(iced::Color::from_rgb(1.0, 0.0, 0.0))),
++                    widget::container(
++                        widget::text(error)
++                            .class(theme::Text::Color(iced::Color::from_rgb(1.0, 0.0, 0.0)))
++                            .align_x(iced::alignment::Horizontal::Center)
++                            .width(Length::Fill),
++                    )
++                    .width(Length::Fill)
++                    .align_x(Alignment::Center),
+                 );
+                 if !self.common.caps_lock {
+                     column = column.push(widget::text(""));

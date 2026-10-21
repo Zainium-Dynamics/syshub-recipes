@@ -1,0 +1,11 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -31,7 +31,7 @@
+ tracing.workspace = true
+ tracing-journald = { workspace = true, optional = true }
+ tracing-subscriber = { workspace = true, features = ["env-filter"] }
+-pam-client = "0.5.0"
++elevate-pam = { git = "https://github.com/Zainium-Dynamics/elevate-pam.git", rev = "9d99ab2fcf47925644290e0e4326befd94e29408", default-features = false, features = ["std", "builtin_modules", "legacy_pamd", "dynload", "fail_delay", "syslog", "elevate_crypto"] }
+ pwd.workspace = true
+ ron.workspace = true
+ shlex = "1.3.0"

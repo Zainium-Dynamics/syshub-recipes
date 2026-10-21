@@ -1,0 +1,251 @@
+--- a/src/locker.rs
++++ b/src/locker.rs
+@@ -18,7 +18,6 @@
+ use cosmic_config::CosmicConfigEntry;
+ use cosmic_greeter_daemon::{TimeAppletConfig, UserData};
+ use std::any::TypeId;
+-use std::ffi::{CStr, CString};
+ use std::os::fd::OwnedFd;
+ use std::path::PathBuf;
+ use std::sync::Arc;
+@@ -96,21 +95,29 @@
+ }
+ 
+ /// Convert PAM errors to user-friendly localized messages
+-fn pam_error_to_message(error: &pam_client::Error) -> String {
+-    use pam_client::ErrorCode;
++fn pam_error_to_message(error: &elevate_pam::error::PamError) -> String {
++    use elevate_pam::constants::{
++        PAM_ACCT_EXPIRED, PAM_AUTH_ERR, PAM_CRED_INSUFFICIENT, PAM_MAXTRIES, PAM_PERM_DENIED,
++        PAM_USER_UNKNOWN,
++    };
++    use elevate_pam::error::PamError;
+ 
+-    // Use the structured error code instead of string matching for reliability
+-    match error.code() {
+-        ErrorCode::AUTH_ERR | ErrorCode::CRED_INSUFFICIENT => {
++    // Use the structured status code instead of string matching for reliability
++    let code = match error {
++        PamError::Status(s) => s.0,
++        _ => -1,
++    };
++    match code {
++        c if c == PAM_AUTH_ERR || c == PAM_CRED_INSUFFICIENT => {
+             fl!("auth-error-credentials")
+         }
+-        ErrorCode::PERM_DENIED => {
++        c if c == PAM_PERM_DENIED => {
+             fl!("auth-error-denied")
+         }
+-        ErrorCode::MAXTRIES => {
++        c if c == PAM_MAXTRIES => {
+             fl!("auth-error-maxtries")
+         }
+-        ErrorCode::ACCT_EXPIRED | ErrorCode::USER_UNKNOWN => {
++        c if c == PAM_ACCT_EXPIRED || c == PAM_USER_UNKNOWN => {
+             fl!("auth-error-account")
+         }
+         _ => {
+@@ -120,21 +127,45 @@
+     }
+ }
+ 
+-pub fn pam_thread(username: String, conversation: Conversation) -> Result<(), pam_client::Error> {
++pub fn pam_thread(
++    username: String,
++    conversation: Conversation,
++) -> Result<(), elevate_pam::error::PamError> {
+     //TODO: send errors to GUI, restart process
++    use elevate_pam::appl::PamBuilder;
++    use elevate_pam::conv::{free_converser, pam_conv_from_converser};
++
++    let conv = pam_conv_from_converser(alloc_box(conversation));
+ 
+     // Create PAM context
+-    let mut context = pam_client::Context::new("cosmic-greeter", Some(&username), conversation)?;
++    let mut handle = PamBuilder::new("cosmic-greeter")
++        .user(username)
++        .start(conv)?;
+ 
+     // Authenticate the user (ask for password, 2nd-factor token, fingerprint, etc.)
+     tracing::info!("authenticate");
+-    context.authenticate(pam_client::Flag::NONE)?;
++    let auth_result = handle.authenticate(0);
+ 
+-    // Validate the account (is not locked, expired, etc.)
+-    tracing::info!("acct_mgmt");
+-    context.acct_mgmt(pam_client::Flag::NONE)?;
++    // Validate the account (is not locked, expired, etc.) only if auth succeeded
++    let result = auth_result.and_then(|()| {
++        tracing::info!("acct_mgmt");
++        handle.acct_mgmt(0)
++    });
++
++    let conv_ptr = handle.conv().clone();
++    let end_status = if result.is_ok() { 0 } else { -1 };
++    let _ = handle.end(end_status);
++    // SAFETY: conv_ptr was produced by pam_conv_from_converser above and
++    // has not been reclaimed yet (handle.end doesn't touch appdata_ptr).
++    unsafe { free_converser(&conv_ptr) };
+ 
+-    Ok(())
++    result
++}
++
++/// Move `conversation` onto the heap as a boxed [`elevate_pam::conv::Converser`]
++/// trait object — a tiny helper so `pam_thread` reads linearly.
++fn alloc_box(conversation: Conversation) -> Box<dyn elevate_pam::conv::Converser> {
++    Box::new(conversation)
+ }
+ 
+ pub struct Conversation {
+@@ -143,16 +174,7 @@
+ }
+ 
+ impl Conversation {
+-    fn prompt_value(
+-        &mut self,
+-        prompt_c: &CStr,
+-        secret: bool,
+-    ) -> Result<CString, pam_client::ErrorCode> {
+-        let prompt = prompt_c.to_str().map_err(|err| {
+-            tracing::error!("failed to convert prompt to UTF-8: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+-        })?;
+-
++    fn prompt_value(&mut self, prompt: &str, secret: bool) -> Result<String, ()> {
+         futures::executor::block_on(async {
+             self.msg_tx
+                 .send(cosmic::Action::App(
+@@ -162,26 +184,14 @@
+         })
+         .map_err(|err| {
+             tracing::error!("failed to send prompt: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+         })?;
+ 
+-        let value = self.value_rx.blocking_recv().ok_or_else(|| {
++        self.value_rx.blocking_recv().ok_or_else(|| {
+             tracing::error!("failed to receive value: channel closed");
+-            pam_client::ErrorCode::CONV_ERR
+-        })?;
+-
+-        CString::new(value).map_err(|err| {
+-            tracing::error!("failed to convert value to C string: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+         })
+     }
+ 
+-    fn message(&mut self, prompt_c: &CStr) -> Result<(), pam_client::ErrorCode> {
+-        let prompt = prompt_c.to_str().map_err(|err| {
+-            tracing::error!("failed to convert prompt to UTF-8: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+-        })?;
+-
++    fn message(&mut self, prompt: &str) -> Result<(), ()> {
+         futures::executor::block_on(async {
+             self.msg_tx
+                 .send(cosmic::Action::App(
+@@ -191,16 +201,10 @@
+         })
+         .map_err(|err| {
+             tracing::error!("failed to send prompt: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+         })
+     }
+ 
+-    fn error_message(&mut self, prompt_c: &CStr) -> Result<(), pam_client::ErrorCode> {
+-        let prompt = prompt_c.to_str().map_err(|err| {
+-            tracing::error!("failed to convert prompt to UTF-8: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+-        })?;
+-
++    fn error_message(&mut self, prompt: &str) -> Result<(), ()> {
+         futures::executor::block_on(async {
+             self.msg_tx
+                 .send(cosmic::Action::App(Message::Error(prompt.to_string())))
+@@ -208,37 +212,59 @@
+         })
+         .map_err(|err| {
+             tracing::error!("failed to send error message: {:?}", err);
+-            pam_client::ErrorCode::CONV_ERR
+         })
+     }
+ }
+ 
+-impl pam_client::ConversationHandler for Conversation {
+-    fn prompt_echo_on(&mut self, prompt_c: &CStr) -> Result<CString, pam_client::ErrorCode> {
+-        tracing::info!("prompt_echo_on {:?}", prompt_c);
+-        self.prompt_value(prompt_c, false)
+-    }
+-    fn prompt_echo_off(&mut self, prompt_c: &CStr) -> Result<CString, pam_client::ErrorCode> {
+-        tracing::info!("prompt_echo_off {:?}", prompt_c);
+-        self.prompt_value(prompt_c, true)
+-    }
+-    fn text_info(&mut self, prompt_c: &CStr) {
+-        tracing::info!("text_info {:?}", prompt_c);
+-        match self.message(prompt_c) {
+-            Ok(()) => (),
+-            Err(err) => {
+-                tracing::warn!("failed to send text_info: {:?}", err);
+-            }
+-        }
+-    }
+-    fn error_msg(&mut self, prompt_c: &CStr) {
+-        tracing::info!("error_msg {:?}", prompt_c);
+-        match self.error_message(prompt_c) {
+-            Ok(()) => (),
+-            Err(err) => {
+-                tracing::warn!("failed to send error_msg: {:?}", err);
++impl elevate_pam::conv::Converser for Conversation {
++    fn converse(
++        &mut self,
++        messages: &[elevate_pam::types::Message],
++    ) -> elevate_pam::error::PamResult<Vec<elevate_pam::types::Response>> {
++        use elevate_pam::error::{PamError, PamStatus};
++        use elevate_pam::types::{MsgStyle, Response};
++
++        let mut out = Vec::with_capacity(messages.len());
++        for m in messages {
++            tracing::info!("{:?} {:?}", m.style, m.text);
++            match m.style {
++                MsgStyle::PromptEchoOn => {
++                    let text = self
++                        .prompt_value(&m.text, false)
++                        .map_err(|()| PamError::Status(PamStatus::new(19)))?;
++                    out.push(Response { text, retcode: 0 });
++                }
++                MsgStyle::PromptEchoOff => {
++                    let text = self
++                        .prompt_value(&m.text, true)
++                        .map_err(|()| PamError::Status(PamStatus::new(19)))?;
++                    out.push(Response { text, retcode: 0 });
++                }
++                MsgStyle::TextInfo => {
++                    if self.message(&m.text).is_err() {
++                        tracing::warn!("failed to send text_info");
++                    }
++                    out.push(Response {
++                        text: String::new(),
++                        retcode: 0,
++                    });
++                }
++                MsgStyle::ErrorMsg => {
++                    if self.error_message(&m.text).is_err() {
++                        tracing::warn!("failed to send error_msg");
++                    }
++                    out.push(Response {
++                        text: String::new(),
++                        retcode: 0,
++                    });
++                }
++                _ => out.push(Response {
++                    text: String::new(),
++                    retcode: 0,
++                }),
+             }
+         }
++        Ok(out)
+     }
+ }
+ 

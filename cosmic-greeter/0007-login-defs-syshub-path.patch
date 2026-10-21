@@ -1,0 +1,11 @@
+--- a/daemon/src/lib.rs
++++ b/daemon/src/lib.rs
+@@ -39,7 +39,7 @@
+     }
+ 
+     pub async fn new() -> Self {
+-        let login_defs_data = fs::read_to_string("/etc/login.defs").unwrap_or_default();
++        let login_defs_data = fs::read_to_string("/overlayer/syshub/etc/login.defs").unwrap_or_default();
+         let login_defs = whitespace_conf::parse(&login_defs_data);
+ 
+         #[cfg(feature = "systemd")]

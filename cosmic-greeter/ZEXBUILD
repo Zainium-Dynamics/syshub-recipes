@@ -1,0 +1,97 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-greeter
+pkgver=1.10.0
+pkgrel=4
+source="https://github.com/pop-os/cosmic-greeter/archive/refs/tags/epoch-1.10.0.tar.gz
+0001-main-no-systemd-default-and-elevate-pam.patch
+0003-overlayer-syshub-path.patch
+0004-elevate-pam-integration.patch
+0006-start-script-syshub-path.patch
+0007-login-defs-syshub-path.patch
+0008-error-text-wraps-in-column.patch
+0009-default-wallpaper-before-first-login.patch"
+
+sha256sums=""
+makedepends="rustup just eudev-dev libinput-dev libseat-dev libxkbcommon-dev wayland-dev dav1d-dev"
+
+build() {
+
+    cd cosmic-greeter-epoch-1.10.0
+
+    patch -p1 < ../0001-main-no-systemd-default-and-elevate-pam.patch
+    patch -p1 < ../0003-overlayer-syshub-path.patch
+    patch -p1 < ../0004-elevate-pam-integration.patch
+    # also relocates the script's own shebang: /bin/sh isn't a real path on
+    # Zainium, only /overlayer/syshub/bin/sh is -- this script is exec'd
+    # directly, so a dangling shebang would fail the greeter outright.
+    patch -p1 < ../0006-start-script-syshub-path.patch
+    # daemon/src/lib.rs read /etc/login.defs for UID_MIN/UID_MAX (falls back
+    # to 1000/65000 if missing) -- on Zainium that file, if shipped at all,
+    # lives under /overlayer/syshub/etc like the rest of this package's own
+    # etc/ payload (see manifest.toml's [install] etc= path), same fix
+    # already applied to cosmic-initial-setup's own /etc/login.defs read.
+    patch -p1 < ../0007-login-defs-syshub-path.patch
+    # the red error text was cut off at the column edge on the login and lock screens
+    patch -p1 < ../0008-error-text-wraps-in-column.patch
+    # before a user's first login there is no cosmic-bg state: show the background
+    # config's (system default) wallpaper instead of the built-in fallback image
+    patch -p1 < ../0009-default-wallpaper-before-first-login.patch
+
+    # Alpine's cargo has no x86_64-unknown-linux-musl std; elevate-pam needs a newer
+    # rustc than the repo's rust-toolchain.toml pins, so nightly wins over that file
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install nightly --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=nightly
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+
+    # elevate-pam is built into the locker; this is where it finds its config
+    export ELEVATE_PAM_CONFIG_PATH=/overlayer/syshub/etc/elevate-pam/elevate-pam.toml
+    cargo build --release --workspace --target x86_64-unknown-linux-musl
+}
+
+package() {
+    just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
+        cargo-target-dir=target/x86_64-unknown-linux-musl install
+
+    local sh="$PAYLOAD_DIR/overlayer/syshub"
+    # no /var on Zainium: the greeter's home is under the syshub var
+    cat > "$sh/lib/sysusers.d/cosmic-greeter.conf" <<'END'
+#Type Name           ID GECOS                    Home directory           Shell
+u     cosmic-greeter -  "Cosmic Greeter Account" /overlayer/syshub/var/lib/cosmic-greeter  -
+m     cosmic-greeter video
+m     cosmic-greeter input
+m     cosmic-greeter render
+END
+    cat > "$sh/lib/tmpfiles.d/cosmic-greeter.conf" <<'END'
+d	/overlayer/syshub/var/lib/cosmic-greeter	0750	cosmic-greeter	cosmic-greeter	-
+z	/overlayer/syshub/var/lib/cosmic-greeter	0750	cosmic-greeter	cosmic-greeter	-
+d	/overlayer/syshub/var/lib/cosmic-greeter/.config	0750	cosmic-greeter	cosmic-greeter	-
+z	/overlayer/syshub/var/lib/cosmic-greeter/.config	0750	cosmic-greeter	cosmic-greeter	-
+d	/run/cosmic-greeter	0700	cosmic-greeter	cosmic-greeter	-
+z	/run/cosmic-greeter	0700	cosmic-greeter	cosmic-greeter	-
+d	/run/user/1000	0700	zainium	zainium	-
+z	/run/user/1000	0700	zainium	zainium	-
+END
+
+    # the daemon hands users' backgrounds and settings to the login screen
+    mkdir -p "$sh/lib/systemd/system" "$sh/etc/systemd/system/multi-user.target.wants"
+    cat > "$sh/lib/systemd/system/cosmic-greeter-daemon.service" <<'END'
+[Unit]
+Description=COSMIC Greeter Daemon
+
+[Service]
+Type=dbus
+BusName=com.system76.CosmicGreeter
+ExecStart=/overlayer/syshub/bin/cosmic-greeter-daemon
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+END
+    chmod 644 "$sh/lib/systemd/system/cosmic-greeter-daemon.service"
+    ln -sf /overlayer/syshub/lib/systemd/system/cosmic-greeter-daemon.service \
+        "$sh/etc/systemd/system/multi-user.target.wants/cosmic-greeter-daemon.service"
+}

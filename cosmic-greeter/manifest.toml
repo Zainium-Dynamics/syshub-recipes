@@ -1,0 +1,33 @@
+# manifest.toml — cosmic-greeter (syshub tier)
+
+[package]
+name             = "cosmic-greeter"
+version          = "1.10.0"
+description      = "COSMIC greeter/lock screen, systemd/dbus/flatpak/PAM free (elevate-pam + quantra-logind + oxibus)"
+license          = "GPL-3.0-only"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-greeter"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cosmic-comp", "quantra-logind", "elevate-pam", "greetd"]
+provides         = ["cosmic-greeter"]
+tags             = ["desktop", "cosmic"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

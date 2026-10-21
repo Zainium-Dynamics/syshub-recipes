@@ -1,0 +1,20 @@
+--- a/src/greeter.rs
++++ b/src/greeter.rs
+@@ -248,7 +248,7 @@
+                 }
+ 
+                 // Session exec may contain environmental variables
+-                command.push("/usr/bin/env".to_string());
++                command.push("/overlayer/syshub/bin/env".to_string());
+ 
+                 // To ensure the env is set correctly, we also set it in the session command
+                 for arg in env.iter() {
+@@ -1647,7 +1647,7 @@
+                         .is_none_or(|c| c.try_wait().is_ok())
+                 {
+                     self.accessibility.screen_reader =
+-                        tokio::process::Command::new("/usr/bin/orca").spawn().ok();
++                        tokio::process::Command::new("/overlayer/syshub/bin/orca").spawn().ok();
+                 } else if let Some(mut c) = self.accessibility.screen_reader.take() {
+                     return cosmic::task::future::<(), ()>(async move {
+                         if let Err(err) = c.kill().await {
