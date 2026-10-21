@@ -5,7 +5,7 @@ pkgrel=0
 source="https://www.kernel.org/pub/linux/bluetooth/bluez-$pkgver.tar.xz"
 sha256sums="26bdcf2cebd7310c6f598850606b037ef0c515fe6608ebc54d22c50c4c32b35f  bluez-$pkgver.tar.xz"
 makedepends="pkgconf"
-needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev"
+needs_toolchain="systemd systemd-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev"
 
 # bluetoothd, bluetoothctl and btmon: the org.bluez D-Bus service COSMIC's Bluetooth
 # applet and settings page talk to. Started through bluetooth.target, which udev
