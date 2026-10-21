@@ -5,7 +5,7 @@ pkgrel=0
 source="https://github.com/flatpak/xdg-desktop-portal/releases/download/$pkgver/xdg-desktop-portal-$pkgver.tar.xz"
 sha256sums="d4879ddb3d65ff1a8f19187497e6f13dc5d267bcac404a5d501218be355753d3  xdg-desktop-portal-$pkgver.tar.xz"
 makedepends="meson gettext"
-needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev json-glib json-glib-dev fuse3 fuse3-dev gdk-pixbuf gdk-pixbuf-dev libpng libjpeg-turbo pipewire pipewire-dev gstreamer gstreamer-dev systemd systemd-dev"
+needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev json-glib json-glib-dev fuse3 fuse3-dev gdk-pixbuf gdk-pixbuf-dev libpng libjpeg-turbo pipewire pipewire-dev gstreamer gstreamer-dev libdrm libdrm-dev systemd systemd-dev"
 
 # xdg-desktop-portal: the org.freedesktop.portal.Desktop service COSMIC's screenshot
 # tool and Flatpak apps (file chooser, open with, ...) talk to; it hands the requests
