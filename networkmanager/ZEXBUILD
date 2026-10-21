@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=networkmanager
 pkgver=1.58.1
-pkgrel=4
+pkgrel=5
 subpackages="networkmanager-dev"
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
@@ -110,6 +110,20 @@ path=/overlayer/syshub/etc/NetworkManager/system-connections
 EOF
     ln -sf /overlayer/syshub/lib/systemd/system/NetworkManager.service \
         "$sh/etc/systemd/system/multi-user.target.wants/NetworkManager.service"
+
+    # Zainium boots through quantra-ramfs, not a systemd initrd: the initrd units can
+    # never start, and their generator only masks them on every boot
+    rm -f "$sh"/lib/systemd/system/NetworkManager-config-initrd.service \
+        "$sh"/lib/systemd/system/NetworkManager-initrd.service \
+        "$sh"/lib/systemd/system/NetworkManager-wait-online-initrd.service \
+        "$sh"/lib/systemd/system-generators/nm-initrd-generator.sh
+    rmdir "$sh"/lib/systemd/system-generators 2>/dev/null || true
+    # no /bin or /etc on Zainium
+    for f in $(grep -rIlE '/bin/sh|/etc/' "$sh"/lib/udev "$sh"/lib/systemd "$sh"/share/dbus-1 2>/dev/null); do
+        sed -i -e 's#\([^a-z/]\)/bin/sh #\1/overlayer/syshub/bin/sh #g' \
+            -e 's#\([^a-z/]\)/etc/#\1/overlayer/syshub/etc/#g' "$f"
+    done
+    sed -i '\|^#ExecReload=/bin/kill|d' "$sh"/lib/systemd/system/NetworkManager.service
 
     mkdir -p "$STAGING_ROOT/_networkmanager-dev"
     mv "$PAYLOAD_DIR/overlayer/syshub/include" "$STAGING_ROOT/_networkmanager-dev/include"
