@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=networkmanager
 pkgver=1.58.1
-pkgrel=5
+pkgrel=6
 subpackages="networkmanager-dev"
 source="https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/archive/1.58.1/NetworkManager-$pkgver.tar.gz"
 sha256sums="8d112eefc0e0e15d44e93453a8a16760ec07a4037e1f93097abdf55abd5dca2d  NetworkManager-$pkgver.tar.gz"
@@ -107,6 +107,13 @@ plugins=keyfile
 
 [keyfile]
 path=/overlayer/syshub/etc/NetworkManager/system-connections
+EOF
+    # fixed public DNS on every network: home routers' DNS drops answers under load
+    # (flatpak's parallel downloads failed with "Could not resolve hostname")
+    mkdir -p "$sh/etc/NetworkManager/conf.d"
+    cat > "$sh/etc/NetworkManager/conf.d/90-dns.conf" <<'EOF'
+[global-dns-domain-*]
+servers=1.1.1.1,8.8.8.8
 EOF
     ln -sf /overlayer/syshub/lib/systemd/system/NetworkManager.service \
         "$sh/etc/systemd/system/multi-user.target.wants/NetworkManager.service"
