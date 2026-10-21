@@ -1,0 +1,15 @@
+[Unit]
+Description=Compressed swap in RAM (zram)
+DefaultDependencies=no
+After=systemd-modules-load.service
+Before=swap.target shutdown.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/overlayer/syshub/libexec/zram-swap start
+ExecStop=/overlayer/syshub/libexec/zram-swap stop
+
+[Install]
+WantedBy=swap.target

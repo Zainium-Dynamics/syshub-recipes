@@ -1,0 +1,32 @@
+# manifest.toml — zram-swap (syshub tier)
+
+[package]
+name             = "zram-swap"
+version          = "1.0"
+description      = "Compressed swap in RAM (zram, zstd) at boot"
+license          = "GPL-3.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://zainiumdynamics.tech"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["util-linux", "userutiles", "kmod", "systemd"]
+provides         = ["zram-swap"]
+tags             = ["base", "memory"]
+
+[install]
+libexec = "/overlayer/syshub/libexec"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
