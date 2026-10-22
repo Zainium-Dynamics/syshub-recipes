@@ -2,7 +2,7 @@
 
 [package]
 name             = "cosmic-greeter"
-version          = "1.10.0"
+version          = "1.10.1"
 description      = "COSMIC greeter/lock screen, systemd/dbus/flatpak/PAM free (elevate-pam + quantra-logind + oxibus)"
 license          = "GPL-3.0-only"
 maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
@@ -14,7 +14,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["cosmic-comp", "quantra-logind", "elevate-pam", "greetd"]
+depends          = ["cosmic-comp", "elevate-pam", "greetd"]
 provides         = ["cosmic-greeter"]
 tags             = ["desktop", "cosmic"]
 
