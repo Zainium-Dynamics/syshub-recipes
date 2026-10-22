@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=greetd
-pkgver=0.10.3
-pkgrel=4
+pkgver=0.10.4
+pkgrel=0
 _commit=63ecfb3e0f9684800e440925e10370f4e690b807
 source="https://github.com/Zainium-Dynamics/greetd/archive/$_commit.tar.gz"
 sha256sums=""
