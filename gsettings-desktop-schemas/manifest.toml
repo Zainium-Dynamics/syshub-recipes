@@ -1,0 +1,28 @@
+[package]
+name             = "gsettings-desktop-schemas"
+version          = "51.0"
+description      = "Shared GSettings schemas for the desktop, with the compiled schema file"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.gnome.org/GNOME/gsettings-desktop-schemas"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib"]
+provides         = ["gsettings-desktop-schemas"]
+tags             = ["base", "desktop", "settings"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

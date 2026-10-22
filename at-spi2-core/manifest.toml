@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["musl", "glib", "dbus", "libxml2", "systemd"]
+depends          = ["musl", "glib", "dbus", "libxml2", "systemd", "gsettings-desktop-schemas"]
 provides         = ["at-spi2-core", "atk", "at-spi2-atk", "libatspi"]
 tags             = ["base", "desktop", "accessibility"]
 

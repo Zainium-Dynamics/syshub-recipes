@@ -1,0 +1,36 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=gsettings-desktop-schemas
+pkgver=51.0
+pkgrel=0
+source="https://download.gnome.org/sources/gsettings-desktop-schemas/${pkgver%.*}/gsettings-desktop-schemas-$pkgver.tar.xz"
+sha256sums="1e2419a5f21d26c324b28ae1c00e29e9175e8b596fff385a04c2172b36652226  gsettings-desktop-schemas-$pkgver.tar.xz"
+makedepends="meson gettext"
+needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev"
+
+build() {
+    # glib-dev's python tools (glib-mkenums) start with #!/overlayer/syshub/bin/env
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --wrap-mode=nofallback \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        -Dintrospection=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/share/glib-2.0/schemas"
+    cp -a "$inst"/share/glib-2.0/schemas/. "$PAYLOAD_DIR/share/glib-2.0/schemas/"
+    if [ -d "$inst/share/locale" ]; then
+        cp -a "$inst"/share/locale "$PAYLOAD_DIR/share/"
+    fi
+    # without a compiled schema file GSettings has no schema source at all, and
+    # at-spi-bus-launcher aborts on that: every app then waits 25 s for the a11y bus
+    local compile=/overlayer/syshub/bin/glib-compile-schemas
+    [ -x "$compile" ] || compile=glib-compile-schemas
+    "$compile" "$PAYLOAD_DIR/share/glib-2.0/schemas"
+    [ -s "$PAYLOAD_DIR/share/glib-2.0/schemas/gschemas.compiled" ]
+}

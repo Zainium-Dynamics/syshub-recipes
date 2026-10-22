@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=at-spi2-core
 pkgver=2.62.1
-pkgrel=0
+pkgrel=1
 subpackages="$pkgname-dev"
 source="https://download.gnome.org/sources/at-spi2-core/${pkgver%.*}/at-spi2-core-$pkgver.tar.xz"
 sha256sums="cca6b6a86e4389d89b370288761ce2385ddeceb10c4412da78689bc30c88af2d  at-spi2-core-$pkgver.tar.xz"
