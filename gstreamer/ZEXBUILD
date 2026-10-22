@@ -1,12 +1,12 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=gstreamer
 pkgver=1.28.8
-pkgrel=2
+pkgrel=3
 subpackages="gstreamer-dev"
 source="https://gitlab.freedesktop.org/gstreamer/gstreamer/-/archive/$pkgver/gstreamer-$pkgver.tar.gz"
 sha256sums="fd146dc03ea55ccfe78c1a91d35b71f20089209e173163f98237aad9f5ec7540  gstreamer-$pkgver.tar.gz"
 makedepends="meson ninja bison flex python3 pkgconf zlib zlib-dev glslang shaderc"
-needs_toolchain="openssl openssl-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev gettext gettext-dev alsa-lib alsa-lib-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev libdrm libdrm-dev mesa mesa-dev wayland wayland-dev wayland-protocols expat expat-dev eudev eudev-dev libxkbcommon libxkbcommon-dev vulkan-loader vulkan-loader-dev"
+needs_toolchain="ffmpeg ffmpeg-dev dav1d openssl openssl-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev gettext gettext-dev alsa-lib alsa-lib-dev libpng libpng-dev libjpeg-turbo libjpeg-turbo-dev libdrm libdrm-dev mesa mesa-dev wayland wayland-dev wayland-protocols expat expat-dev eudev eudev-dev libxkbcommon libxkbcommon-dev vulkan-loader vulkan-loader-dev"
 
 build() {
     [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
@@ -29,7 +29,7 @@ build() {
         -Dgood=enabled \
         -Dbad=enabled \
         -Dugly=disabled \
-        -Dlibav=disabled \
+        -Dlibav=enabled \
         -Dges=disabled \
         -Drtsp_server=disabled \
         -Ddevtools=disabled \
