@@ -1,6 +1,6 @@
 [package]
 name             = "greetd"
-version          = "0.10.3"
+version          = "0.10.4"
 description      = "Minimal, flexible login manager daemon"
 license          = "GPL-3.0-only"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
