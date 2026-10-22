@@ -1,0 +1,37 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=xdg-utils
+pkgver=1.3.0_rc1
+pkgrel=0
+_tag=v1.3.0-rc.1
+source="https://gitlab.freedesktop.org/xdg/xdg-utils/-/archive/$_tag/xdg-utils-$_tag.tar.gz"
+sha256sums="1bf3a49832312287fd1264dff22602ad11767d0724bd2261b83610d8a0278130  xdg-utils-$_tag.tar.gz"
+# the scripts' --help text is generated from the docbook descriptions
+makedepends="libxml2-utils libxslt lynx xmlto"
+
+_scripts="xdg-desktop-menu xdg-desktop-icon xdg-mime xdg-icon-resource xdg-open xdg-email xdg-realpath xdg-screensaver xdg-settings xdg-terminal"
+
+build() {
+    cd "xdg-utils-$_tag"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --mandir=/overlayer/syshub/share/man
+    make -C scripts scripts
+}
+
+package() {
+    # still in the source dir build() changed into
+    mkdir -p "$PAYLOAD_DIR/bin"
+    for x in $_scripts; do
+        install -m755 "scripts/$x" "$PAYLOAD_DIR/bin/$x"
+    done
+    # no /usr or /bin on Zainium: system data in the syshub, apps from zex in the union
+    sed -i \
+        -e '1s|^#!/bin/sh|#!/overlayer/syshub/bin/sh|' \
+        -e 's#/usr/local/share/:/usr/share/#/overlayer/syshub/share/:/overlayer/zexlib/union/share/#g' \
+        -e 's#/usr/local/share:/usr/share#/overlayer/syshub/share:/overlayer/zexlib/union/share#g' \
+        -e 's#/usr/local/#/overlayer/zexlib/union/#g' \
+        -e 's#/usr/#/overlayer/syshub/#g' \
+        -e 's#/etc/xdg#/overlayer/syshub/etc/xdg#g' \
+        "$PAYLOAD_DIR"/bin/xdg-*
+}
