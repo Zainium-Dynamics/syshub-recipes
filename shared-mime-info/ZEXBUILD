@@ -28,6 +28,11 @@ package() {
     if [ -d "$inst/share/locale" ]; then
         cp -a "$inst"/share/locale "$PAYLOAD_DIR/share/"
     fi
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
     # the compiled database is what apps read: without it every file looks like text
     # (COSMIC Files opened videos and images in the text editor)
     export LD_LIBRARY_PATH=/usr/lib:/lib
