@@ -1,0 +1,29 @@
+[package]
+name             = "shared-mime-info"
+version          = "2.5.1"
+description      = "Freedesktop MIME database, compiled, and update-mime-database"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.freedesktop.org/xdg/shared-mime-info"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl", "glib", "libxml2"]
+provides         = ["shared-mime-info", "update-mime-database"]
+tags             = ["base", "desktop", "mime"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
