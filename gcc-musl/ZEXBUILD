@@ -5,7 +5,7 @@ pkgrel=0
 source="https://ftp.gnu.org/gnu/gcc/gcc-$pkgver/gcc-$pkgver.tar.gz
 0001-zainium-musl-paths.patch"
 sha256sums="071d00a097579e5ef7ce97fc4a9e58e73fd3503c0a013c765c970370a5a53b9b  gcc-$pkgver.tar.gz"
-makedepends="make m4 patch perl xz wget"
+makedepends="make m4 patch perl xz"
 needs_toolchain="gcc-musl binutils musl zlib zlib-dev zstd zstd-dev bzip2 bzip2-dev gawk gawk-dev bash"
 
 build() {
