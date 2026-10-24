@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=nghttp2
 pkgver=1.70.0
-pkgrel=0
+pkgrel=1
 subpackages="$pkgname-dev"
 source="https://github.com/nghttp2/nghttp2/releases/download/v$pkgver/nghttp2-$pkgver.tar.gz"
 sha256sums="aa317e2cf9dca6afa0aed68f8fad6ff303ec6982e25a78c75c0b65e2b9b3ded5  nghttp2-$pkgver.tar.gz"
