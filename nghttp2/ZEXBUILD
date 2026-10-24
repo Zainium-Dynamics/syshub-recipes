@@ -1,0 +1,37 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=nghttp2
+pkgver=1.70.0
+pkgrel=0
+subpackages="$pkgname-dev"
+source="https://github.com/nghttp2/nghttp2/releases/download/v$pkgver/nghttp2-$pkgver.tar.gz"
+sha256sums="aa317e2cf9dca6afa0aed68f8fad6ff303ec6982e25a78c75c0b65e2b9b3ded5  nghttp2-$pkgver.tar.gz"
+makedepends="cmake ninja"
+
+build() {
+    cmake -B builddir -G Ninja \
+        -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_INSTALL_LIBDIR=lib \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DENABLE_LIB_ONLY=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_STATIC_LIBS=OFF \
+        -DBUILD_TESTING=OFF \
+        -DENABLE_DOC=OFF \
+        -DENABLE_PYTHON_BINDINGS=OFF
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libnghttp2.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    strip "$PAYLOAD_DIR/lib/"*.so.* 2>/dev/null || true
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
