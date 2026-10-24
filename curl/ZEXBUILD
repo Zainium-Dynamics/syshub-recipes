@@ -1,12 +1,12 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=curl
 pkgver=8.22.0
-pkgrel=0
+pkgrel=1
 subpackages="curl-dev"
 source="https://github.com/curl/curl/releases/download/curl-8_22_0/curl-$pkgver.tar.gz"
 sha256sums="d54dd598bf05927a726deb38df31c6a255ba83ff1de57c5d1464dac3ed8f44a1  curl-$pkgver.tar.gz"
 makedepends="cmake"
-needs_toolchain="openssl openssl-dev zlib zlib-dev zstd zstd-dev"
+needs_toolchain="nghttp2 nghttp2-dev openssl openssl-dev zlib zlib-dev zstd zstd-dev"
 
 build() {
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
@@ -19,7 +19,7 @@ build() {
         -DCURL_ZLIB=ON \
         -DCURL_BROTLI=OFF \
         -DCURL_ZSTD=ON \
-        -DUSE_NGHTTP2=OFF \
+        -DUSE_NGHTTP2=ON \
         -DCURL_USE_LIBPSL=OFF \
         -DUSE_LIBIDN2=OFF \
         -DENABLE_ARES=OFF \
