@@ -2,7 +2,7 @@
 name             = "nghttp2"
 version          = "1.70.0"
 description      = "HTTP/2 C library"
-license          = "nghttp2"
+license          = "MIT"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
 homepage         = "https://nghttp2.org/"
 build_type       = "dynamic"
