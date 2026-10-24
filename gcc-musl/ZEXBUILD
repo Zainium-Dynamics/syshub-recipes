@@ -9,6 +9,13 @@ makedepends="make m4 patch perl xz"
 needs_toolchain="gcc-musl binutils musl zlib zlib-dev zstd zstd-dev bzip2 bzip2-dev gawk bash"
 
 build() {
+
+    export PATH="/overlayer/syshub/bin:$PATH"
+    export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
+    export CFLAGS="-I/overlayer/syshub/include ${CFLAGS:-}"
+    export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
     local sysroot=/overlayer/syshub
     local triple=x86_64-zainium-linux-musl
     local musl_root="$sysroot/$triple"
