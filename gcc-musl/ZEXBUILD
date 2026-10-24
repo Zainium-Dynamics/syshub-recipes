@@ -5,7 +5,7 @@ pkgrel=0
 source="https://ftp.gnu.org/gnu/gcc/gcc-$pkgver/gcc-$pkgver.tar.gz
 0001-zainium-musl-paths.patch"
 sha256sums="071d00a097579e5ef7ce97fc4a9e58e73fd3503c0a013c765c970370a5a53b9b  gcc-$pkgver.tar.gz"
-makedepends="build-base bzip2 xz wget"
+makedepends="make m4 bash gawk patch perl bzip2 xz wget"
 needs_toolchain="musl gcc-musl binutils zlib zlib-dev zstd zstd-dev"
 
 build() {
@@ -26,8 +26,8 @@ build() {
 
     export CC="$sysroot/bin/$triple-gcc -B$sysroot/lib/gcc/$triple/$old/"
     export CXX="$sysroot/bin/$triple-g++ -B$sysroot/lib/gcc/$triple/$old/"
-    export CC_FOR_BUILD=/usr/bin/gcc
-    export CXX_FOR_BUILD=/usr/bin/g++
+    export CC_FOR_BUILD="$CC"
+    export CXX_FOR_BUILD="$CXX"
     export AR="$sysroot/bin/$triple-ar" AS="$sysroot/bin/$triple-as" LD="$sysroot/bin/$triple-ld"
     export NM="$sysroot/bin/$triple-nm" RANLIB="$sysroot/bin/$triple-ranlib"
     for t in AR AS LD NM RANLIB OBJCOPY OBJDUMP STRIP READELF; do
@@ -41,7 +41,7 @@ build() {
     export LDFLAGS_FOR_TARGET="-Wl,-dynamic-linker=$ldso $rpath"
 
     "$SRCDIR/gcc-$pkgver/configure" \
-        --build=x86_64-linux-gnu \
+        --build=$triple \
         --host=$triple \
         --target=$triple \
         --prefix=$sysroot \
