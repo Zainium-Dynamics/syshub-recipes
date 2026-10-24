@@ -1,0 +1,80 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=gcc-musl
+pkgver=16.2.0
+pkgrel=0
+source="https://ftp.gnu.org/gnu/gcc/gcc-$pkgver/gcc-$pkgver.tar.gz
+0001-zainium-musl-paths.patch"
+sha256sums="071d00a097579e5ef7ce97fc4a9e58e73fd3503c0a013c765c970370a5a53b9b  gcc-$pkgver.tar.gz"
+makedepends="bzip2 xz wget"
+needs_toolchain="musl gcc-musl binutils zlib zlib-dev zstd zstd-dev"
+
+build() {
+    local triple=x86_64-zainium-linux-musl
+    local sysroot=/overlayer/syshub
+    cd "$SRCDIR/gcc-$pkgver"
+    patch -p1 < "$SRCDIR/0001-zainium-musl-paths.patch"
+    ./contrib/download_prerequisites
+
+    mkdir -p "$SRCDIR/gcc-build"
+    cd "$SRCDIR/gcc-build"
+    export CC="$sysroot/bin/$triple-gcc"
+    export CXX="$sysroot/bin/$triple-g++"
+    "$SRCDIR/gcc-$pkgver/configure" \
+        --build=$triple \
+        --host=$triple \
+        --target=$triple \
+        --prefix=$sysroot \
+        --libdir=$sysroot/lib \
+        --libexecdir=$sysroot/libexec \
+        --program-prefix=$triple- \
+        --with-sysroot=$sysroot/$triple \
+        --with-native-system-header-dir=/include \
+        --with-specs='%{!static:-Wl,-rpath=/overlayer/syshub/lib}' \
+        --enable-languages=c,c++ \
+        --enable-shared \
+        --enable-threads=posix \
+        --enable-default-pie \
+        --enable-default-ssp \
+        --enable-tls \
+        --disable-multilib \
+        --disable-bootstrap \
+        --disable-nls \
+        --disable-fixincludes \
+        --disable-libsanitizer \
+        --disable-libitm \
+        --disable-libquadmath \
+        --disable-libssp \
+        --with-system-zlib
+    make -j"$(nproc)"
+    make DESTDIR="$SRCDIR/gcc-install" install
+}
+
+package() {
+    local inst="$SRCDIR/gcc-install/overlayer/syshub"
+    local triple=x86_64-zainium-linux-musl
+    mkdir -p "$PAYLOAD_DIR"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    rm -rf "$PAYLOAD_DIR/share/info" "$PAYLOAD_DIR/share/locale"
+    [ ! -e "$PAYLOAD_DIR/lib64" ] || { echo "gcc installed a lib64 directory" >&2; return 1; }
+
+    for so in libstdc++ libatomic libgcc_s; do
+        real="$(ls "$PAYLOAD_DIR"/lib/$so.so.[0-9]*.* 2>/dev/null | head -1)"
+        [ -n "$real" ] || continue
+        major="$(basename "$real" | sed -n "s/^$so\.so\.\([0-9]*\)\..*/\1/p")"
+        [ -e "$PAYLOAD_DIR/lib/$so.so.$major" ] || ln -s "$(basename "$real")" "$PAYLOAD_DIR/lib/$so.so.$major"
+        [ -e "$PAYLOAD_DIR/lib/$so.so" ] || ln -s "$so.so.$major" "$PAYLOAD_DIR/lib/$so.so"
+    done
+
+    cd "$PAYLOAD_DIR/bin"
+    ln -sf $triple-gcc cc
+    ln -sf $triple-gcc gcc
+    ln -sf $triple-g++ c++
+    ln -sf $triple-g++ g++
+    cd - >/dev/null
+
+    find "$PAYLOAD_DIR" -type f | while read -r f; do
+        grep -q '/usr' "$f" || continue
+        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
+    done
+}
