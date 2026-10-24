@@ -9,13 +9,6 @@ makedepends="make m4 patch perl xz"
 needs_toolchain="gcc-musl binutils musl zlib zlib-dev zstd zstd-dev bzip2 bzip2-dev gawk bash"
 
 build() {
-
-    export PATH="/overlayer/syshub/bin:$PATH"
-    export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
-    export CFLAGS="-I/overlayer/syshub/include ${CFLAGS:-}"
-    export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
-    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-
     local sysroot=/overlayer/syshub
     local triple=x86_64-zainium-linux-musl
     local musl_root="$sysroot/$triple"
@@ -24,6 +17,9 @@ build() {
     local ldso="$musl_root/lib/ld-musl-x86_64.so.1"
     local rpath="-Wl,-rpath=$sysroot/lib:$musl_root/lib"
 
+    export PATH="$sysroot/bin:$PATH"
+    export PKG_CONFIG_PATH="$sysroot/lib/pkgconfig:$sysroot/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
     cd "$SRCDIR/gcc-$pkgver"
     patch -p1 < "$SRCDIR/0001-zainium-musl-paths.patch"
     ./contrib/download_prerequisites
@@ -31,21 +27,29 @@ build() {
     mkdir -p "$SRCDIR/gcc-build"
     cd "$SRCDIR/gcc-build"
 
-    export CC="$sysroot/bin/$triple-gcc -B$sysroot/lib/gcc/$triple/$old/"
-    export CXX="$sysroot/bin/$triple-g++ -B$sysroot/lib/gcc/$triple/$old/"
+    local inc_flags="-isystem $sysroot/include"
+    local cpp_inc_flags="-isystem $sysroot/include/c++/$old -isystem $sysroot/include/c++/$old/$triple $inc_flags"
+    local lib_flags="-L$sysroot/lib -B$sysroot/lib"
+
+    export CC="$sysroot/bin/$triple-gcc -B$sysroot/lib/gcc/$triple/$old/ $inc_flags $lib_flags"
+    export CXX="$sysroot/bin/$triple-g++ -B$sysroot/lib/gcc/$triple/$old/ $cpp_inc_flags $lib_flags"
     export CC_FOR_BUILD="$CC"
     export CXX_FOR_BUILD="$CXX"
+
     export AR="$sysroot/bin/$triple-ar" AS="$sysroot/bin/$triple-as" LD="$sysroot/bin/$triple-ld"
     export NM="$sysroot/bin/$triple-nm" RANLIB="$sysroot/bin/$triple-ranlib"
     for t in AR AS LD NM RANLIB OBJCOPY OBJDUMP STRIP READELF; do
         export "${t}_FOR_TARGET=$sysroot/bin/$triple-$(echo "$t" | tr 'A-Z' 'a-z')"
     done
-    export CFLAGS="-O2 -pipe"
-    export CXXFLAGS="-O2 -pipe -isystem $sysroot/include/c++/$old -isystem $sysroot/include/c++/$old/$triple"
-    export CFLAGS_FOR_TARGET="-O2 -pipe"
-    export CXXFLAGS_FOR_TARGET="-O2 -pipe"
-    export LDFLAGS="-Wl,-dynamic-linker=$ldso $rpath"
-    export LDFLAGS_FOR_TARGET="-Wl,-dynamic-linker=$ldso $rpath"
+
+    export CPPFLAGS="$inc_flags"
+    export CFLAGS="-O2 -pipe $inc_flags"
+    export CXXFLAGS="-O2 -pipe $cpp_inc_flags"
+    export CFLAGS_FOR_TARGET="-O2 -pipe $inc_flags"
+    export CXXFLAGS_FOR_TARGET="-O2 -pipe $inc_flags"
+    export LDFLAGS="$lib_flags -Wl,-dynamic-linker=$ldso $rpath"
+    export LDFLAGS_FOR_BUILD="$LDFLAGS"
+    export LDFLAGS_FOR_TARGET="$lib_flags -Wl,-dynamic-linker=$ldso $rpath"
 
     "$SRCDIR/gcc-$pkgver/configure" \
         --build=$triple \
@@ -84,6 +88,7 @@ build() {
         --disable-libssp \
         --disable-libstdcxx-pch \
         --disable-werror
+
     make -j"$(nproc)"
     make DESTDIR="$SRCDIR/gcc-install" install
 }
