@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=binutils
 pkgver=2.47
-pkgrel=0
+pkgrel=1
 needs_toolchain="musl gcc-musl zstd zstd-dev"
 source="https://ftp.gnu.org/gnu/binutils/binutils-$pkgver.tar.zst
 0001-tooldir-flat-into-syshub-bin.patch"
@@ -82,6 +82,7 @@ build() {
         --target=x86_64-zainium-linux-musl \
         --prefix="$sysroot" \
         --with-sysroot="$sysroot" \
+        --with-lib-path="${sysroot}/lib:${musl_sysroot}/lib" \
         --disable-nls \
         --disable-werror \
         --disable-multilib \
@@ -101,4 +102,20 @@ package() {
     # fully (ld-new linked), only this final install step's directory
     # was wrong ("make: *** build: No such file or directory. Stop.").
     make DESTDIR="$PAYLOAD_DIR" bfdlibdir='${libdir}' bfdincludedir='${includedir}' install
+
+    local sh="$PAYLOAD_DIR/overlayer/syshub"
+    # configure sees the CI host as the host, so libbfd/libopcodes and their headers land
+    # in <host>/x86_64-zainium-linux-musl/{lib,include}: flat lib/ and include/ instead
+    for nested in "$sh"/*/x86_64-zainium-linux-musl; do
+        [ -d "$nested" ] || continue
+        for sub in lib include; do
+            [ -d "$nested/$sub" ] || continue
+            mkdir -p "$sh/$sub"
+            cp -a "$nested/$sub/." "$sh/$sub/"
+        done
+        rm -rf "$(dirname "$nested")"
+    done
+    # gcc runs plain `ld`; with tooldir == bindir binutils skips the unprefixed ld copy
+    cp "$sh/bin/x86_64-zainium-linux-musl-ld.bfd" "$sh/bin/ld.bfd"
+    cp "$sh/bin/x86_64-zainium-linux-musl-ld.bfd" "$sh/bin/ld"
 }
