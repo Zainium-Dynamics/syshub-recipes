@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=gcc-musl
 pkgver=16.2.0
-pkgrel=0
+pkgrel=1
 source="https://ftp.gnu.org/gnu/gcc/gcc-$pkgver/gcc-$pkgver.tar.gz
 0001-zainium-musl-paths.patch"
 sha256sums="071d00a097579e5ef7ce97fc4a9e58e73fd3503c0a013c765c970370a5a53b9b  gcc-$pkgver.tar.gz"
@@ -65,6 +65,7 @@ build() {
         --with-sysroot=$musl_root \
         --with-native-system-header-dir=/include \
         --with-local-prefix=$sysroot \
+        --with-specs='%{!nostdinc:-idirafter /overlayer/syshub/include}' \
         --with-toolexeclibdir=$sysroot/lib \
         --with-gxx-include-dir=$sysroot/include/c++/16 \
         --with-system-zlib \
@@ -121,6 +122,14 @@ package() {
         [ -e "$PAYLOAD_DIR/lib/$so.so.$major" ] || ln -s "$(basename "$real")" "$PAYLOAD_DIR/lib/$so.so.$major"
         [ -e "$PAYLOAD_DIR/lib/$so.so" ] || ln -s "$so.so.$major" "$PAYLOAD_DIR/lib/$so.so"
     done
+
+    # POSIX c99
+    cat > "$PAYLOAD_DIR/bin/c99" <<'EOF'
+#!/overlayer/syshub/bin/sh
+# POSIX c99: the C compiler in C99 mode
+exec /overlayer/syshub/bin/gcc -std=c99 "$@"
+EOF
+    chmod 0755 "$PAYLOAD_DIR/bin/c99"
 
     cd "$PAYLOAD_DIR/bin"
     [ -e $triple-gcc ] || ln -s gcc $triple-gcc
