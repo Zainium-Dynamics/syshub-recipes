@@ -102,14 +102,14 @@ package() {
     mkdir -p "$PAYLOAD_DIR"
     cp -a "$inst"/. "$PAYLOAD_DIR/"
     find "$PAYLOAD_DIR" -name '*.la' -delete
+    rm -rf "$PAYLOAD_DIR/share/info" "$PAYLOAD_DIR/share/man"
     if find "$PAYLOAD_DIR" -name 'lib64*' | grep -q .; then
         echo "gcc installed lib64 paths:" >&2
         find "$PAYLOAD_DIR" -name 'lib64*' >&2
         return 1
     fi
-    if find "$PAYLOAD_DIR" -type l -lname '*lib64*' | grep -q .; then
-        echo "gcc installed symlinks to lib64:" >&2
-        find "$PAYLOAD_DIR" -type l -lname '*lib64*' >&2
+    if find "$PAYLOAD_DIR" -type l | while read -r l; do readlink "$l"; done | grep -q lib64; then
+        echo "gcc installed symlinks to lib64" >&2
         return 1
     fi
     [ -d "$PAYLOAD_DIR/lib/gcc/$triple" ] || { echo "no lib/gcc/$triple in the payload" >&2; return 1; }
