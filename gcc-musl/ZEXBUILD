@@ -24,6 +24,8 @@ build() {
     patch -p1 < "$SRCDIR/0001-zainium-musl-paths.patch"
     ./contrib/download_prerequisites
 
+    rm -f /overlayer/syshub/lib/*.la
+
     mkdir -p "$SRCDIR/gcc-build"
     cd "$SRCDIR/gcc-build"
 
@@ -99,6 +101,7 @@ package() {
     local inst="$SRCDIR/gcc-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR"
     cp -a "$inst"/. "$PAYLOAD_DIR/"
+    find "$PAYLOAD_DIR" -name '*.la' -delete
     if find "$PAYLOAD_DIR" -name 'lib64*' | grep -q .; then
         echo "gcc installed lib64 paths:" >&2
         find "$PAYLOAD_DIR" -name 'lib64*' >&2
