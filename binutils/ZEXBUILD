@@ -104,6 +104,7 @@ package() {
     make DESTDIR="$PAYLOAD_DIR" bfdlibdir='${libdir}' bfdincludedir='${includedir}' install
 
     local sh="$PAYLOAD_DIR/overlayer/syshub"
+    rm -rf "$sh/share/man" "$sh/share/info"
     # configure sees the CI host as the host, so libbfd/libopcodes and their headers land
     # in <host>/x86_64-zainium-linux-musl/{lib,include}: flat lib/ and include/ instead
     for nested in "$sh"/*/x86_64-zainium-linux-musl; do
