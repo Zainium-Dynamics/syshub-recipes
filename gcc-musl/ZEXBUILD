@@ -5,7 +5,7 @@ pkgrel=0
 source="https://ftp.gnu.org/gnu/gcc/gcc-$pkgver/gcc-$pkgver.tar.gz
 0001-zainium-musl-paths.patch"
 sha256sums="071d00a097579e5ef7ce97fc4a9e58e73fd3503c0a013c765c970370a5a53b9b  gcc-$pkgver.tar.gz"
-makedepends="make m4 patch perl xz"
+makedepends="make m4 patch perl xz gawk"
 needs_toolchain="gcc-musl binutils musl zlib zlib-dev zstd zstd-dev bzip2 bzip2-dev gawk bash"
 
 build() {
@@ -23,6 +23,8 @@ build() {
     cd "$SRCDIR/gcc-$pkgver"
     patch -p1 < "$SRCDIR/0001-zainium-musl-paths.patch"
     ./contrib/download_prerequisites
+
+    rm -f /overlayer/syshub/lib/*.la
 
     mkdir -p "$SRCDIR/gcc-build"
     cd "$SRCDIR/gcc-build"
@@ -43,6 +45,7 @@ build() {
     done
 
     export CPPFLAGS="$inc_flags"
+    export AWK=/usr/bin/gawk
     export CFLAGS="-O2 -pipe $inc_flags"
     export CXXFLAGS="-O2 -pipe $cpp_inc_flags"
     export CFLAGS_FOR_TARGET="-O2 -pipe $inc_flags"
@@ -98,14 +101,15 @@ package() {
     local inst="$SRCDIR/gcc-install/overlayer/syshub"
     mkdir -p "$PAYLOAD_DIR"
     cp -a "$inst"/. "$PAYLOAD_DIR/"
+    find "$PAYLOAD_DIR" -name '*.la' -delete
+    rm -rf "$PAYLOAD_DIR/share/info" "$PAYLOAD_DIR/share/man"
     if find "$PAYLOAD_DIR" -name 'lib64*' | grep -q .; then
         echo "gcc installed lib64 paths:" >&2
         find "$PAYLOAD_DIR" -name 'lib64*' >&2
         return 1
     fi
-    if find "$PAYLOAD_DIR" -type l -lname '*lib64*' | grep -q .; then
-        echo "gcc installed symlinks to lib64:" >&2
-        find "$PAYLOAD_DIR" -type l -lname '*lib64*' >&2
+    if find "$PAYLOAD_DIR" -type l | while read -r l; do readlink "$l"; done | grep -q lib64; then
+        echo "gcc installed symlinks to lib64" >&2
         return 1
     fi
     [ -d "$PAYLOAD_DIR/lib/gcc/$triple" ] || { echo "no lib/gcc/$triple in the payload" >&2; return 1; }
