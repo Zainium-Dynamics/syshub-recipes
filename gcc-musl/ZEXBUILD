@@ -43,6 +43,7 @@ build() {
     done
 
     export CPPFLAGS="$inc_flags"
+    export AWK=/usr/bin/gawk
     export CFLAGS="-O2 -pipe $inc_flags"
     export CXXFLAGS="-O2 -pipe $cpp_inc_flags"
     export CFLAGS_FOR_TARGET="-O2 -pipe $inc_flags"
