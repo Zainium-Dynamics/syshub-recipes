@@ -1,8 +1,8 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=userutiles
-pkgver=1.0.0
-pkgrel=6
-source="https://github.com/Zainium-Dynamics/userutiles/archive/aff35bc182bc8f707760b745d04585e3cbac202b.tar.gz"
+pkgver=1.1.0
+pkgrel=0
+source="https://github.com/Zainium-Dynamics/userutiles/archive/33f8df9a6149ab51c8e89d367ab537d3e4f085fa.tar.gz"
 sha256sums=""
 makedepends="rustup"
 needs_toolchain="musl gcc-musl"
