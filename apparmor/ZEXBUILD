@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=apparmor
 pkgver=5.0.1
-pkgrel=1
+pkgrel=2
 subpackages="$pkgname-dev"
 source="https://gitlab.com/apparmor/apparmor/-/archive/v$pkgver/apparmor-v$pkgver.tar.gz"
 sha256sums="cea1fc638dccea42a0a972bfe6ee2a34cbf52ed98526c25a49bbed39450d2dcc  apparmor-v$pkgver.tar.gz"
@@ -104,6 +104,15 @@ package() {
         VIM_INSTALL_PATH="$PAYLOAD_DIR/overlayer/syshub/share/apparmor" \
         || true
     cd ..
+
+    # setup.py puts easyprof.conf in $PAYLOAD_DIR/etc/apparmor, outside the prefix; CI's
+    # move of overlayer/syshub/etc then hits an existing etc/ and drops all of etc
+    # (profiles included) -- fold it into the prefix first
+    if [ -d "$PAYLOAD_DIR/etc" ]; then
+        mkdir -p "$PAYLOAD_DIR/overlayer/syshub/etc"
+        cp -a "$PAYLOAD_DIR/etc/." "$PAYLOAD_DIR/overlayer/syshub/etc/"
+        rm -rf "$PAYLOAD_DIR/etc"
+    fi
 
     # profiles/apparmor.d is plain policy text; copied as is (its `make install`
     # failed quietly behind `|| true`, so the base shipped no profiles)
