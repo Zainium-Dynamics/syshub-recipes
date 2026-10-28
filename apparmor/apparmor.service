@@ -1,0 +1,18 @@
+[Unit]
+Description=Load AppArmor profiles
+Documentation=man:apparmor(7)
+DefaultDependencies=no
+After=local-fs.target
+Before=sysinit.target
+ConditionSecurity=apparmor
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# One parser run per profile: a profile the running kernel cannot take is reported
+# and skipped instead of stopping the rest. `aa-status` shows what is loaded.
+ExecStart=/overlayer/syshub/bin/sh -c 'mkdir -p /overlayer/syshub/var/cache/apparmor; for p in /overlayer/syshub/etc/apparmor.d/*; do [ -f "$p" ] || continue; /overlayer/syshub/bin/apparmor_parser --replace --base=/overlayer/syshub/etc/apparmor.d --include=/overlayer/syshub/etc/apparmor.d --write-cache --cache-loc=/overlayer/syshub/var/cache/apparmor -- "$p" || echo "apparmor: skipped $p"; done; exit 0'
+ExecReload=/overlayer/syshub/bin/systemctl restart apparmor.service
+
+[Install]
+WantedBy=sysinit.target

@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=apparmor
 pkgver=5.0.1
-pkgrel=0
+pkgrel=1
 subpackages="$pkgname-dev"
 source="https://gitlab.com/apparmor/apparmor/-/archive/v$pkgver/apparmor-v$pkgver.tar.gz"
 sha256sums="cea1fc638dccea42a0a972bfe6ee2a34cbf52ed98526c25a49bbed39450d2dcc  apparmor-v$pkgver.tar.gz"
@@ -105,13 +105,16 @@ package() {
         || true
     cd ..
 
-    cd profiles
-    make install \
-        DESTDIR="$PAYLOAD_DIR" \
-        PROFILES_DEST="$PAYLOAD_DIR/overlayer/syshub/etc/apparmor.d" \
-        EXTRAS_DEST="$PAYLOAD_DIR/overlayer/syshub/share/apparmor/extra-profiles" \
-        || true
-    cd ..
+    # profiles/apparmor.d is plain policy text; copied as is (its `make install`
+    # failed quietly behind `|| true`, so the base shipped no profiles)
+    mkdir -p "$PAYLOAD_DIR/overlayer/syshub/etc"
+    cp -a profiles/apparmor.d "$PAYLOAD_DIR/overlayer/syshub/etc/apparmor.d"
+
+    # loads the profiles at boot when the kernel runs AppArmor (lsm=...,apparmor,...)
+    unitdir="$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system"
+    mkdir -p "$unitdir/sysinit.target.wants" "$PAYLOAD_DIR/overlayer/syshub/var/cache/apparmor"
+    install -m644 "$RECIPE_DIR/apparmor.service" "$unitdir/apparmor.service"
+    ln -sf ../apparmor.service "$unitdir/sysinit.target.wants/apparmor.service"
 
     # extras/ and the legacy usr.<sbin|bin|lib>.<daemon> / sbin.<daemon>
     # profiles are all for third-party software (dovecot, samba, apache2,
