@@ -1,0 +1,10 @@
+  # Zainium keeps each C library in a directory of its own (Dualayer Hierarchy Standard):
+  # its loader and libraries, and the loader's search-path file
+  /overlayer/syshub/*-zainium-linux-*/lib/**        r,
+  /overlayer/syshub/*-zainium-linux-*/lib/**.so*    mr,
+  /overlayer/syshub/etc/ld-musl-*.path              r,
+
+  # sys_resolver, in every program, reads the start of a program it is about to run to
+  # give it the right loader, and its toolchain setting
+  /overlayer/syshub/bin/*                           r,
+  /overlayer/syshub/etc/sys-resolver/*              r,

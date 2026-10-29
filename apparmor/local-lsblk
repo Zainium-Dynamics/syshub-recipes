@@ -1,0 +1,2 @@
+# Zainium's lsblk (userutiles) reads the mount table from /proc/<pid>/mounts
+owner @{PROC}/@{pid}/mounts r,

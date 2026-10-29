@@ -9,9 +9,10 @@ ConditionSecurity=apparmor
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-# One parser run per profile: a profile the running kernel cannot take is reported
-# and skipped instead of stopping the rest. `aa-status` shows what is loaded.
-ExecStart=/overlayer/syshub/bin/sh -c 'mkdir -p /overlayer/syshub/var/cache/apparmor; for p in /overlayer/syshub/etc/apparmor.d/*; do [ -f "$p" ] || continue; /overlayer/syshub/bin/apparmor_parser --replace --base=/overlayer/syshub/etc/apparmor.d --include=/overlayer/syshub/etc/apparmor.d --write-cache --cache-loc=/overlayer/syshub/var/cache/apparmor -- "$p" || echo "apparmor: skipped $p"; done; exit 0'
+# Every profile in apparmor.d in one parser run, compiled into the cache on the first boot and
+# loaded from it afterwards. A profile the kernel cannot take is reported and the rest still
+# load; the parser exits non-zero for any warning, hence the "-". `aa-status` shows the result.
+ExecStart=-/overlayer/syshub/bin/apparmor_parser --replace --quiet --jobs=auto --max-jobs=4 --write-cache --cache-loc=/overlayer/syshub/var/cache/apparmor --base=/overlayer/syshub/etc/apparmor.d --Include=/overlayer/syshub/etc/apparmor.d /overlayer/syshub/etc/apparmor.d
 ExecReload=/overlayer/syshub/bin/systemctl restart apparmor.service
 
 [Install]
