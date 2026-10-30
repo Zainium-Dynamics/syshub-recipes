@@ -1,9 +1,10 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=apparmor
 pkgver=5.0.1
-pkgrel=3
+pkgrel=4
 subpackages="$pkgname-dev"
-source="https://gitlab.com/apparmor/apparmor/-/archive/v$pkgver/apparmor-v$pkgver.tar.gz"
+source="https://gitlab.com/apparmor/apparmor/-/archive/v$pkgver/apparmor-v$pkgver.tar.gz
+0001-parser-stable-capability-table.patch"
 sha256sums="cea1fc638dccea42a0a972bfe6ee2a34cbf52ed98526c25a49bbed39450d2dcc  apparmor-v$pkgver.tar.gz"
 # af_protos.h's generator rule relies on GNU sed's \U/\L case-conversion
 # escapes (BusyBox's sed treats \U as a literal "U", producing garbage
@@ -18,6 +19,10 @@ makedepends="build-base autoconf automake autoconf-archive libtool pkgconf bison
 # no C dependency on libapparmor at build time.
 build() {
     cd "apparmor-v$pkgver"
+
+    # the capability table kept references into a vector that moves when the kernel
+    # names a capability the parser does not know; every capability rule then broke
+    patch -p1 < ../0001-parser-stable-capability-table.patch
 
     # common/Make.rules' MANDIR/DOCDIR default to /usr/share/... and every
     # subdir's install_manpages target reads them straight from here --
