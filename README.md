@@ -22,7 +22,7 @@ etc). A few have places of their own:
     firmware                       /overlayer/syshub/drivers/hardware/firmwares
     package lists and mirrors      /overlayer/syshub/engine/services
 
-The kernel and its modules come from linux_patches.
+The kernel and its modules come from kernel-recipes.
 
 A base package's manifest.toml sets _syshub = true. A -dev subpackage of a
 base package goes to the userland: it has its own <name>-dev.manifest.toml
