@@ -1,36 +1,45 @@
-# syshub-recipes
+Zainium OS base recipes
+=======================
 
-Package recipes for the base OS (syshub) of Zainium OS, an immutable Linux distribution built on musl.
+These are the recipes for syshub, the base of Zainium OS: the C library,
+the toolchain, systemd, the desktop and everything else the system ships.
+Each directory is one package: a ZEXBUILD build script, a manifest.toml
+and any patches it needs.
 
-Recipes use the same `ZEXBUILD` format and CI as [userland-recipes](https://github.com/Zainium-Dynamics/userland-recipes), which documents the format in full.
+The core team maintains this repository. Software you would like users to
+be able to install belongs in userland-recipes, which also explains the
+ZEXBUILD and manifest.toml formats in full:
 
-## How it differs from userland-recipes
+    https://github.com/Zainium-Dynamics/userland-recipes
 
-- `manifest.toml` sets `_syshub = true` and installs under `/overlayer/syshub/`.
-- Toolchain packages that are already linked for the target set `native = true` so packing skips the interpreter and RPATH patching.
-- The core team maintains this repo. Public package contributions go to userland-recipes.
-- A `-dev` subpackage of a syshub package is published to userland. Give it its own `<name>-dev.manifest.toml` with `_syshub = false`.
+Where packages install
+----------------------
 
-## Layout
+Base packages install under /overlayer/syshub (bin, lib, include, share,
+etc). A few have places of their own:
 
-Most packages install into the usual `bin`, `lib`, `include` and `share` directories under `/overlayer/syshub/`. `lib64` is a symlink to `lib`.
+    musl and the cross toolchain   /overlayer/syshub/x86_64-zainium-linux-musl
+    firmware                       /overlayer/syshub/drivers/hardware/firmwares
+    package lists and mirrors      /overlayer/syshub/engine/services
 
-Some packages install elsewhere:
+The kernel and its modules come from linux_patches.
 
-- Cross toolchain (`musl`, `gcc-musl-cross`, `binutils`): `/overlayer/syshub/x86_64-zainium-linux-musl/`
-- Firmware: `/overlayer/syshub/drivers/hardware/firmwares/`
-- Kernel modules: `/overlayer/syshub/drivers/modules/<kernel-version>/`
-- Service definitions: `/overlayer/syshub/engine/services/`
-- Quantra (PID 1): `/overlayer/syshub/engine/`
+A base package's manifest.toml sets _syshub = true. A -dev subpackage of a
+base package goes to the userland: it has its own <name>-dev.manifest.toml
+with _syshub = false. Toolchain packages that are already linked for the
+target set native = true, so packing leaves their loader and library path
+as they are.
 
-## CI
+Building
+--------
 
-GitHub Actions builds each changed package in an Alpine container. Pull requests are build-only. Every push to `master` builds, verifies the musl interpreter, packs with [substrate](https://crates.io/crates/substrate-zainium) and publishes to `core/syshub/x86_64/`.
+GitHub Actions builds every changed package in an Alpine container. A pull
+request is only built. A push to master is built, checked, packed with
+substrate and published to the base archive; installed systems get it with
+"elevate zex update".
 
-## License
+License
+-------
 
-The recipes in this repository are licensed under GPL-3.0-only. See `LICENSE`. Upstream software keeps its own license.
-
-## License
-
-The recipes in this repository are licensed under GPL-3.0-only. See `LICENSE`. Upstream software keeps its own license.
+The recipes are GPL-3.0-only (see LICENSE). The software they build keeps
+its own license.
