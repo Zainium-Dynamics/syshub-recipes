@@ -1,0 +1,20 @@
+From: Ali Zain <alizain@zainiumdynamics.tech>
+Subject: [PATCH] nftables.service: ProtectSystem=strict
+
+ProtectSystem=full makes systemd bind /usr read-only for the service and
+fails when /usr does not exist, as on Zainium. strict protects the whole
+tree from / instead, which is stricter and works without /usr.
+---
+diff --git a/tools/nftables.service.in b/tools/nftables.service.in
+index 2ac7e6f..bd66536 100644
+--- a/tools/nftables.service.in
++++ b/tools/nftables.service.in
+@@ -11,7 +11,7 @@ ConditionPathExists=@pkgsysconfdir@/rules/main.nft
+ Type=oneshot
+ RemainAfterExit=yes
+ StandardInput=null
+-ProtectSystem=full
++ProtectSystem=strict
+ ProtectHome=true
+ ExecStart=@sbindir@/nft 'flush ruleset; include "@pkgsysconfdir@/rules/main.nft"'
+ ExecReload=@sbindir@/nft 'flush ruleset; include "@pkgsysconfdir@/rules/main.nft"'
