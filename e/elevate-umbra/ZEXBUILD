@@ -1,0 +1,43 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=elevate-umbra
+pkgver=1.0.1
+pkgrel=0
+_nightly=nightly-2026-05-24
+_commit=8392433b955f51e9df2f143ea05a49103ac2d9cd
+source="https://github.com/Zainium-Dynamics/elevate-umbra/archive/$_commit.tar.gz
+x86_64-zainium-linux-musl.json"
+sha256sums="e52f549c18baaa8172cc3faed0ee0187f461b8640c5f48f1e7b3f9ddccee0261  $_commit.tar.gz"
+makedepends="rustup"
+needs_toolchain="musl"
+
+build() {
+    local target="$SRCDIR/x86_64-zainium-linux-musl.json"
+    cd "elevate-umbra-$_commit"
+
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install "$_nightly" --profile minimal --component rust-src
+
+    RUSTFLAGS="-C target-feature=-crt-static -C link-arg=-Wl,-dynamic-linker=/overlayer/syshub/x86_64-zainium-linux-musl/lib/ld-musl-x86_64.so.1 -C link-arg=-Wl,-rpath=/overlayer/syshub/lib" \
+        cargo "+$_nightly" build --release --locked \
+        -Z json-target-spec \
+        --target "$target" \
+        -Z build-std=core,alloc,std,panic_abort \
+        --config 'target.x86_64-zainium-linux-musl.linker="cc"'
+}
+
+package() {
+    local out="target/x86_64-zainium-linux-musl/release"
+    mkdir -p "$PAYLOAD_DIR/bin"
+
+    for b in useradd userdel usermod newusers \
+             groupadd groupdel groupmod gpasswd groupmems newgrp \
+             passwd chpasswd chgpasswd chage expiry \
+             chfn chsh nologin pwck grpck vipw umbra-sign \
+             pwconv pwunconv grpconv grpunconv sulogin faillog sudo; do
+        cp "$out/$b" "$PAYLOAD_DIR/bin/"
+    done
+
+    strip "$PAYLOAD_DIR/bin/"* 2>/dev/null || true
+}
