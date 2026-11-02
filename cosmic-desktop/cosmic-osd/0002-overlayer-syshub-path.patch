@@ -1,0 +1,11 @@
+--- a/src/subscriptions/polkit_agent_helper.rs
++++ b/src/subscriptions/polkit_agent_helper.rs
+@@ -197,7 +197,7 @@
+     async fn new_bin(pw_name: &str) -> io::Result<Self> {
+         log::info!("using binary");
+ 
+-        let helper_bin_path = HELPER_BIN_PATH.unwrap_or("/usr/libexec/polkit-agent-helper-1");
++        let helper_bin_path = HELPER_BIN_PATH.unwrap_or("/overlayer/syshub/libexec/polkit-agent-helper-1");
+         log::trace!("using helper binary from: {helper_bin_path}");
+ 
+         let mut child = Command::new(helper_bin_path)

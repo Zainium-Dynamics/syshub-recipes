@@ -1,0 +1,3324 @@
+From: Ali Zain <alizain@zainiumdynamics.tech>
+Subject: [PATCH] zainium: system paths under /overlayer/syshub
+
+Config, data, state and helper paths point into /overlayer/syshub:
+Zainium has no /etc, /usr or /var at the root. Image and container
+tools keep the stock paths, since they read other systems, and so do
+the checks that move a legacy /var/run/ path in a unit to /run.
+---
+diff --git a/src/analyze/analyze-unit-shell.c b/src/analyze/analyze-unit-shell.c
+index 98dc474..625d370 100644
+--- a/src/analyze/analyze-unit-shell.c
++++ b/src/analyze/analyze-unit-shell.c
+@@ -106,8 +106,8 @@ int verb_unit_shell(int argc, char *argv[], uintptr_t _data, void *userdata) {
+                                 log_debug_errno(errno, "Failed to execute '/bin/bash', ignoring: %m");
+                         }
+ 
+-                        if (!streq(DEFAULT_USER_SHELL, "/bin/sh")) {
+-                                (void) execl("/bin/sh", "-sh", NULL);
++                        if (!streq(DEFAULT_USER_SHELL, "/overlayer/syshub/bin/bash")) {
++                                (void) execl("/overlayer/syshub/bin/bash", "-sh", NULL);
+                                 log_debug_errno(errno, "Failed to execute '/bin/sh', ignoring: %m");
+                         }
+ 
+diff --git a/src/backlight/backlight.c b/src/backlight/backlight.c
+index a84640d..2ab874e 100644
+--- a/src/backlight/backlight.c
++++ b/src/backlight/backlight.c
+@@ -463,9 +463,9 @@ static int build_save_file_path(sd_device *device, char **ret) {
+                 if (!escaped_path_id)
+                         return log_oom();
+ 
+-                path = strjoin("/var/lib/systemd/backlight/", escaped_path_id, ":", escaped_subsystem, ":", escaped_sysname);
++                path = strjoin("/overlayer/syshub/var/lib/systemd/backlight/", escaped_path_id, ":", escaped_subsystem, ":", escaped_sysname);
+         } else
+-                path = strjoin("/var/lib/systemd/backlight/", escaped_subsystem, ":", escaped_sysname);
++                path = strjoin("/overlayer/syshub/var/lib/systemd/backlight/", escaped_subsystem, ":", escaped_sysname);
+         if (!path)
+                 return log_oom();
+ 
+diff --git a/src/basic/constants.h b/src/basic/constants.h
+index 3dbffde..a02b1c6 100644
+--- a/src/basic/constants.h
++++ b/src/basic/constants.h
+@@ -37,16 +37,16 @@
+ /* Return a nulstr for a standard cascade of configuration paths, suitable to pass to
+  * conf_files_list_nulstr() to implement drop-in directories for extending configuration files. */
+ #define CONF_PATHS_NULSTR(n)                    \
+-        "/etc/" n "\0"                          \
++        "/overlayer/syshub/etc/" n "\0"                          \
+         "/run/" n "\0"                          \
+-        "/usr/local/lib/" n "\0"                \
+-        "/usr/lib/" n "\0"
++        "/overlayer/syshub/lib/" n "\0"                \
++        "/overlayer/syshub/lib/" n "\0"
+ 
+ #define CONF_PATHS(n)                           \
+-        "/etc/" n,                              \
++        "/overlayer/syshub/etc/" n,                              \
+         "/run/" n,                              \
+-        "/usr/local/lib/" n,                    \
+-        "/usr/lib/" n
++        "/overlayer/syshub/lib/" n,                    \
++        "/overlayer/syshub/lib/" n
+ 
+ #define CONF_PATHS_STRV(n)                      \
+         STRV_MAKE(CONF_PATHS(n))
+diff --git a/src/basic/errno-util.h b/src/basic/errno-util.h
+index 195d132..9e559b5 100644
+--- a/src/basic/errno-util.h
++++ b/src/basic/errno-util.h
+@@ -67,7 +67,7 @@ static inline int RET_NERRNO(int ret) {
+          * or
+          *
+          *     …
+-         *     fd = RET_NERRNO(open("/etc/fstab", O_RDONLY|O_CLOEXEC));
++         *     fd = RET_NERRNO(open("/overlayer/syshub/etc/fstab", O_RDONLY|O_CLOEXEC));
+          *     …
+          */
+ 
+diff --git a/src/basic/fs-util.c b/src/basic/fs-util.c
+index 2e9a27f..38f0d3a 100644
+--- a/src/basic/fs-util.c
++++ b/src/basic/fs-util.c
+@@ -666,7 +666,7 @@ int var_tmp_dir(const char **ret) {
+          * returned preferably however. Note that both this function and tmp_dir() below are affected by $TMPDIR,
+          * making it a variable that overrides all temporary file storage locations. */
+ 
+-        return tmp_dir_internal("/var/tmp", ret);
++        return tmp_dir_internal("/overlayer/syshub/var/tmp", ret);
+ }
+ 
+ int tmp_dir(const char **ret) {
+diff --git a/src/basic/hostname-util.c b/src/basic/hostname-util.c
+index e12ec01..7c44437 100644
+--- a/src/basic/hostname-util.c
++++ b/src/basic/hostname-util.c
+@@ -161,7 +161,7 @@ const char* etc_hostname(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_ETC_HOSTNAME") ?: "/etc/hostname";
++                cached = secure_getenv("SYSTEMD_ETC_HOSTNAME") ?: "/overlayer/syshub/etc/hostname";
+ 
+         return cached;
+ }
+@@ -170,7 +170,7 @@ const char* etc_machine_info(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_ETC_MACHINE_INFO") ?: "/etc/machine-info";
++                cached = secure_getenv("SYSTEMD_ETC_MACHINE_INFO") ?: "/overlayer/syshub/etc/machine-info";
+ 
+         return cached;
+ }
+diff --git a/src/basic/initrd-util.c b/src/basic/initrd-util.c
+index c45920b..f1e4bc8 100644
+--- a/src/basic/initrd-util.c
++++ b/src/basic/initrd-util.c
+@@ -26,7 +26,7 @@ bool in_initrd(void) {
+         if (r >= 0)
+                 saved_in_initrd = r > 0;
+         else {
+-                r = RET_NERRNO(access("/etc/initrd-release", F_OK));
++                r = RET_NERRNO(access("/overlayer/syshub/etc/initrd-release", F_OK));
+                 if (r < 0 && r != -ENOENT)
+                         log_debug_errno(r, "Failed to check if /etc/initrd-release exists, assuming it does not: %m");
+                 saved_in_initrd = r >= 0;
+diff --git a/src/basic/locale-util.c b/src/basic/locale-util.c
+index 1f0692e..7bb6eeb 100644
+--- a/src/basic/locale-util.c
++++ b/src/basic/locale-util.c
+@@ -86,9 +86,9 @@ static char* normalize_locale(const char *name) {
+ static const char* get_locale_dir(void) {
+         return secure_getenv("SYSTEMD_LOCALE_DIRECTORY") ?:
+ #ifdef __GLIBC__
+-                "/usr/lib/locale/";
++                "/overlayer/syshub/lib/locale/";
+ #else
+-                "/usr/share/i18n/locales/musl/";
++                "/overlayer/syshub/share/i18n/locales/musl/";
+ #endif
+ }
+ 
+diff --git a/src/basic/os-util.c b/src/basic/os-util.c
+index f743d2b..e7ffe62 100644
+--- a/src/basic/os-util.c
++++ b/src/basic/os-util.c
+@@ -38,12 +38,12 @@ static const struct {
+         const char *release_file_path_prefix;
+ } image_class_release_info[_IMAGE_CLASS_MAX] = {
+         [IMAGE_SYSEXT] = {
+-                .release_file_directory = "/usr/lib/extension-release.d/",
+-                .release_file_path_prefix = "/usr/lib/extension-release.d/extension-release.",
++                .release_file_directory = "/overlayer/syshub/lib/extension-release.d/",
++                .release_file_path_prefix = "/overlayer/syshub/lib/extension-release.d/extension-release.",
+         },
+         [IMAGE_CONFEXT] = {
+-                .release_file_directory = "/etc/extension-release.d/",
+-                .release_file_path_prefix = "/etc/extension-release.d/extension-release.",
++                .release_file_directory = "/overlayer/syshub/etc/extension-release.d/",
++                .release_file_path_prefix = "/overlayer/syshub/etc/extension-release.d/extension-release.",
+         }
+ };
+ 
+@@ -176,7 +176,7 @@ int open_os_release_at(int rfd, char **ret_path, int *ret_fd) {
+         if (e)
+                 return chaseat(rfd, rfd, e, /* flags= */ 0, ret_path, ret_fd);
+ 
+-        FOREACH_STRING(path, "/etc/os-release", "/usr/lib/os-release") {
++        FOREACH_STRING(path, "/overlayer/syshub/etc/os-release", "/overlayer/syshub/lib/os-release") {
+                 r = chaseat(rfd, rfd, path, /* flags= */ 0, ret_path, ret_fd);
+                 if (r != -ENOENT)
+                         return r;
+diff --git a/src/basic/path-util.c b/src/basic/path-util.c
+index b41029b..4643be9 100644
+--- a/src/basic/path-util.c
++++ b/src/basic/path-util.c
+@@ -805,8 +805,8 @@ static int executable_is_good(const char *executable) {
+                 return r;
+ 
+         return !PATH_IN_SET(d, "true",
+-                               "/bin/true",
+-                               "/usr/bin/true",
++                               "/overlayer/syshub/bin/true",
++                               "/overlayer/syshub/bin/true",
+                                "/dev/null");
+ }
+ 
+diff --git a/src/basic/terminal-util.c b/src/basic/terminal-util.c
+index 597880d..237d377 100644
+--- a/src/basic/terminal-util.c
++++ b/src/basic/terminal-util.c
+@@ -2834,7 +2834,7 @@ int have_terminfo_file(const char *name) {
+ 
+         assert(filename_is_valid(name));
+ 
+-        _cleanup_free_ char *p = path_join("/usr/share/terminfo", CHAR_TO_STR(name[0]), name);
++        _cleanup_free_ char *p = path_join("/overlayer/syshub/share/terminfo", CHAR_TO_STR(name[0]), name);
+         if (!p)
+                 return log_oom_debug();
+ 
+diff --git a/src/basic/time-util.c b/src/basic/time-util.c
+index 82c9f63..dfdfbeb 100644
+--- a/src/basic/time-util.c
++++ b/src/basic/time-util.c
+@@ -1459,7 +1459,7 @@ static int get_timezones_from_zone1970_tab(char ***ret) {
+ 
+         assert(ret);
+ 
+-        f = fopen("/usr/share/zoneinfo/zone1970.tab", "re");
++        f = fopen("/overlayer/syshub/share/zoneinfo/zone1970.tab", "re");
+         if (!f)
+                 return -errno;
+ 
+@@ -1504,7 +1504,7 @@ static int get_timezones_from_tzdata_zi(char ***ret) {
+ 
+         assert(ret);
+ 
+-        f = fopen("/usr/share/zoneinfo/tzdata.zi", "re");
++        f = fopen("/overlayer/syshub/share/zoneinfo/tzdata.zi", "re");
+         if (!f)
+                 return -errno;
+ 
+@@ -1619,7 +1619,7 @@ int verify_timezone(const char *name, int log_level) {
+         if (p - name >= PATH_MAX)
+                 return -ENAMETOOLONG;
+ 
+-        t = strjoina("/usr/share/zoneinfo/", name);
++        t = strjoina("/overlayer/syshub/share/zoneinfo/", name);
+ 
+         fd = open(t, O_RDONLY|O_CLOEXEC);
+         if (fd < 0)
+@@ -1691,7 +1691,7 @@ int get_timezone(char **ret) {
+         if (r < 0)
+                 return r; /* Return EINVAL if not a symlink */
+ 
+-        const char *e = PATH_STARTSWITH_SET(t, "/usr/share/zoneinfo/", "../usr/share/zoneinfo/");
++        const char *e = PATH_STARTSWITH_SET(t, "/overlayer/syshub/share/zoneinfo/", "../share/zoneinfo/");
+         if (!e)
+                 return -EINVAL;
+         if (!timezone_is_valid(e, LOG_DEBUG))
+@@ -1714,7 +1714,7 @@ const char* etc_localtime(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_ETC_LOCALTIME") ?: "/etc/localtime";
++                cached = secure_getenv("SYSTEMD_ETC_LOCALTIME") ?: "/overlayer/syshub/etc/localtime";
+ 
+         return cached;
+ }
+diff --git a/src/basic/uid-classification.c b/src/basic/uid-classification.c
+index a3bc7ef..4261eb6 100644
+--- a/src/basic/uid-classification.c
++++ b/src/basic/uid-classification.c
+@@ -47,7 +47,7 @@ int read_login_defs(UGIDAllocationRange *ret_defs, const char *path, const char
+         int r;
+ 
+         if (!path)
+-                path = "/etc/login.defs";
++                path = "/overlayer/syshub/etc/login.defs";
+ 
+         r = chase_and_fopen_unlocked(path, root, CHASE_PREFIX_ROOT, "re", NULL, &f);
+         if (r == -ENOENT)
+diff --git a/src/basic/user-util.c b/src/basic/user-util.c
+index a665a2d..4cb57e0 100644
+--- a/src/basic/user-util.c
++++ b/src/basic/user-util.c
+@@ -161,17 +161,17 @@ bool is_nologin_shell(const char *shell) {
+                            /* 'nologin' is the friendliest way to disable logins for a user account. It prints a nice
+                             * message and exits. Different distributions place the binary at different places though,
+                             * hence let's list them all. */
+-                           "/bin/nologin",
+-                           "/sbin/nologin",
+-                           "/usr/bin/nologin",
+-                           "/usr/sbin/nologin",
++                           "/overlayer/syshub/bin/nologin",
++                           "/overlayer/syshub/bin/nologin",
++                           "/overlayer/syshub/bin/nologin",
++                           "/overlayer/syshub/bin/nologin",
+                            /* 'true' and 'false' work too for the same purpose, but are less friendly as they don't do
+                             * any message printing. Different distributions place the binary at various places but at
+                             * least not in the 'sbin' directory. */
+-                           "/bin/false",
+-                           "/usr/bin/false",
+-                           "/bin/true",
+-                           "/usr/bin/true");
++                           "/overlayer/syshub/bin/false",
++                           "/overlayer/syshub/bin/false",
++                           "/overlayer/syshub/bin/true",
++                           "/overlayer/syshub/bin/true");
+ }
+ 
+ bool shell_is_placeholder(const char *shell) {
+@@ -191,7 +191,7 @@ const char* default_root_shell_at(int rfd) {
+         if (r > 0)
+                 return DEFAULT_USER_SHELL;
+ 
+-        return "/bin/sh";
++        return "/overlayer/syshub/bin/bash";
+ }
+ 
+ const char* default_root_shell(const char *root) {
+@@ -199,7 +199,7 @@ const char* default_root_shell(const char *root) {
+ 
+         rfd = open(empty_to_root(root), O_CLOEXEC | O_DIRECTORY | O_PATH);
+         if (rfd < 0)
+-                return "/bin/sh";
++                return "/overlayer/syshub/bin/bash";
+ 
+         return default_root_shell_at(rfd);
+ }
+@@ -963,7 +963,7 @@ bool synthesize_nobody(void) {
+         static int cache = -1;
+ 
+         if (cache < 0)
+-                cache = access("/etc/systemd/dont-synthesize-nobody", F_OK) < 0;
++                cache = access("/overlayer/syshub/etc/systemd/dont-synthesize-nobody", F_OK) < 0;
+ 
+         return cache;
+ }
+diff --git a/src/bootctl/bootctl-install.c b/src/bootctl/bootctl-install.c
+index c1e619c..4b31a7f 100644
+--- a/src/bootctl/bootctl-install.c
++++ b/src/bootctl/bootctl-install.c
+@@ -273,7 +273,7 @@ static int load_etc_machine_info(InstallContext *c) {
+ 
+         assert(c);
+ 
+-        _cleanup_free_ char *j = path_join(c->root, "/etc/machine-info");
++        _cleanup_free_ char *j = path_join(c->root, "/overlayer/syshub/etc/machine-info");
+         if (!j)
+                 return log_oom();
+ 
+@@ -281,7 +281,7 @@ static int load_etc_machine_info(InstallContext *c) {
+                 chase_and_openat(
+                                 c->root_fd,
+                                 c->root_fd,
+-                                "/etc/machine-info",
++                                "/overlayer/syshub/etc/machine-info",
+                                 CHASE_MUST_BE_REGULAR,
+                                 O_RDONLY|O_CLOEXEC,
+                                 /* ret_path= */ NULL);
+@@ -291,7 +291,7 @@ static int load_etc_machine_info(InstallContext *c) {
+                 return log_error_errno(fd, "Failed to open '%s': %m", j);
+ 
+         r = parse_env_file_fd(
+-                        fd, "/etc/machine-info",
++                        fd, "/overlayer/syshub/etc/machine-info",
+                         "KERNEL_INSTALL_LAYOUT", &layout,
+                         "KERNEL_INSTALL_MACHINE_ID", &s);
+         if (r < 0)
+@@ -390,14 +390,14 @@ static int settle_make_entry_directory(InstallContext *c) {
+         if (c->make_entry_directory < 0) { /* Automatic mode */
+                 if (layout_type1) {
+                         if (c->entry_token_type == BOOT_ENTRY_TOKEN_MACHINE_ID) {
+-                                _cleanup_free_ char *j = path_join(c->root, "/etc/machine-id");
++                                _cleanup_free_ char *j = path_join(c->root, "/overlayer/syshub/etc/machine-id");
+                                 if (!j)
+                                         return log_oom();
+ 
+                                 _cleanup_close_ int fd = -EBADF;
+                                 r = chaseat(c->root_fd,
+                                             c->root_fd,
+-                                            "/etc/machine-id",
++                                            "/overlayer/syshub/etc/machine-id",
+                                             CHASE_MUST_BE_REGULAR,
+                                             /* ret_path= */ NULL,
+                                             &fd);
+@@ -1024,7 +1024,7 @@ static int install_entry_token(InstallContext *c) {
+         if (!c->make_entry_directory && c->entry_token_type == BOOT_ENTRY_TOKEN_MACHINE_ID)
+                 return 0;
+ 
+-        const char *confdir = secure_getenv("KERNEL_INSTALL_CONF_ROOT") ?: "/etc/kernel/";
++        const char *confdir = secure_getenv("KERNEL_INSTALL_CONF_ROOT") ?: "/overlayer/syshub/etc/kernel/";
+ 
+         _cleanup_free_ char *j = path_join(c->root, confdir);
+         if (!j)
+diff --git a/src/core/apparmor-setup.c b/src/core/apparmor-setup.c
+index 19b7282..5642b83 100644
+--- a/src/core/apparmor-setup.c
++++ b/src/core/apparmor-setup.c
+@@ -51,14 +51,14 @@ int mac_apparmor_setup(void) {
+                 return 0;
+         }
+ 
+-        cache_dir_path = sym_aa_policy_cache_dir_path_preview(features, AT_FDCWD, "/etc/apparmor/earlypolicy");
++        cache_dir_path = sym_aa_policy_cache_dir_path_preview(features, AT_FDCWD, "/overlayer/syshub/etc/apparmor/earlypolicy");
+         if (!cache_dir_path) {
+                 log_debug_errno(errno, "Failed to get the path of the early AppArmor policy cache directory, ignoring: %m");
+                 return 0;
+         }
+ 
+         /* aa_policy_cache_new will internally use the same path as aa_policy_cache_dir_path_preview has returned. */
+-        r = sym_aa_policy_cache_new(&policy_cache, features, AT_FDCWD, "/etc/apparmor/earlypolicy", 0);
++        r = sym_aa_policy_cache_new(&policy_cache, features, AT_FDCWD, "/overlayer/syshub/etc/apparmor/earlypolicy", 0);
+         if (r < 0) {
+                 if (errno == ENOENT)
+                         log_debug_errno(errno,
+diff --git a/src/core/crash-handler.c b/src/core/crash-handler.c
+index b5286c8..2248d2f 100644
+--- a/src/core/crash-handler.c
++++ b/src/core/crash-handler.c
+@@ -177,7 +177,7 @@ _noreturn_ static void crash(int sig, siginfo_t *siginfo, void *context) {
+                         (void) terminal_vhangup("/dev/console");
+                         (void) make_console_stdio();
+                         (void) rlimit_nofile_safe();
+-                        (void) execle("/bin/sh", "/bin/sh", NULL, environ);
++                        (void) execle("/overlayer/syshub/bin/bash", "/overlayer/syshub/bin/bash", NULL, environ);
+ 
+                         log_struct_errno(LOG_EMERG, errno,
+                                          LOG_MESSAGE("execle() failed: %m"),
+diff --git a/src/core/exec-invoke.c b/src/core/exec-invoke.c
+index 7eaf813..dd54f0d 100644
+--- a/src/core/exec-invoke.c
++++ b/src/core/exec-invoke.c
+@@ -3123,8 +3123,8 @@ static int setup_exec_directory(
+                                  *    directories is specified and already created. E.g.
+                                  *        StateDirectory=foo foo/bar
+                                  *    In that case, the inode points to pp and p for "foo/bar" are the same:
+-                                 *        pp = "/var/lib/private/foo/bar"
+-                                 *        p = "/var/lib/foo/bar"
++                                 *        pp = "/overlayer/syshub/var/lib/private/foo/bar"
++                                 *        p = "/overlayer/syshub/var/lib/foo/bar"
+                                  *    and, /var/lib/foo is a symlink to /var/lib/private/foo. So, not only
+                                  *    we do not need to create the symlink, but we cannot create the symlink.
+                                  *    See issue #24783. */
+diff --git a/src/core/execute.c b/src/core/execute.c
+index b7c8623..8460cb5 100644
+--- a/src/core/execute.c
++++ b/src/core/execute.c
+@@ -2527,10 +2527,10 @@ static int exec_shared_runtime_make(
+         }
+ 
+         if (c->private_var_tmp == PRIVATE_TMP_CONNECTED &&
+-            !prefixed_path_strv_contains(c->inaccessible_paths, "/var/tmp") &&
+-            !prefixed_path_strv_contains(c->inaccessible_paths, "/var")) {
++            !prefixed_path_strv_contains(c->inaccessible_paths, "/overlayer/syshub/var/tmp") &&
++            !prefixed_path_strv_contains(c->inaccessible_paths, "/overlayer/syshub/var")) {
+ 
+-                r = setup_tmp_dir_one(id, "/var/tmp", &var_tmp_dir);
++                r = setup_tmp_dir_one(id, "/overlayer/syshub/var/tmp", &var_tmp_dir);
+                 if (r < 0)
+                         return r;
+         }
+@@ -2915,11 +2915,11 @@ int exec_runtime_make(
+         }
+ 
+         if (exec_needs_ephemeral(context)) {
+-                r = mkdir_p("/var/lib/systemd/ephemeral-trees", 0755);
++                r = mkdir_p("/overlayer/syshub/var/lib/systemd/ephemeral-trees", 0755);
+                 if (r < 0)
+                         return r;
+ 
+-                r = tempfn_random_child("/var/lib/systemd/ephemeral-trees", unit->id, &ephemeral);
++                r = tempfn_random_child("/overlayer/syshub/var/lib/systemd/ephemeral-trees", unit->id, &ephemeral);
+                 if (r < 0)
+                         return r;
+ 
+diff --git a/src/core/ima-setup.c b/src/core/ima-setup.c
+index bdd37a6..4ed89b2 100644
+--- a/src/core/ima-setup.c
++++ b/src/core/ima-setup.c
+@@ -15,7 +15,7 @@
+ 
+ #define IMA_SECFS_DIR "/sys/kernel/security/ima"
+ #define IMA_SECFS_POLICY IMA_SECFS_DIR "/policy"
+-#define IMA_POLICY_PATH "/etc/ima/ima-policy"
++#define IMA_POLICY_PATH "/overlayer/syshub/etc/ima/ima-policy"
+ 
+ int ima_setup(void) {
+ #if ENABLE_IMA
+diff --git a/src/core/main.c b/src/core/main.c
+index 389131f..274df08 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -1582,16 +1582,16 @@ static int os_release_status(void) {
+ static int setup_os_release(RuntimeScope scope) {
+         char os_release_dst[STRLEN("/run/user//systemd/propagate/.os-release-stage/os-release") + DECIMAL_STR_MAX(uid_t)] =
+                 "/run/systemd/propagate/.os-release-stage/os-release";
+-        const char *os_release_src = "/etc/os-release";
++        const char *os_release_src = "/overlayer/syshub/etc/os-release";
+         int r;
+ 
+         assert(IN_SET(scope, RUNTIME_SCOPE_SYSTEM, RUNTIME_SCOPE_USER));
+ 
+-        if (access("/etc/os-release", F_OK) < 0) {
++        if (access("/overlayer/syshub/etc/os-release", F_OK) < 0) {
+                 if (errno != ENOENT)
+                         log_debug_errno(errno, "Failed to check if /etc/os-release exists, ignoring: %m");
+ 
+-                os_release_src = "/usr/lib/os-release";
++                os_release_src = "/overlayer/syshub/lib/os-release";
+         }
+ 
+         if (scope == RUNTIME_SCOPE_USER)
+@@ -2290,7 +2290,7 @@ static int do_reexecute(
+ 
+                 log_warning_errno(r, "No /sbin/init, trying fallback shell");
+ 
+-                args[0] = "/bin/sh";
++                args[0] = "/overlayer/syshub/bin/bash";
+                 args[1] = NULL;
+                 (void) execve(args[0], (char* const*) args, saved_env);
+                 r = -errno;
+@@ -2523,7 +2523,7 @@ static void log_execution_mode(bool *ret_first_boot) {
+                                  * first-boot initialization to occur. If the container manager wants to
+                                  * provision the machine ID it should pass $container_uuid to PID 1. */
+ 
+-                                r = read_one_line_file("/etc/machine-id", &id_text);
++                                r = read_one_line_file("/overlayer/syshub/etc/machine-id", &id_text);
+                                 if (r < 0 || streq(id_text, "uninitialized")) {
+                                         if (r < 0 && r != -ENOENT)
+                                                 log_warning_errno(r, "Unexpected error while reading /etc/machine-id, assuming first boot: %m");
+diff --git a/src/core/namespace.c b/src/core/namespace.c
+index c0baf69..f904839 100644
+--- a/src/core/namespace.c
++++ b/src/core/namespace.c
+@@ -180,7 +180,7 @@ static const MountEntry private_bpf_no_table[] = {
+ 
+ /* ProtectKernelModules= option */
+ static const MountEntry protect_kernel_modules_table[] = {
+-        { "/usr/lib/modules",    MOUNT_INACCESSIBLE, true  },
++        { "/overlayer/syshub/drivers/modules",    MOUNT_INACCESSIBLE, true  },
+ };
+ 
+ /* ProtectKernelLogs= option */
+@@ -804,7 +804,7 @@ static int append_private_tmp(MountList *ml, const NamespaceParameters *p) {
+                 if (r < 0)
+                         return r;
+ 
+-                r = append_private_tmp_one(ml, p->private_var_tmp, "/var/tmp/", p->var_tmp_dir);
++                r = append_private_tmp_one(ml, p->private_var_tmp, "/overlayer/syshub/var/tmp/", p->var_tmp_dir);
+                 if (r < 0)
+                         return r;
+ 
+@@ -850,7 +850,7 @@ static int append_private_tmp(MountList *ml, const NamespaceParameters *p) {
+                 return log_oom_debug();
+         *me = (MountEntry) {
+                 .source_malloc = TAKE_PTR(var_tmp_dir),
+-                .path_const = "/var/tmp/",
++                .path_const = "/overlayer/syshub/var/tmp/",
+                 .mode = MOUNT_BIND,
+                 .source_dir_mode = 01777,
+                 .create_source_dir = true,
+diff --git a/src/core/smack-setup.c b/src/core/smack-setup.c
+index 46c7d0a..1291f3d 100644
+--- a/src/core/smack-setup.c
++++ b/src/core/smack-setup.c
+@@ -253,10 +253,10 @@ static int write_onlycap_list(void) {
+         size_t len = 0;
+         int r;
+ 
+-        f = fopen("/etc/smack/onlycap", "re");
++        f = fopen("/overlayer/syshub/etc/smack/onlycap", "re");
+         if (!f) {
+                 if (errno != ENOENT)
+-                        log_warning_errno(errno, "Failed to open %s: %m", "/etc/smack/onlycap");
++                        log_warning_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/etc/smack/onlycap");
+ 
+                 return errno == ENOENT ? ENOENT : -errno;
+         }
+@@ -267,7 +267,7 @@ static int write_onlycap_list(void) {
+ 
+                 r = read_line(f, LONG_LINE_MAX, &buf);
+                 if (r < 0)
+-                        return log_error_errno(r, "%s: failed to read line: %m", "/etc/smack/onlycap");
++                        return log_error_errno(r, "%s: failed to read line: %m", "/overlayer/syshub/etc/smack/onlycap");
+                 if (r == 0)
+                         break;
+ 
+@@ -311,7 +311,7 @@ int mac_smack_setup(bool *loaded_policy) {
+ 
+         assert(loaded_policy);
+ 
+-        r = write_access2_rules("/etc/smack/accesses.d");
++        r = write_access2_rules("/overlayer/syshub/etc/smack/accesses.d");
+         switch (r) {
+         case -ENOENT:
+                 log_debug("Smack is not enabled in the kernel.");
+@@ -343,7 +343,7 @@ int mac_smack_setup(bool *loaded_policy) {
+                 log_warning_errno(r, "Failed to set SMACK netlabel rule \"127.0.0.1 -CIPSO\": %m");
+ #endif
+ 
+-        r = write_cipso2_rules("/etc/smack/cipso.d");
++        r = write_cipso2_rules("/overlayer/syshub/etc/smack/cipso.d");
+         switch (r) {
+         case -ENOENT:
+                 log_debug("Smack/CIPSO is not enabled in the kernel.");
+@@ -358,7 +358,7 @@ int mac_smack_setup(bool *loaded_policy) {
+                 log_warning_errno(r, "Failed to load Smack/CIPSO access rules, ignoring: %m");
+         }
+ 
+-        r = write_netlabel_rules("/etc/smack/netlabel.d");
++        r = write_netlabel_rules("/overlayer/syshub/etc/smack/netlabel.d");
+         switch (r) {
+         case -ENOENT:
+                 log_debug("Smack/CIPSO is not enabled in the kernel.");
+diff --git a/src/core/taint.c b/src/core/taint.c
+index 8872a22..11b2a70 100644
+--- a/src/core/taint.c
++++ b/src/core/taint.c
+@@ -50,7 +50,7 @@ char** taint_strv(void) {
+         if (readlink_malloc("/usr/sbin", &usr_sbin) < 0 || !PATH_IN_SET(usr_sbin, "bin", "/usr/bin"))
+                 stage[n++] = "unmerged-bin";
+ 
+-        if (readlink_malloc("/var/run", &var_run) < 0 || !PATH_IN_SET(var_run, "../run", "/run"))
++        if (readlink_malloc("/overlayer/syshub/var/run", &var_run) < 0 || !PATH_IN_SET(var_run, "../run", "/run"))
+                 stage[n++] = "var-run-bad";
+ 
+         if (clock_is_localtime(NULL) > 0)
+diff --git a/src/core/timer.c b/src/core/timer.c
+index 5716c4f..1b7febe 100644
+--- a/src/core/timer.c
++++ b/src/core/timer.c
+@@ -139,11 +139,11 @@ static int timer_setup_persistent(Timer *t) {
+ 
+         if (MANAGER_IS_SYSTEM(UNIT(t)->manager)) {
+ 
+-                r = unit_add_mounts_for(UNIT(t), "/var/lib/systemd/timers", UNIT_DEPENDENCY_FILE, UNIT_MOUNT_REQUIRES);
++                r = unit_add_mounts_for(UNIT(t), "/overlayer/syshub/var/lib/systemd/timers", UNIT_DEPENDENCY_FILE, UNIT_MOUNT_REQUIRES);
+                 if (r < 0)
+                         return r;
+ 
+-                stamp_path = strjoin("/var/lib/systemd/timers/stamp-", UNIT(t)->id);
++                stamp_path = strjoin("/overlayer/syshub/var/lib/systemd/timers/stamp-", UNIT(t)->id);
+         } else {
+                 const char *e;
+ 
+diff --git a/src/core/unit.c b/src/core/unit.c
+index 8684471..3ed3317 100644
+--- a/src/core/unit.c
++++ b/src/core/unit.c
+@@ -1329,13 +1329,13 @@ int unit_add_exec_dependencies(Unit *u, ExecContext *c) {
+         }
+ 
+         if (c->private_var_tmp == PRIVATE_TMP_CONNECTED) {
+-                r = unit_add_mounts_for(u, "/var/tmp/", UNIT_DEPENDENCY_FILE, UNIT_MOUNT_WANTS);
++                r = unit_add_mounts_for(u, "/overlayer/syshub/var/tmp/", UNIT_DEPENDENCY_FILE, UNIT_MOUNT_WANTS);
+                 if (r < 0)
+                         return r;
+         } else if (c->private_var_tmp == PRIVATE_TMP_DISCONNECTED && !exec_context_with_rootfs(c)) {
+                 /* Even if PrivateTmp=disconnected, we still require /var/tmp/ mountpoint to be present,
+                  * i.e. /var/ needs to be mounted. See comments in unit_patch_contexts(). */
+-                r = unit_add_mounts_for(u, "/var/", UNIT_DEPENDENCY_FILE, UNIT_MOUNT_WANTS);
++                r = unit_add_mounts_for(u, "/overlayer/syshub/var/", UNIT_DEPENDENCY_FILE, UNIT_MOUNT_WANTS);
+                 if (r < 0)
+                         return r;
+         }
+@@ -4389,7 +4389,7 @@ static PrivateTmp unit_get_private_var_tmp(const Unit *u, const ExecContext *c)
+         /* Even if DefaultDependencies=no, enable disconnected tmpfs when
+          * RequiresMountsFor=/WantsMountsFor=/var/ is explicitly set. */
+         for (UnitMountDependencyType t = 0; t < _UNIT_MOUNT_DEPENDENCY_TYPE_MAX; t++)
+-                if (hashmap_contains(u->mounts_for[t], "/var/"))
++                if (hashmap_contains(u->mounts_for[t], "/overlayer/syshub/var/"))
+                         return PRIVATE_TMP_DISCONNECTED;
+ 
+         /* Check the same but for After=. */
+diff --git a/src/coredump/coredump-submit.c b/src/coredump/coredump-submit.c
+index fe1042c..bdf9f73 100644
+--- a/src/coredump/coredump-submit.c
++++ b/src/coredump/coredump-submit.c
+@@ -71,7 +71,7 @@ static int make_filename(const CoredumpContext *context, char **ret) {
+                 return r;
+ 
+         if (asprintf(ret,
+-                     "/var/lib/systemd/coredump/core.%s."UID_FMT"." SD_ID128_FORMAT_STR "."PID_FMT"."USEC_FMT,
++                     "/overlayer/syshub/var/lib/systemd/coredump/core.%s."UID_FMT"." SD_ID128_FORMAT_STR "."PID_FMT"."USEC_FMT,
+                      c, context->uid, SD_ID128_FORMAT_VAL(boot), context->pidref.pid, context->timestamp) < 0)
+                 return -ENOMEM;
+ 
+diff --git a/src/coredump/coredump-vacuum.c b/src/coredump/coredump-vacuum.c
+index ac6d8aa..6e4acd4 100644
+--- a/src/coredump/coredump-vacuum.c
++++ b/src/coredump/coredump-vacuum.c
+@@ -129,7 +129,7 @@ int coredump_vacuum(int exclude_fd, uint64_t keep_free, uint64_t max_use) {
+          * because we rely on rate-limiting of the messages there,
+          * to avoid being flooded. */
+ 
+-        d = opendir("/var/lib/systemd/coredump");
++        d = opendir("/overlayer/syshub/var/lib/systemd/coredump");
+         if (!d) {
+                 if (errno == ENOENT)
+                         return 0;
+diff --git a/src/cryptenroll/cryptenroll.c b/src/cryptenroll/cryptenroll.c
+index 0b577ba..c13fab0 100644
+--- a/src/cryptenroll/cryptenroll.c
++++ b/src/cryptenroll/cryptenroll.c
+@@ -130,7 +130,7 @@ static int determine_default_node(void) {
+          * case people should just specify the device name explicitly. */
+ 
+         dev_t devno;
+-        r = get_block_device("/var", &devno);
++        r = get_block_device("/overlayer/syshub/var", &devno);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to determine block device backing /var/: %m");
+         if (r == 0)
+diff --git a/src/cryptsetup/cryptsetup-generator.c b/src/cryptsetup/cryptsetup-generator.c
+index d513564..734260b 100644
+--- a/src/cryptsetup/cryptsetup-generator.c
++++ b/src/cryptsetup/cryptsetup-generator.c
+@@ -923,7 +923,7 @@ static int run(const char *dest, const char *dest_early, const char *dest_late)
+ 
+         assert_se(arg_dest = dest);
+ 
+-        arg_crypttab = getenv("SYSTEMD_CRYPTTAB") ?: "/etc/crypttab";
++        arg_crypttab = getenv("SYSTEMD_CRYPTTAB") ?: "/overlayer/syshub/etc/crypttab";
+         arg_runtime_directory = getenv("RUNTIME_DIRECTORY") ?: "/run/systemd/cryptsetup";
+ 
+         arg_disks = hashmap_new(&crypt_device_hash_ops);
+diff --git a/src/cryptsetup/cryptsetup.c b/src/cryptsetup/cryptsetup.c
+index bdd00b4..c55d74a 100644
+--- a/src/cryptsetup/cryptsetup.c
++++ b/src/cryptsetup/cryptsetup.c
+@@ -2583,7 +2583,7 @@ static int discover_key(const char *key_file, const char *volume, TokenType toke
+                 return log_oom();
+ 
+         /* If a key file is not explicitly specified, search for a key in a well defined search path, and load it. */
+-        r = find_key_file(key_file, STRV_MAKE("/etc/cryptsetup-keys.d", "/run/cryptsetup-keys.d"), bindname, ret_key_data);
++        r = find_key_file(key_file, STRV_MAKE("/overlayer/syshub/etc/cryptsetup-keys.d", "/run/cryptsetup-keys.d"), bindname, ret_key_data);
+         if (r <= 0)
+                 return r;
+ 
+diff --git a/src/dissect/dissect.c b/src/dissect/dissect.c
+index 5d6edc5..c8cf06e 100644
+--- a/src/dissect/dissect.c
++++ b/src/dissect/dissect.c
+@@ -1751,7 +1751,7 @@ static int action_with(DissectedImage *m, LoopDevice *d) {
+                                 log_warning_errno(errno, "Failed to execute $SHELL, falling back to /bin/sh: %m");
+                         }
+ 
+-                        execl("/bin/sh", "sh", NULL);
++                        execl("/overlayer/syshub/bin/bash", "sh", NULL);
+                         log_error_errno(errno, "Failed to invoke /bin/sh: %m");
+                 } else {
+                         execvp(arg_argv[0], arg_argv);
+diff --git a/src/firstboot/firstboot.c b/src/firstboot/firstboot.c
+index 2dd08e5..fcd8410 100644
+--- a/src/firstboot/firstboot.c
++++ b/src/firstboot/firstboot.c
+@@ -401,7 +401,7 @@ static int process_locale(int rfd, sd_varlink **mute_console_link) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/locale.conf: %m");
+ 
+-        log_info("/etc/locale.conf written.");
++        log_info("/overlayer/syshub/etc/locale.conf written.");
+         return 1;
+ }
+ 
+@@ -543,7 +543,7 @@ static int process_keymap(int rfd, sd_varlink **mute_console_link) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/vconsole.conf: %m");
+ 
+-        log_info("/etc/vconsole.conf written.");
++        log_info("/overlayer/syshub/etc/vconsole.conf written.");
+         return 1;
+ }
+ 
+@@ -647,7 +647,7 @@ static int process_timezone(int rfd, sd_varlink **mute_console_link) {
+         if (isempty(arg_timezone))
+                 return 0;
+ 
+-        e = strjoina("/usr/share/zoneinfo/", arg_timezone);
++        e = strjoina("/overlayer/syshub/share/zoneinfo/", arg_timezone);
+         r = path_make_relative_parent(etc_localtime(), e, &relpath);
+         if (r < 0)
+                 return r;
+@@ -656,7 +656,7 @@ static int process_timezone(int rfd, sd_varlink **mute_console_link) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to create /etc/localtime symlink: %m");
+ 
+-        log_info("/etc/localtime written");
++        log_info("/overlayer/syshub/etc/localtime written");
+         return 0;
+ }
+ 
+@@ -743,7 +743,7 @@ static int process_hostname(int rfd, sd_varlink **mute_console_link) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/hostname: %m");
+ 
+-        log_info("/etc/hostname written.");
++        log_info("/overlayer/syshub/etc/hostname written.");
+         return 0;
+ }
+ 
+@@ -754,7 +754,7 @@ static int process_machine_id(int rfd) {
+ 
+         assert(rfd >= 0);
+ 
+-        pfd = chase_and_open_parent_at(rfd, rfd, "/etc/machine-id",
++        pfd = chase_and_open_parent_at(rfd, rfd, "/overlayer/syshub/etc/machine-id",
+                                        CHASE_MKDIR_0755|CHASE_WARN|CHASE_NOFOLLOW,
+                                        &f);
+         if (pfd < 0)
+@@ -776,7 +776,7 @@ static int process_machine_id(int rfd) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/machine-id: %m");
+ 
+-        log_info("/etc/machine-id written.");
++        log_info("/overlayer/syshub/etc/machine-id written.");
+         return 0;
+ }
+ 
+@@ -789,7 +789,7 @@ static int process_machine_tags(int rfd) {
+         _cleanup_close_ int pfd = chase_and_open_parent_at(
+                         /* root_fd= */ rfd,
+                         /* dir_fd= */ rfd,
+-                        "/etc/machine-info",
++                        "/overlayer/syshub/etc/machine-info",
+                         CHASE_MKDIR_0755|CHASE_WARN|CHASE_NOFOLLOW,
+                         &f);
+         if (pfd < 0)
+@@ -841,7 +841,7 @@ static int process_machine_tags(int rfd) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/machine-info: %m");
+ 
+-        log_info("/etc/machine-info written.");
++        log_info("/overlayer/syshub/etc/machine-info written.");
+         return 0;
+ }
+ 
+@@ -1138,7 +1138,7 @@ static int process_root_account(int rfd, sd_varlink **mute_console_link) {
+ 
+         assert(rfd >= 0);
+ 
+-        pfd = chase_and_open_parent_at(rfd, rfd, "/etc/passwd",
++        pfd = chase_and_open_parent_at(rfd, rfd, "/overlayer/syshub/etc/passwd",
+                                        CHASE_MKDIR_0755|CHASE_WARN|CHASE_NOFOLLOW,
+                                        NULL);
+         if (pfd < 0)
+@@ -1238,13 +1238,13 @@ static int process_root_account(int rfd, sd_varlink **mute_console_link) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/passwd: %m");
+ 
+-        log_info("/etc/passwd written.");
++        log_info("/overlayer/syshub/etc/passwd written.");
+ 
+         r = write_root_shadow(pfd, hashed_password);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/shadow: %m");
+ 
+-        log_info("/etc/shadow written.");
++        log_info("/overlayer/syshub/etc/shadow written.");
+         return 0;
+ }
+ 
+@@ -1255,7 +1255,7 @@ static int process_kernel_cmdline(int rfd) {
+ 
+         assert(rfd >= 0);
+ 
+-        pfd = chase_and_open_parent_at(rfd, rfd, "/etc/kernel/cmdline",
++        pfd = chase_and_open_parent_at(rfd, rfd, "/overlayer/syshub/etc/kernel/cmdline",
+                                        CHASE_MKDIR_0755|CHASE_WARN|CHASE_NOFOLLOW,
+                                        &f);
+         if (pfd < 0)
+@@ -1277,7 +1277,7 @@ static int process_kernel_cmdline(int rfd) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write /etc/kernel/cmdline: %m");
+ 
+-        log_info("/etc/kernel/cmdline written.");
++        log_info("/overlayer/syshub/etc/kernel/cmdline written.");
+         return 0;
+ }
+ 
+@@ -1313,8 +1313,8 @@ static int process_reset(int rfd) {
+                        etc_locale_conf(),
+                        etc_vconsole_conf(),
+                        etc_hostname(),
+-                       "/etc/machine-id",
+-                       "/etc/kernel/cmdline",
++                       "/overlayer/syshub/etc/machine-id",
++                       "/overlayer/syshub/etc/kernel/cmdline",
+                        etc_localtime()) {
+                 r = reset_one(rfd, p);
+                 if (r < 0)
+diff --git a/src/fstab-generator/fstab-generator.c b/src/fstab-generator/fstab-generator.c
+index 3a5ce47..f1715ad 100644
+--- a/src/fstab-generator/fstab-generator.c
++++ b/src/fstab-generator/fstab-generator.c
+@@ -1418,7 +1418,7 @@ static int add_volatile_var(void) {
+         return add_mount("/proc/cmdline",
+                          arg_dest_late,
+                          "tmpfs",
+-                         "/var",
++                         "/overlayer/syshub/var",
+                          /* original_where= */ NULL,
+                          "tmpfs",
+                          "mode=0755" TMPFS_LIMITS_VAR,
+diff --git a/src/gpt-auto-generator/gpt-auto-generator.c b/src/gpt-auto-generator/gpt-auto-generator.c
+index b92ac8f..f9fe834 100644
+--- a/src/gpt-auto-generator/gpt-auto-generator.c
++++ b/src/gpt-auto-generator/gpt-auto-generator.c
+@@ -1197,11 +1197,11 @@ static int enumerate_partitions(dev_t devnum) {
+ 
+         if (m->partitions[PARTITION_VAR].found)
+                 RET_GATHER(r, add_partition_mount(PARTITION_VAR, m->partitions + PARTITION_VAR,
+-                                                  "var", "/var", "Variable Data Partition"));
++                                                  "var", "/overlayer/syshub/var", "Variable Data Partition"));
+ 
+         if (m->partitions[PARTITION_TMP].found)
+                 RET_GATHER(r, add_partition_mount(PARTITION_TMP, m->partitions + PARTITION_TMP,
+-                                                  "var-tmp", "/var/tmp", "Temporary Data Partition"));
++                                                  "var-tmp", "/overlayer/syshub/var/tmp", "Temporary Data Partition"));
+ 
+         if (m->partitions[PARTITION_ROOT].found)
+                 RET_GATHER(r, add_partition_root_flags(m->partitions + PARTITION_ROOT));
+diff --git a/src/hostname/hostnamed.c b/src/hostname/hostnamed.c
+index 73c0f2e..1f01f72 100644
+--- a/src/hostname/hostnamed.c
++++ b/src/hostname/hostnamed.c
+@@ -206,8 +206,8 @@ static void context_read_os_release(Context *c) {
+ 
+         assert(c);
+ 
+-        if ((stat("/etc/os-release", &current_stat) >= 0 ||
+-             stat("/usr/lib/os-release", &current_stat) >= 0) &&
++        if ((stat("/overlayer/syshub/etc/os-release", &current_stat) >= 0 ||
++             stat("/overlayer/syshub/lib/os-release", &current_stat) >= 0) &&
+             stat_inode_unmodified(&c->etc_os_release_stat, &current_stat))
+                 return;
+ 
+@@ -1470,7 +1470,7 @@ static int method_set_static_hostname(sd_bus_message *m, void *userdata, sd_bus_
+                 if (ERRNO_IS_PRIVILEGE(r))
+                         return sd_bus_error_set(error, BUS_ERROR_FILE_IS_PROTECTED, "Not allowed to update /etc/hostname.");
+                 if (r == -EROFS)
+-                        return sd_bus_error_set(error, BUS_ERROR_READ_ONLY_FILESYSTEM, "/etc/hostname is in a read-only filesystem.");
++                        return sd_bus_error_set(error, BUS_ERROR_READ_ONLY_FILESYSTEM, "/overlayer/syshub/etc/hostname is in a read-only filesystem.");
+                 return sd_bus_error_set_errnof(error, r, "Failed to set static hostname: %m");
+         }
+ 
+@@ -1548,7 +1548,7 @@ static int set_machine_info(Context *c, sd_bus_message *m, int prop, sd_bus_mess
+                 if (ERRNO_IS_PRIVILEGE(r))
+                         return sd_bus_error_set(error, BUS_ERROR_FILE_IS_PROTECTED, "Not allowed to update /etc/machine-info.");
+                 if (r == -EROFS)
+-                        return sd_bus_error_set(error, BUS_ERROR_READ_ONLY_FILESYSTEM, "/etc/machine-info is in a read-only filesystem.");
++                        return sd_bus_error_set(error, BUS_ERROR_READ_ONLY_FILESYSTEM, "/overlayer/syshub/etc/machine-info is in a read-only filesystem.");
+                 return sd_bus_error_set_errnof(error, r, "Failed to write machine info: %m");
+         }
+ 
+@@ -1642,7 +1642,7 @@ static int method_set_tags(sd_bus_message *m, void *userdata, sd_bus_error *erro
+                 if (ERRNO_IS_PRIVILEGE(r))
+                         return sd_bus_error_set(error, BUS_ERROR_FILE_IS_PROTECTED, "Not allowed to update /etc/machine-info.");
+                 if (r == -EROFS)
+-                        return sd_bus_error_set(error, BUS_ERROR_READ_ONLY_FILESYSTEM, "/etc/machine-info is in a read-only filesystem.");
++                        return sd_bus_error_set(error, BUS_ERROR_READ_ONLY_FILESYSTEM, "/overlayer/syshub/etc/machine-info is in a read-only filesystem.");
+                 return sd_bus_error_set_errnof(error, r, "Failed to write machine info: %m");
+         }
+ 
+diff --git a/src/integritysetup/integritysetup-generator.c b/src/integritysetup/integritysetup-generator.c
+index ce7a8ce..6950ac3 100644
+--- a/src/integritysetup/integritysetup-generator.c
++++ b/src/integritysetup/integritysetup-generator.c
+@@ -181,7 +181,7 @@ static int add_integritytab_devices(void) {
+ static int run(const char *dest, const char *dest_early, const char *dest_late) {
+         assert_se(arg_dest = dest);
+ 
+-        arg_integritytab = getenv("SYSTEMD_INTEGRITYTAB") ?: "/etc/integritytab";
++        arg_integritytab = getenv("SYSTEMD_INTEGRITYTAB") ?: "/overlayer/syshub/etc/integritytab";
+ 
+         return add_integritytab_devices();
+ }
+diff --git a/src/journal-remote/journal-remote.c b/src/journal-remote/journal-remote.c
+index 12886f5..2df26db 100644
+--- a/src/journal-remote/journal-remote.c
++++ b/src/journal-remote/journal-remote.c
+@@ -18,7 +18,7 @@
+ #include "socket-util.h"
+ #include "stdio-util.h"
+ 
+-#define REMOTE_JOURNAL_PATH "/var/log/journal/remote"
++#define REMOTE_JOURNAL_PATH "/overlayer/syshub/var/log/journal/remote"
+ 
+ #define filename_escape(s) xescape((s), "/ ")
+ 
+diff --git a/src/journal-remote/journal-upload.c b/src/journal-remote/journal-upload.c
+index 2eb47d2..c66f82d 100644
+--- a/src/journal-remote/journal-upload.c
++++ b/src/journal-remote/journal-upload.c
+@@ -81,7 +81,7 @@ static void close_fd_input(Uploader *u);
+ 
+ #define SERVER_ANSWER_KEEP 2048
+ 
+-#define STATE_FILE "/var/lib/systemd/journal-upload/state"
++#define STATE_FILE "/overlayer/syshub/var/lib/systemd/journal-upload/state"
+ 
+ static size_t output_callback(char *buf,
+                               size_t size,
+diff --git a/src/journal/journalctl-authenticate.c b/src/journal/journalctl-authenticate.c
+index b1b1ba6..90b55a7 100644
+--- a/src/journal/journalctl-authenticate.c
++++ b/src/journal/journalctl-authenticate.c
+@@ -77,10 +77,10 @@ int action_setup_keys(void) {
+         if (r < 0)
+                 return r;
+ 
+-        r = is_dir("/var/log/journal/", /* follow= */ false);
++        r = is_dir("/overlayer/syshub/var/log/journal/", /* follow= */ false);
+         if (r == 0)
+                 return log_error_errno(SYNTHETIC_ERRNO(ENOTDIR),
+-                                       "/var/log/journal is not a directory, must be using persistent logging for FSS.");
++                                       "/overlayer/syshub/var/log/journal is not a directory, must be using persistent logging for FSS.");
+         if (r == -ENOENT)
+                 return log_error_errno(r, "Directory /var/log/journal/ does not exist, must be using persistent logging for FSS.");
+         if (r < 0)
+@@ -94,7 +94,7 @@ int action_setup_keys(void) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to get boot ID: %m");
+ 
+-        path = path_join("/var/log/journal/", SD_ID128_TO_STRING(machine), "/fss");
++        path = path_join("/overlayer/syshub/var/log/journal/", SD_ID128_TO_STRING(machine), "/fss");
+         if (!path)
+                 return log_oom();
+ 
+diff --git a/src/journal/journalctl-misc.c b/src/journal/journalctl-misc.c
+index ca8dffe..667132b 100644
+--- a/src/journal/journalctl-misc.c
++++ b/src/journal/journalctl-misc.c
+@@ -298,7 +298,7 @@ int action_list_namespaces(void) {
+ 
+         (void) table_set_sort(table, (size_t) 0);
+ 
+-        FOREACH_STRING(dir, "/var/log/journal", "/run/log/journal") {
++        FOREACH_STRING(dir, "/overlayer/syshub/var/log/journal", "/run/log/journal") {
+                 _cleanup_free_ char *path = NULL;
+                 _cleanup_closedir_ DIR *dirp = NULL;
+ 
+diff --git a/src/journal/journalctl.c b/src/journal/journalctl.c
+index 657924b..e5a37ab 100644
+--- a/src/journal/journalctl.c
++++ b/src/journal/journalctl.c
+@@ -1076,14 +1076,14 @@ static int run(int argc, char *argv[]) {
+                 if (r < 0)
+                         log_debug_errno(r, "Failed to get root mount ID, ignoring: %m");
+                 else {
+-                        r = path_get_mnt_id("/var/log/journal/", &log_mnt_id);
++                        r = path_get_mnt_id("/overlayer/syshub/var/log/journal/", &log_mnt_id);
+                         if (r < 0)
+                                 log_debug_errno(r, "Failed to get journal directory mount ID, ignoring: %m");
+                         else if (root_mnt_id == log_mnt_id) {
+-                                log_debug("/var/log/journal/ is on root file system, not relinquishing access to /var.");
++                                log_debug("/overlayer/syshub/var/log/journal/ is on root file system, not relinquishing access to /var.");
+                                 return 0;
+                         } else
+-                                log_debug("/var/log/journal/ is not on the root file system, relinquishing access to it.");
++                                log_debug("/overlayer/syshub/var/log/journal/ is not on the root file system, relinquishing access to it.");
+                 }
+ 
+                 _fallthrough_;
+diff --git a/src/journal/journald-manager.c b/src/journal/journald-manager.c
+index 764e509..7d5c725 100644
+--- a/src/journal/journald-manager.c
++++ b/src/journal/journald-manager.c
+@@ -2519,9 +2519,9 @@ int manager_init(Manager *m) {
+         if (e)
+                 m->system_storage.path = strdup(e);
+         else if (m->namespace)
+-                m->system_storage.path = strjoin("/var/log/journal/", MANAGER_MACHINE_ID(m), ".", m->namespace);
++                m->system_storage.path = strjoin("/overlayer/syshub/var/log/journal/", MANAGER_MACHINE_ID(m), ".", m->namespace);
+         else
+-                m->system_storage.path = strjoin("/var/log/journal/", MANAGER_MACHINE_ID(m));
++                m->system_storage.path = strjoin("/overlayer/syshub/var/log/journal/", MANAGER_MACHINE_ID(m));
+         if (!m->system_storage.path)
+                 return log_oom();
+ 
+diff --git a/src/journal/journald-native.c b/src/journal/journald-native.c
+index 01e7d65..23b42e8 100644
+--- a/src/journal/journald-native.c
++++ b/src/journal/journald-native.c
+@@ -436,7 +436,7 @@ int manager_process_native_file(
+                         return log_ratelimit_error_errno(r, JOURNAL_LOG_RATELIMIT,
+                                                          "Failed to get path of passed fd: %m");
+ 
+-                e = PATH_STARTSWITH_SET(k, "/dev/shm/", "/tmp/", "/var/tmp/");
++                e = PATH_STARTSWITH_SET(k, "/dev/shm/", "/tmp/", "/overlayer/syshub/var/tmp/");
+                 if (!e)
+                         return log_ratelimit_error_errno(SYNTHETIC_ERRNO(EPERM), JOURNAL_LOG_RATELIMIT,
+                                                          "Received file outside of allowed directories, refusing.");
+diff --git a/src/libsystemd/sd-bus/sd-bus.c b/src/libsystemd/sd-bus/sd-bus.c
+index e44c439..ac4d699 100644
+--- a/src/libsystemd/sd-bus/sd-bus.c
++++ b/src/libsystemd/sd-bus/sd-bus.c
+@@ -1035,7 +1035,7 @@ static int parse_container_unix_address(sd_bus *b, const char **p, char **guid)
+         b->sockaddr.un = (struct sockaddr_un) {
+                 .sun_family = AF_UNIX,
+                 /* Note that we use the old /var/run prefix here, to increase compatibility with really old containers */
+-                .sun_path = "/var/run/dbus/system_bus_socket",
++                .sun_path = "/overlayer/syshub/var/run/dbus/system_bus_socket",
+         };
+         b->sockaddr_size = sockaddr_un_len(&b->sockaddr.un);
+         b->is_local = false;
+diff --git a/src/libsystemd/sd-hwdb/hwdb-internal.h b/src/libsystemd/sd-hwdb/hwdb-internal.h
+index 72b2f77..a11ad57 100644
+--- a/src/libsystemd/sd-hwdb/hwdb-internal.h
++++ b/src/libsystemd/sd-hwdb/hwdb-internal.h
+@@ -82,7 +82,7 @@ struct trie_value_entry2_f {
+ } _packed_;
+ 
+ #define HWDB_BIN_PATHS                          \
+-        "/etc/systemd/hwdb/hwdb.bin\0"          \
+-        "/etc/udev/hwdb.bin\0"                  \
+-        "/usr/lib/systemd/hwdb/hwdb.bin\0"      \
++        "/overlayer/syshub/etc/systemd/hwdb/hwdb.bin\0"          \
++        "/overlayer/syshub/etc/udev/hwdb.bin\0"                  \
++        "/overlayer/syshub/lib/systemd/hwdb/hwdb.bin\0"      \
+         UDEVLIBEXECDIR "/hwdb.bin\0"
+diff --git a/src/libsystemd/sd-id128/sd-id128.c b/src/libsystemd/sd-id128/sd-id128.c
+index ba3e47d..0940159 100644
+--- a/src/libsystemd/sd-id128/sd-id128.c
++++ b/src/libsystemd/sd-id128/sd-id128.c
+@@ -125,7 +125,7 @@ _public_ int sd_id128_get_machine(sd_id128_t *ret) {
+         int r;
+ 
+         if (sd_id128_is_null(saved_machine_id)) {
+-                r = id128_read("/etc/machine-id", ID128_FORMAT_PLAIN | ID128_REFUSE_NULL, &saved_machine_id);
++                r = id128_read("/overlayer/syshub/etc/machine-id", ID128_FORMAT_PLAIN | ID128_REFUSE_NULL, &saved_machine_id);
+                 if (r < 0)
+                         return r;
+         }
+@@ -147,7 +147,7 @@ int id128_get_machine_at(int rfd, sd_id128_t *ret) {
+                 return sd_id128_get_machine(ret);
+ 
+         _cleanup_close_ int fd =
+-                chase_and_openat(rfd, rfd, "/etc/machine-id", CHASE_MUST_BE_REGULAR, O_RDONLY|O_CLOEXEC|O_NOCTTY, /* ret_path= */ NULL);
++                chase_and_openat(rfd, rfd, "/overlayer/syshub/etc/machine-id", CHASE_MUST_BE_REGULAR, O_RDONLY|O_CLOEXEC|O_NOCTTY, /* ret_path= */ NULL);
+         if (fd < 0)
+                 return fd;
+ 
+@@ -159,7 +159,7 @@ int id128_get_machine(const char *root, sd_id128_t *ret) {
+                 return sd_id128_get_machine(ret);
+ 
+         _cleanup_close_ int fd =
+-                chase_and_open("/etc/machine-id", root, CHASE_PREFIX_ROOT|CHASE_MUST_BE_REGULAR, O_RDONLY|O_CLOEXEC|O_NOCTTY, /* ret_path= */ NULL);
++                chase_and_open("/overlayer/syshub/etc/machine-id", root, CHASE_PREFIX_ROOT|CHASE_MUST_BE_REGULAR, O_RDONLY|O_CLOEXEC|O_NOCTTY, /* ret_path= */ NULL);
+         if (fd < 0)
+                 return fd;
+ 
+diff --git a/src/libsystemd/sd-journal/catalog.c b/src/libsystemd/sd-journal/catalog.c
+index 433288b..7520ca7 100644
+--- a/src/libsystemd/sd-journal/catalog.c
++++ b/src/libsystemd/sd-journal/catalog.c
+@@ -29,8 +29,8 @@
+ #include "tmpfile-util.h"
+ 
+ static const char * const catalog_file_dirs[] = {
+-        "/usr/local/lib/systemd/catalog/",
+-        "/usr/lib/systemd/catalog/",
++        "/overlayer/syshub/lib/systemd/catalog/",
++        "/overlayer/syshub/lib/systemd/catalog/",
+         NULL
+ };
+ 
+diff --git a/src/libsystemd/sd-journal/journal-authenticate.c b/src/libsystemd/sd-journal/journal-authenticate.c
+index 60a60f2..a4063a1 100644
+--- a/src/libsystemd/sd-journal/journal-authenticate.c
++++ b/src/libsystemd/sd-journal/journal-authenticate.c
+@@ -374,7 +374,7 @@ int journal_file_fss_load(JournalFile *f) {
+         if (r < 0)
+                 return r;
+ 
+-        if (asprintf(&path, "/var/log/journal/" SD_ID128_FORMAT_STR "/fss",
++        if (asprintf(&path, "/overlayer/syshub/var/log/journal/" SD_ID128_FORMAT_STR "/fss",
+                      SD_ID128_FORMAT_VAL(machine)) < 0)
+                 return -ENOMEM;
+ 
+diff --git a/src/libsystemd/sd-journal/sd-journal.c b/src/libsystemd/sd-journal/sd-journal.c
+index d67d269..91e5d70 100644
+--- a/src/libsystemd/sd-journal/sd-journal.c
++++ b/src/libsystemd/sd-journal/sd-journal.c
+@@ -1575,7 +1575,7 @@ static void track_file_disposition(sd_journal *j, JournalFile *f) {
+ 
+         if (!j->has_runtime_files && path_has_prefix(j, f->path, "/run"))
+                 j->has_runtime_files = true;
+-        else if (!j->has_persistent_files && path_has_prefix(j, f->path, "/var"))
++        else if (!j->has_persistent_files && path_has_prefix(j, f->path, "/overlayer/syshub/var"))
+                 j->has_persistent_files = true;
+ }
+ 
+@@ -2221,7 +2221,7 @@ static int add_search_paths(sd_journal *j) {
+ 
+         static const char search_paths[] =
+                 "/run/log/journal\0"
+-                "/var/log/journal\0";
++                "/overlayer/syshub/var/log/journal\0";
+ 
+         assert(j);
+ 
+@@ -2232,7 +2232,7 @@ static int add_search_paths(sd_journal *j) {
+                 (void) add_root_directory(j, p, true);
+ 
+         if (!(j->flags & SD_JOURNAL_LOCAL_ONLY))
+-                (void) add_root_directory(j, "/var/log/journal/remote", true);
++                (void) add_root_directory(j, "/overlayer/syshub/var/log/journal/remote", true);
+ 
+         return 0;
+ }
+diff --git a/src/libsystemd/sd-path/path-lookup.c b/src/libsystemd/sd-path/path-lookup.c
+index ee97164..97b315f 100644
+--- a/src/libsystemd/sd-path/path-lookup.c
++++ b/src/libsystemd/sd-path/path-lookup.c
+@@ -164,7 +164,7 @@ int state_directory_generic(RuntimeScope scope, const char *suffix, char **ret)
+                 return xdg_user_state_dir(suffix, ret);
+ 
+         case RUNTIME_SCOPE_SYSTEM: {
+-                char *d = path_join("/var/lib", suffix);
++                char *d = path_join("/overlayer/syshub/var/lib", suffix);
+                 if (!d)
+                         return -ENOMEM;
+                 *ret = d;
+@@ -177,17 +177,17 @@ int state_directory_generic(RuntimeScope scope, const char *suffix, char **ret)
+ }
+ 
+ static const char* const user_data_unit_paths[] = {
+-        "/usr/local/lib/systemd/user",
+-        "/usr/local/share/systemd/user",
++        "/overlayer/syshub/lib/systemd/user",
++        "/overlayer/syshub/share/systemd/user",
+         USER_DATA_UNIT_DIR,
+-        "/usr/lib/systemd/user",
+-        "/usr/share/systemd/user",
++        "/overlayer/syshub/lib/systemd/user",
++        "/overlayer/syshub/share/systemd/user",
+         NULL
+ };
+ 
+ static const char* const user_config_unit_paths[] = {
+         USER_CONFIG_UNIT_DIR,
+-        "/etc/systemd/user",
++        "/overlayer/syshub/etc/systemd/user",
+         NULL
+ };
+ 
+@@ -301,11 +301,11 @@ static int acquire_lookup_dirs(
+                         [RUNTIME_SCOPE_USER]   = { "systemd/user",         "systemd/user"        },
+                 },
+                 [LOOKUP_DIR_CONTROL] = {
+-                        [RUNTIME_SCOPE_SYSTEM] = { "/etc/systemd/system.control", "/run/systemd/system.control" },
++                        [RUNTIME_SCOPE_SYSTEM] = { "/overlayer/syshub/etc/systemd/system.control", "/run/systemd/system.control" },
+                         [RUNTIME_SCOPE_USER]   = { "systemd/user.control",        "systemd/user.control"        },
+                 },
+                 [LOOKUP_DIR_ATTACHED] = {
+-                        [RUNTIME_SCOPE_SYSTEM] = { "/etc/systemd/system.attached", "/run/systemd/system.attached" },
++                        [RUNTIME_SCOPE_SYSTEM] = { "/overlayer/syshub/etc/systemd/system.attached", "/run/systemd/system.attached" },
+                         [RUNTIME_SCOPE_USER]   = { "systemd/user.attached",        "systemd/user.attached"        },
+                 },
+         };
+@@ -593,15 +593,15 @@ int lookup_paths_init(
+                                        STRV_IFNOTNULL(generator_early),
+                                        persistent_config,
+                                        SYSTEM_CONFIG_UNIT_DIR,
+-                                       "/etc/systemd/system",
++                                       "/overlayer/syshub/etc/systemd/system",
+                                        ASSERT_PTR(persistent_attached),
+                                        ASSERT_PTR(runtime_config),
+                                        "/run/systemd/system",
+                                        ASSERT_PTR(runtime_attached),
+                                        STRV_IFNOTNULL(generator),
+-                                       "/usr/local/lib/systemd/system",
++                                       "/overlayer/syshub/lib/systemd/system",
+                                        SYSTEM_DATA_UNIT_DIR,
+-                                       "/usr/lib/systemd/system",
++                                       "/overlayer/syshub/lib/systemd/system",
+                                        /* To be used ONLY for images which might be legacy split-usr */
+                                        FLAGS_SET(flags, LOOKUP_PATHS_SPLIT_USR) ? "/lib/systemd/system" : STRV_IGNORE,
+                                        STRV_IFNOTNULL(generator_late));
+@@ -620,14 +620,14 @@ int lookup_paths_init(
+ 
+                         add = strv_new(persistent_config,
+                                        USER_CONFIG_UNIT_DIR,
+-                                       "/etc/systemd/user",
++                                       "/overlayer/syshub/etc/systemd/user",
+                                        ASSERT_PTR(runtime_config),
+                                        "/run/systemd/user",
+-                                       "/usr/local/share/systemd/user",
+-                                       "/usr/share/systemd/user",
+-                                       "/usr/local/lib/systemd/user",
++                                       "/overlayer/syshub/share/systemd/user",
++                                       "/overlayer/syshub/share/systemd/user",
++                                       "/overlayer/syshub/lib/systemd/user",
+                                        USER_DATA_UNIT_DIR,
+-                                       "/usr/lib/systemd/user");
++                                       "/overlayer/syshub/lib/systemd/user");
+                         break;
+ 
+                 case RUNTIME_SCOPE_USER:
+@@ -766,32 +766,32 @@ void lookup_paths_log(LookupPaths *lp) {
+ 
+ static const char* const system_generator_paths[] = {
+         "/run/systemd/system-generators",
+-        "/etc/systemd/system-generators",
+-        "/usr/local/lib/systemd/system-generators",
++        "/overlayer/syshub/etc/systemd/system-generators",
++        "/overlayer/syshub/lib/systemd/system-generators",
+         SYSTEM_GENERATOR_DIR,
+         NULL,
+ };
+ 
+ static const char* const user_generator_paths[] = {
+         "/run/systemd/user-generators",
+-        "/etc/systemd/user-generators",
+-        "/usr/local/lib/systemd/user-generators",
++        "/overlayer/syshub/etc/systemd/user-generators",
++        "/overlayer/syshub/lib/systemd/user-generators",
+         USER_GENERATOR_DIR,
+         NULL,
+ };
+ 
+ static const char* const system_env_generator_paths[] = {
+         "/run/systemd/system-environment-generators",
+-        "/etc/systemd/system-environment-generators",
+-        "/usr/local/lib/systemd/system-environment-generators",
++        "/overlayer/syshub/etc/systemd/system-environment-generators",
++        "/overlayer/syshub/lib/systemd/system-environment-generators",
+         SYSTEM_ENV_GENERATOR_DIR,
+         NULL,
+ };
+ 
+ static const char* const user_env_generator_paths[] = {
+         "/run/systemd/user-environment-generators",
+-        "/etc/systemd/user-environment-generators",
+-        "/usr/local/lib/systemd/user-environment-generators",
++        "/overlayer/syshub/etc/systemd/user-environment-generators",
++        "/overlayer/syshub/lib/systemd/user-environment-generators",
+         USER_ENV_GENERATOR_DIR,
+         NULL,
+ };
+diff --git a/src/libsystemd/sd-path/sd-path.c b/src/libsystemd/sd-path/sd-path.c
+index eebcd20..3075e41 100644
+--- a/src/libsystemd/sd-path/sd-path.c
++++ b/src/libsystemd/sd-path/sd-path.c
+@@ -191,15 +191,15 @@ static int get_path(uint64_t type, char **buffer, const char **ret) {
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_CONFIGURATION_FACTORY:
+-                *ret = "/usr/share/factory/etc";
++                *ret = "/overlayer/syshub/share/factory/etc";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_STATE_FACTORY:
+-                *ret = "/usr/share/factory/var";
++                *ret = "/overlayer/syshub/share/factory/var";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_CONFIGURATION:
+-                *ret = "/etc";
++                *ret = "/overlayer/syshub/etc";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_RUNTIME:
+@@ -211,19 +211,19 @@ static int get_path(uint64_t type, char **buffer, const char **ret) {
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_STATE_PRIVATE:
+-                *ret = "/var/lib";
++                *ret = "/overlayer/syshub/var/lib";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_STATE_LOGS:
+-                *ret = "/var/log";
++                *ret = "/overlayer/syshub/var/log";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_STATE_CACHE:
+-                *ret = "/var/cache";
++                *ret = "/overlayer/syshub/var/cache";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_STATE_SPOOL:
+-                *ret = "/var/spool";
++                *ret = "/overlayer/syshub/var/spool";
+                 return 0;
+ 
+         case SD_PATH_USER_BINARIES:
+@@ -334,7 +334,7 @@ static int get_path(uint64_t type, char **buffer, const char **ret) {
+                 return 0;
+ 
+         case SD_PATH_TMPFILES:
+-                *ret = "/usr/lib/tmpfiles.d";
++                *ret = "/overlayer/syshub/lib/tmpfiles.d";
+                 return 0;
+ 
+         case SD_PATH_SYSUSERS:
+@@ -354,7 +354,7 @@ static int get_path(uint64_t type, char **buffer, const char **ret) {
+                 return 0;
+ 
+         case SD_PATH_CATALOG:
+-                *ret = "/usr/lib/systemd/catalog";
++                *ret = "/overlayer/syshub/lib/systemd/catalog";
+                 return 0;
+ 
+         case SD_PATH_SYSTEMD_SYSTEM_ENVIRONMENT_GENERATOR:
+@@ -366,11 +366,11 @@ static int get_path(uint64_t type, char **buffer, const char **ret) {
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_CREDENTIAL_STORE:
+-                *ret = "/etc/credstore";
++                *ret = "/overlayer/syshub/etc/credstore";
+                 return 0;
+ 
+         case SD_PATH_SYSTEM_CREDENTIAL_STORE_ENCRYPTED:
+-                *ret = "/etc/credstore.encrypted";
++                *ret = "/overlayer/syshub/etc/credstore.encrypted";
+                 return 0;
+ 
+         case SD_PATH_USER_CREDENTIAL_STORE:
+@@ -575,8 +575,8 @@ static int get_search(uint64_t type, char ***ret) {
+                                                NULL,
+                                                NULL,
+                                                false,
+-                                               "/usr/local/share/factory/etc",
+-                                               "/usr/share/factory/etc",
++                                               "/overlayer/syshub/share/factory/etc",
++                                               "/overlayer/syshub/share/factory/etc",
+                                                NULL);
+ 
+         case SD_PATH_SEARCH_STATE_FACTORY:
+@@ -585,8 +585,8 @@ static int get_search(uint64_t type, char ***ret) {
+                                                NULL,
+                                                NULL,
+                                                false,
+-                                               "/usr/local/share/factory/var",
+-                                               "/usr/share/factory/var",
++                                               "/overlayer/syshub/share/factory/var",
++                                               "/overlayer/syshub/share/factory/var",
+                                                NULL);
+ 
+         case SD_PATH_SEARCH_CONFIGURATION:
+diff --git a/src/locale/localectl.c b/src/locale/localectl.c
+index ff7afa6..818e0ae 100644
+--- a/src/locale/localectl.c
++++ b/src/locale/localectl.c
+@@ -302,7 +302,7 @@ static const char* xkb_directory(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_XKB_DIRECTORY") ?: "/usr/share/X11/xkb";
++                cached = secure_getenv("SYSTEMD_XKB_DIRECTORY") ?: "/overlayer/syshub/share/X11/xkb";
+         return cached;
+ }
+ 
+diff --git a/src/locale/localed-util.c b/src/locale/localed-util.c
+index ab2abd7..623c8d0 100644
+--- a/src/locale/localed-util.c
++++ b/src/locale/localed-util.c
+@@ -216,7 +216,7 @@ int x11_read_data(Context *c, sd_bus_message *m) {
+                 c->x11_cache = sd_bus_message_ref(m);
+         }
+ 
+-        fd = RET_NERRNO(open("/etc/X11/xorg.conf.d/00-keyboard.conf", O_CLOEXEC | O_PATH));
++        fd = RET_NERRNO(open("/overlayer/syshub/etc/X11/xorg.conf.d/00-keyboard.conf", O_CLOEXEC | O_PATH));
+         if (fd == -ENOENT) {
+                 c->x11_stat = (struct stat) {};
+                 x11_context_clear(&c->x11_from_xorg);
+@@ -339,15 +339,15 @@ int x11_write_data(Context *c) {
+ 
+         xc = context_get_x11_context(c);
+         if (x11_context_isempty(xc)) {
+-                if (unlink("/etc/X11/xorg.conf.d/00-keyboard.conf") < 0)
++                if (unlink("/overlayer/syshub/etc/X11/xorg.conf.d/00-keyboard.conf") < 0)
+                         return errno == ENOENT ? 0 : -errno;
+ 
+                 c->x11_stat = (struct stat) {};
+                 return 0;
+         }
+ 
+-        (void) mkdir_p_label("/etc/X11/xorg.conf.d", 0755);
+-        r = fopen_temporary("/etc/X11/xorg.conf.d/00-keyboard.conf", &f, &temp_path);
++        (void) mkdir_p_label("/overlayer/syshub/etc/X11/xorg.conf.d", 0755);
++        r = fopen_temporary("/overlayer/syshub/etc/X11/xorg.conf.d/00-keyboard.conf", &f, &temp_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -378,10 +378,10 @@ int x11_write_data(Context *c) {
+         if (r < 0)
+                 return r;
+ 
+-        if (rename(temp_path, "/etc/X11/xorg.conf.d/00-keyboard.conf") < 0)
++        if (rename(temp_path, "/overlayer/syshub/etc/X11/xorg.conf.d/00-keyboard.conf") < 0)
+                 return -errno;
+ 
+-        if (stat("/etc/X11/xorg.conf.d/00-keyboard.conf", &c->x11_stat) < 0)
++        if (stat("/overlayer/syshub/etc/X11/xorg.conf.d/00-keyboard.conf", &c->x11_stat) < 0)
+                 return -errno;
+ 
+         return 0;
+@@ -394,7 +394,7 @@ bool locale_gen_check_available(void) {
+                         log_warning_errno(errno, "Unable to determine whether " LOCALEGEN_PATH " exists and is executable, assuming it is not: %m");
+                 return false;
+         }
+-        if (access("/etc/locale.gen", F_OK) < 0) {
++        if (access("/overlayer/syshub/etc/locale.gen", F_OK) < 0) {
+                 if (errno != ENOENT)
+                         log_warning_errno(errno, "Unable to determine whether /etc/locale.gen exists, assuming it does not: %m");
+                 return false;
+@@ -426,7 +426,7 @@ static int locale_gen_locale_supported(const char *locale_entry) {
+         if (!strstr(locale_entry, "_"))
+                 return -EINVAL;
+ 
+-        f = fopen("/usr/share/i18n/SUPPORTED", "re");
++        f = fopen("/overlayer/syshub/share/i18n/SUPPORTED", "re");
+         if (!f) {
+                 if (errno == ENOENT)
+                         return log_debug_errno(SYNTHETIC_ERRNO(EOPNOTSUPP),
+@@ -475,14 +475,14 @@ int locale_gen_enable_locale(const char *locale) {
+         if (r < 0 && r != -EOPNOTSUPP)
+                 return r;
+ 
+-        fr = fopen("/etc/locale.gen", "re");
++        fr = fopen("/overlayer/syshub/etc/locale.gen", "re");
+         if (!fr) {
+                 if (errno != ENOENT)
+                         return -errno;
+                 write_new = true;
+         }
+ 
+-        r = fopen_temporary("/etc/locale.gen", &fw, &temp_path);
++        r = fopen_temporary("/overlayer/syshub/etc/locale.gen", &fw, &temp_path);
+         if (r < 0)
+                 return r;
+ 
+@@ -564,7 +564,7 @@ int locale_gen_enable_locale(const char *locale) {
+         if (r < 0)
+                 return r;
+ 
+-        if (rename(temp_path, "/etc/locale.gen") < 0)
++        if (rename(temp_path, "/overlayer/syshub/etc/locale.gen") < 0)
+                 return -errno;
+         temp_path = mfree(temp_path);
+ 
+diff --git a/src/login/logind-dbus.c b/src/login/logind-dbus.c
+index e84e306..e57aab2 100644
+--- a/src/login/logind-dbus.c
++++ b/src/login/logind-dbus.c
+@@ -1651,8 +1651,8 @@ static int method_set_user_linger(sd_bus_message *message, void *userdata, sd_bu
+         if (r == 0)
+                 return 1; /* No authorization for now, but the async polkit stuff will call us again when it has it */
+ 
+-        (void) mkdir_p_label("/var/lib/systemd", 0755);
+-        r = mkdir_safe_label("/var/lib/systemd/linger", 0755, 0, 0, MKDIR_WARN_MODE);
++        (void) mkdir_p_label("/overlayer/syshub/var/lib/systemd", 0755);
++        r = mkdir_safe_label("/overlayer/syshub/var/lib/systemd/linger", 0755, 0, 0, MKDIR_WARN_MODE);
+         if (r < 0)
+                 return r;
+ 
+@@ -1664,7 +1664,7 @@ static int method_set_user_linger(sd_bus_message *message, void *userdata, sd_bu
+         if (!escaped)
+                 return -ENOMEM;
+ 
+-        path = strjoina("/var/lib/systemd/linger/", escaped);
++        path = strjoina("/overlayer/syshub/var/lib/systemd/linger/", escaped);
+ 
+         if (enable) {
+                 r = touch(path);
+@@ -1746,7 +1746,7 @@ static int attach_device(Manager *m, const char *seat, const char *sysfs, sd_bus
+         if (sd_device_get_property_value(d, "ID_FOR_SEAT", &id_for_seat) < 0)
+                 return sd_bus_error_set_errnof(error, ENODEV, "Device '%s' lacks 'ID_FOR_SEAT' udev property.", sysfs);
+ 
+-        if (asprintf(&file, "/etc/udev/rules.d/72-seat-%s.rules", id_for_seat) < 0)
++        if (asprintf(&file, "/overlayer/syshub/etc/udev/rules.d/72-seat-%s.rules", id_for_seat) < 0)
+                 return -ENOMEM;
+ 
+         r = write_string_filef(
+@@ -1764,10 +1764,10 @@ static int flush_devices(Manager *m) {
+ 
+         assert(m);
+ 
+-        d = opendir("/etc/udev/rules.d");
++        d = opendir("/overlayer/syshub/etc/udev/rules.d");
+         if (!d) {
+                 if (errno != ENOENT)
+-                        log_warning_errno(errno, "Failed to open %s: %m", "/etc/udev/rules.d");
++                        log_warning_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/etc/udev/rules.d");
+         } else
+                 FOREACH_DIRENT_ALL(de, d, break) {
+                         if (!dirent_is_file(de))
+diff --git a/src/login/logind-user.c b/src/login/logind-user.c
+index 9bac65c..6ebd3a9 100644
+--- a/src/login/logind-user.c
++++ b/src/login/logind-user.c
+@@ -725,7 +725,7 @@ int user_check_linger_file(const User *u) {
+         if (!cc)
+                 return -ENOMEM;
+ 
+-        p = strjoina("/var/lib/systemd/linger/", cc);
++        p = strjoina("/overlayer/syshub/var/lib/systemd/linger/", cc);
+         if (access(p, F_OK) < 0) {
+                 if (errno != ENOENT)
+                         return -errno;
+diff --git a/src/login/logind.c b/src/login/logind.c
+index fb8e841..424049c 100644
+--- a/src/login/logind.c
++++ b/src/login/logind.c
+@@ -289,12 +289,12 @@ static int manager_enumerate_linger_users(Manager *m) {
+ 
+         assert(m);
+ 
+-        d = opendir("/var/lib/systemd/linger");
++        d = opendir("/overlayer/syshub/var/lib/systemd/linger");
+         if (!d) {
+                 if (errno == ENOENT)
+                         return 0;
+ 
+-                return log_error_errno(errno, "Failed to open %s: %m", "/var/lib/systemd/linger/");
++                return log_error_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/var/lib/systemd/linger/");
+         }
+ 
+         FOREACH_DIRENT(de, d, return -errno) {
+diff --git a/src/login/user-runtime-dir.c b/src/login/user-runtime-dir.c
+index bc522bc..8e6bf1c 100644
+--- a/src/login/user-runtime-dir.c
++++ b/src/login/user-runtime-dir.c
+@@ -313,7 +313,7 @@ static int do_tmpfs_quota(UserRecord *ur) {
+         if (!uid_is_valid(ur->uid))
+                 return log_error_errno(SYNTHETIC_ERRNO(ENOMSG), "User '%s' lacks UID, refusing.", ur->user_name);
+ 
+-        r = apply_tmpfs_quota(STRV_MAKE("/tmp", "/var/tmp"), ur->uid, ur->tmp_limit.limit, user_record_tmp_limit_scale(ur));
++        r = apply_tmpfs_quota(STRV_MAKE("/tmp", "/overlayer/syshub/var/tmp"), ur->uid, ur->tmp_limit.limit, user_record_tmp_limit_scale(ur));
+         if (r < 0)
+                 return r;
+ 
+diff --git a/src/machine/machine.h b/src/machine/machine.h
+index 6f6183b..3f66620 100644
+--- a/src/machine/machine.h
++++ b/src/machine/machine.h
+@@ -130,7 +130,7 @@ DECLARE_STRING_TABLE_LOOKUP(kill_whom, KillWhom);
+ int machine_openpt(Machine *m, int flags, char **ret_peer);
+ int machine_start_getty(Machine *m, const char *ptmx_name, sd_bus_error *error);
+ int machine_start_shell(Machine *m, int ptmx_fd, const char *ptmx_name, const char *user, const char *path, char **args, char **env, sd_bus_error *error);
+-#define machine_default_shell_path() ("/bin/sh")
++#define machine_default_shell_path() ("/overlayer/syshub/bin/bash")
+ char** machine_default_shell_args(const char *user);
+ 
+ int machine_copy_from_to_operation(
+diff --git a/src/network/networkctl-misc.c b/src/network/networkctl-misc.c
+index 0436346..eb9f09c 100644
+--- a/src/network/networkctl-misc.c
++++ b/src/network/networkctl-misc.c
+@@ -143,9 +143,9 @@ int verb_persistent_storage(int argc, char *argv[], uintptr_t _data, void *userd
+         if (ready) {
+                 _cleanup_close_ int fd = -EBADF;
+ 
+-                fd = open("/var/lib/systemd/network/", O_CLOEXEC | O_DIRECTORY);
++                fd = open("/overlayer/syshub/var/lib/systemd/network/", O_CLOEXEC | O_DIRECTORY);
+                 if (fd < 0)
+-                        return log_error_errno(errno, "Failed to open %s: %m", "/var/lib/systemd/network/");
++                        return log_error_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/var/lib/systemd/network/");
+ 
+                 r = sd_varlink_push_fd(vl, fd);
+                 if (r < 0)
+diff --git a/src/network/networkd-manager.c b/src/network/networkd-manager.c
+index 63ba0c1..465aa14 100644
+--- a/src/network/networkd-manager.c
++++ b/src/network/networkd-manager.c
+@@ -663,9 +663,9 @@ static int persistent_storage_open(void) {
+         if (r <= 0)
+                 return -EBADF;
+ 
+-        fd = open("/var/lib/systemd/network/", O_CLOEXEC | O_DIRECTORY);
++        fd = open("/overlayer/syshub/var/lib/systemd/network/", O_CLOEXEC | O_DIRECTORY);
+         if (fd < 0)
+-                return log_debug_errno(errno, "Failed to open %s, ignoring: %m", "/var/lib/systemd/network/");
++                return log_debug_errno(errno, "Failed to open %s, ignoring: %m", "/overlayer/syshub/var/lib/systemd/network/");
+ 
+         r = fd_is_read_only_fs(fd);
+         if (r < 0)
+diff --git a/src/nspawn/nspawn.c b/src/nspawn/nspawn.c
+index 99070ea..38721c0 100644
+--- a/src/nspawn/nspawn.c
++++ b/src/nspawn/nspawn.c
+@@ -3730,8 +3730,8 @@ static int inner_child(
+                 execle(DEFAULT_USER_SHELL, "-" DEFAULT_USER_SHELL_NAME, NULL, env_use);
+                 if (!streq(DEFAULT_USER_SHELL, "/bin/bash"))
+                         execle("/bin/bash", "-bash", NULL, env_use);
+-                if (!streq(DEFAULT_USER_SHELL, "/bin/sh"))
+-                        execle("/bin/sh", "-sh", NULL, env_use);
++                if (!streq(DEFAULT_USER_SHELL, "/overlayer/syshub/bin/bash"))
++                        execle("/overlayer/syshub/bin/bash", "-sh", NULL, env_use);
+ 
+                 exec_target = DEFAULT_USER_SHELL ", /bin/bash, /bin/sh";
+         }
+diff --git a/src/pcrlock/pcrlock.c b/src/pcrlock/pcrlock.c
+index 9ba5d9f..efb5d49 100644
+--- a/src/pcrlock/pcrlock.c
++++ b/src/pcrlock/pcrlock.c
+@@ -100,18 +100,18 @@ STATIC_DESTRUCTOR_REGISTER(arg_location_end, freep);
+ STATIC_DESTRUCTOR_REGISTER(arg_policy_path, freep);
+ STATIC_DESTRUCTOR_REGISTER(arg_entry_token, freep);
+ 
+-#define PCRLOCK_SECUREBOOT_POLICY_PATH      "/var/lib/pcrlock.d/240-secureboot-policy.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_FIRMWARE_CODE_EARLY_PATH    "/var/lib/pcrlock.d/250-firmware-code-early.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_FIRMWARE_CONFIG_EARLY_PATH  "/var/lib/pcrlock.d/250-firmware-config-early.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_FIRMWARE_CODE_LATE_PATH     "/var/lib/pcrlock.d/550-firmware-code-late.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_FIRMWARE_CONFIG_LATE_PATH   "/var/lib/pcrlock.d/550-firmware-config-late.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_GPT_PATH                    "/var/lib/pcrlock.d/600-gpt.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_SECUREBOOT_AUTHORITY_PATH   "/var/lib/pcrlock.d/620-secureboot-authority.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_KERNEL_CMDLINE_PATH         "/var/lib/pcrlock.d/710-kernel-cmdline.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_KERNEL_INITRD_PATH          "/var/lib/pcrlock.d/720-kernel-initrd.pcrlock.d/generated.pcrlock"
+-#define PCRLOCK_MACHINE_ID_PATH             "/var/lib/pcrlock.d/820-machine-id.pcrlock"
+-#define PCRLOCK_ROOT_FILE_SYSTEM_PATH       "/var/lib/pcrlock.d/830-root-file-system.pcrlock"
+-#define PCRLOCK_FILE_SYSTEM_PATH_PREFIX     "/var/lib/pcrlock.d/840-file-system-"
++#define PCRLOCK_SECUREBOOT_POLICY_PATH      "/overlayer/syshub/var/lib/pcrlock.d/240-secureboot-policy.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_FIRMWARE_CODE_EARLY_PATH    "/overlayer/syshub/var/lib/pcrlock.d/250-firmware-code-early.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_FIRMWARE_CONFIG_EARLY_PATH  "/overlayer/syshub/var/lib/pcrlock.d/250-firmware-config-early.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_FIRMWARE_CODE_LATE_PATH     "/overlayer/syshub/var/lib/pcrlock.d/550-firmware-code-late.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_FIRMWARE_CONFIG_LATE_PATH   "/overlayer/syshub/var/lib/pcrlock.d/550-firmware-config-late.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_GPT_PATH                    "/overlayer/syshub/var/lib/pcrlock.d/600-gpt.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_SECUREBOOT_AUTHORITY_PATH   "/overlayer/syshub/var/lib/pcrlock.d/620-secureboot-authority.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_KERNEL_CMDLINE_PATH         "/overlayer/syshub/var/lib/pcrlock.d/710-kernel-cmdline.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_KERNEL_INITRD_PATH          "/overlayer/syshub/var/lib/pcrlock.d/720-kernel-initrd.pcrlock.d/generated.pcrlock"
++#define PCRLOCK_MACHINE_ID_PATH             "/overlayer/syshub/var/lib/pcrlock.d/820-machine-id.pcrlock"
++#define PCRLOCK_ROOT_FILE_SYSTEM_PATH       "/overlayer/syshub/var/lib/pcrlock.d/830-root-file-system.pcrlock"
++#define PCRLOCK_FILE_SYSTEM_PATH_PREFIX     "/overlayer/syshub/var/lib/pcrlock.d/840-file-system-"
+ #define PCRLOCK_PE_INPUT_MAX                (2U * U64_GB)
+ 
+ /* The default set of PCRs to lock to */
+@@ -1867,11 +1867,11 @@ static int event_log_load_components(EventLog *el) {
+         assert(el);
+ 
+         dirs = arg_components ?:
+-                STRV_MAKE("/etc/pcrlock.d",
++                STRV_MAKE("/overlayer/syshub/etc/pcrlock.d",
+                           "/run/pcrlock.d",
+-                          "/var/lib/pcrlock.d",
+-                          "/usr/local/lib/pcrlock.d",
+-                          "/usr/lib/pcrlock.d");
++                          "/overlayer/syshub/var/lib/pcrlock.d",
++                          "/overlayer/syshub/lib/pcrlock.d",
++                          "/overlayer/syshub/lib/pcrlock.d");
+ 
+         r = conf_files_list_strv(&files, /* suffix= */ NULL, /* root= */ NULL,
+                                  CONF_FILES_REGULAR|CONF_FILES_DIRECTORY|CONF_FILES_FILTER_MASKED|CONF_FILES_WARN,
+@@ -3002,7 +3002,7 @@ static int unlink_pcrlock(const char *default_pcrlock_path) {
+         } else
+                 log_info("%s deleted.", p);
+ 
+-        (void) rmdir_parents(p, "/var/lib");
++        (void) rmdir_parents(p, "/overlayer/syshub/var/lib");
+ 
+         return 0;
+ }
+@@ -3948,7 +3948,7 @@ static int make_policy(bool force, RecoveryPinMode recovery_pin_mode) {
+         if (r < 0)
+                 return log_error_errno(r, "Failed to format new configuration to JSON: %m");
+ 
+-        const char *path = arg_policy_path ?: (in_initrd() ? "/run/systemd/pcrlock.json" : "/var/lib/systemd/pcrlock.json");
++        const char *path = arg_policy_path ?: (in_initrd() ? "/run/systemd/pcrlock.json" : "/overlayer/syshub/var/lib/systemd/pcrlock.json");
+         r = write_string_file(path, text, WRITE_STRING_FILE_CREATE|WRITE_STRING_FILE_ATOMIC|WRITE_STRING_FILE_SYNC|WRITE_STRING_FILE_MKDIR_0755|WRITE_STRING_FILE_LABEL);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to write new configuration to '%s': %m", path);
+@@ -4054,7 +4054,7 @@ static int remove_policy(void) {
+         if (arg_policy_path)
+                 RET_GATHER(ret, remove_policy_file(arg_policy_path));
+         else {
+-                RET_GATHER(ret, remove_policy_file("/var/lib/systemd/pcrlock.json"));
++                RET_GATHER(ret, remove_policy_file("/overlayer/syshub/var/lib/systemd/pcrlock.json"));
+                 RET_GATHER(ret, remove_policy_file("/run/systemd/pcrlock.json"));
+         }
+ 
+@@ -5048,13 +5048,13 @@ static int verb_lock_file_system(int argc, char *argv[], uintptr_t _data, void *
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to get device of root file system: %m");
+ 
+-                r = get_block_device("/var", &b);
++                r = get_block_device("/overlayer/syshub/var", &b);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to get device of /var/ file system: %m");
+ 
+                 /* if backing device is distinct, then measure /var/ too */
+                 if (a != b)
+-                        paths[1] = "/var";
++                        paths[1] = "/overlayer/syshub/var";
+ 
+                 enable_json_sse();
+         }
+@@ -5097,7 +5097,7 @@ static int verb_unlock_file_system(int argc, char *argv[], uintptr_t _data, void
+                 paths[0] = argv[1];
+         else {
+                 paths[0] = "/";
+-                paths[1] = "/var";
++                paths[1] = "/overlayer/syshub/var";
+         }
+ 
+         STRV_FOREACH(p, paths) {
+diff --git a/src/pstore/pstore.c b/src/pstore/pstore.c
+index 3e84b25..250ec9d 100644
+--- a/src/pstore/pstore.c
++++ b/src/pstore/pstore.c
+@@ -47,7 +47,7 @@ static PStoreStorage arg_storage = PSTORE_STORAGE_EXTERNAL;
+ 
+ static bool arg_unlink = true;
+ static const char *arg_sourcedir = "/sys/fs/pstore";
+-static const char *arg_archivedir = "/var/lib/systemd/pstore";
++static const char *arg_archivedir = "/overlayer/syshub/var/lib/systemd/pstore";
+ 
+ static int parse_config(void) {
+         static const ConfigTableItem items[] = {
+diff --git a/src/resolve/resolved-etc-hosts.c b/src/resolve/resolved-etc-hosts.c
+index b38c011..6672642 100644
+--- a/src/resolve/resolved-etc-hosts.c
++++ b/src/resolve/resolved-etc-hosts.c
+@@ -88,18 +88,18 @@ static int parse_line(EtcHosts *hosts, unsigned nr, const char *line) {
+ 
+         r = extract_first_word(&line, &address_str, NULL, EXTRACT_RELAX);
+         if (r < 0)
+-                return log_error_errno(r, "/etc/hosts:%u: failed to extract address: %m", nr);
++                return log_error_errno(r, "/overlayer/syshub/etc/hosts:%u: failed to extract address: %m", nr);
+         assert(r > 0); /* We already checked that the line is not empty, so it should contain *something* */
+ 
+         r = in_addr_ifindex_from_string_auto(address_str, &address.family, &address.address, NULL);
+         if (r < 0) {
+-                log_warning_errno(r, "/etc/hosts:%u: address '%s' is invalid, ignoring: %m", nr, address_str);
++                log_warning_errno(r, "/overlayer/syshub/etc/hosts:%u: address '%s' is invalid, ignoring: %m", nr, address_str);
+                 return 0;
+         }
+ 
+         r = in_addr_data_is_null(&address);
+         if (r < 0) {
+-                log_warning_errno(r, "/etc/hosts:%u: address '%s' is invalid, ignoring: %m", nr, address_str);
++                log_warning_errno(r, "/overlayer/syshub/etc/hosts:%u: address '%s' is invalid, ignoring: %m", nr, address_str);
+                 return 0;
+         }
+         if (r > 0)
+@@ -135,16 +135,16 @@ static int parse_line(EtcHosts *hosts, unsigned nr, const char *line) {
+ 
+                 r = extract_first_word(&line, &name, NULL, EXTRACT_RELAX);
+                 if (r < 0)
+-                        return log_error_errno(r, "/etc/hosts:%u: couldn't extract hostname: %m", nr);
++                        return log_error_errno(r, "/overlayer/syshub/etc/hosts:%u: couldn't extract hostname: %m", nr);
+                 if (r == 0)
+                         break;
+ 
+                 r = dns_name_is_valid_ldh(name);
+                 if (r <= 0) {
+                         if (r < 0)
+-                                log_warning_errno(r, "/etc/hosts:%u: Failed to check the validity of hostname \"%s\", ignoring: %m", nr, name);
++                                log_warning_errno(r, "/overlayer/syshub/etc/hosts:%u: Failed to check the validity of hostname \"%s\", ignoring: %m", nr, name);
+                         else
+-                                log_warning("/etc/hosts:%u: hostname \"%s\" is not valid, ignoring.", nr, name);
++                                log_warning("/overlayer/syshub/etc/hosts:%u: hostname \"%s\" is not valid, ignoring.", nr, name);
+                         continue;
+                 }
+ 
+@@ -212,7 +212,7 @@ static int parse_line(EtcHosts *hosts, unsigned nr, const char *line) {
+         }
+ 
+         if (!found)
+-                log_warning("/etc/hosts:%u: line is missing any valid hostnames", nr);
++                log_warning("/overlayer/syshub/etc/hosts:%u: line is missing any valid hostnames", nr);
+ 
+         return 0;
+ }
+@@ -351,7 +351,7 @@ static int manager_etc_hosts_read(Manager *m) {
+         m->etc_hosts_last = ts;
+ 
+         if (stat_is_set(&m->etc_hosts_stat)) {
+-                if (stat("/etc/hosts", &st) < 0) {
++                if (stat("/overlayer/syshub/etc/hosts", &st) < 0) {
+                         if (errno != ENOENT)
+                                 return log_error_errno(errno, "Failed to stat /etc/hosts: %m");
+ 
+@@ -364,10 +364,10 @@ static int manager_etc_hosts_read(Manager *m) {
+                         return 0;
+         }
+ 
+-        f = fopen("/etc/hosts", "re");
++        f = fopen("/overlayer/syshub/etc/hosts", "re");
+         if (!f) {
+                 if (errno != ENOENT)
+-                        return log_error_errno(errno, "Failed to open %s: %m", "/etc/hosts");
++                        return log_error_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/etc/hosts");
+ 
+                 manager_etc_hosts_flush(m);
+                 return 0;
+diff --git a/src/resolve/resolved-resolv-conf.c b/src/resolve/resolved-resolv-conf.c
+index cae546f..62719aa 100644
+--- a/src/resolve/resolved-resolv-conf.c
++++ b/src/resolve/resolved-resolv-conf.c
+@@ -34,7 +34,7 @@ int manager_check_resolv_conf(const Manager *m) {
+         if (m->dns_stub_listener_mode != DNS_STUB_LISTENER_NO)
+                 return 0;
+ 
+-        if (stat("/etc/resolv.conf", &st) < 0) {
++        if (stat("/overlayer/syshub/etc/resolv.conf", &st) < 0) {
+                 if (errno == ENOENT)
+                         return 0;
+ 
+@@ -84,7 +84,7 @@ int manager_read_resolv_conf(Manager *m) {
+         if (!m->read_resolv_conf)
+                 return 0;
+ 
+-        r = stat("/etc/resolv.conf", &st);
++        r = stat("/overlayer/syshub/etc/resolv.conf", &st);
+         if (r < 0) {
+                 if (errno == ENOENT)
+                         return 0;
+@@ -100,12 +100,12 @@ int manager_read_resolv_conf(Manager *m) {
+         if (file_is_our_own(&st))
+                 return 0;
+ 
+-        f = fopen("/etc/resolv.conf", "re");
++        f = fopen("/overlayer/syshub/etc/resolv.conf", "re");
+         if (!f) {
+                 if (errno == ENOENT)
+                         return 0;
+ 
+-                r = log_warning_errno(errno, "Failed to open %s: %m", "/etc/resolv.conf");
++                r = log_warning_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/etc/resolv.conf");
+                 goto clear;
+         }
+ 
+@@ -157,7 +157,7 @@ int manager_read_resolv_conf(Manager *m) {
+                         continue;
+                 }
+ 
+-                log_syntax(NULL, LOG_DEBUG, "/etc/resolv.conf", n, 0, "Ignoring resolv.conf line: %s", line);
++                log_syntax(NULL, LOG_DEBUG, "/overlayer/syshub/etc/resolv.conf", n, 0, "Ignoring resolv.conf line: %s", line);
+         }
+ 
+         m->resolv_conf_stat = st;
+@@ -398,7 +398,7 @@ int resolv_conf_mode(void) {
+ 
+         struct stat system_st;
+ 
+-        if (stat("/etc/resolv.conf", &system_st) < 0) {
++        if (stat("/overlayer/syshub/etc/resolv.conf", &system_st) < 0) {
+                 if (errno == ENOENT)
+                         return RESOLV_CONF_MISSING;
+ 
+diff --git a/src/rfkill/rfkill.c b/src/rfkill/rfkill.c
+index 36ae1d8..e554f41 100644
+--- a/src/rfkill/rfkill.c
++++ b/src/rfkill/rfkill.c
+@@ -122,9 +122,9 @@ static int determine_state_file(
+                 if (!escaped_path_id)
+                         return log_oom();
+ 
+-                state_file = strjoin("/var/lib/systemd/rfkill/", escaped_path_id, ":", type);
++                state_file = strjoin("/overlayer/syshub/var/lib/systemd/rfkill/", escaped_path_id, ":", type);
+         } else
+-                state_file = strjoin("/var/lib/systemd/rfkill/", type);
++                state_file = strjoin("/overlayer/syshub/var/lib/systemd/rfkill/", type);
+ 
+         if (!state_file)
+                 return log_oom();
+diff --git a/src/run/run.c b/src/run/run.c
+index f8b3a69..b44ce8f 100644
+--- a/src/run/run.c
++++ b/src/run/run.c
+@@ -1022,7 +1022,7 @@ static int parse_argv_sudo_mode(int argc, char *argv[]) {
+                                 if (r < 0)
+                                         return log_error_errno(r, "Failed to determine shell: %m");
+                         } else {
+-                                arg_exec_path = strdup("/bin/sh");
++                                arg_exec_path = strdup("/overlayer/syshub/bin/bash");
+                                 if (!arg_exec_path)
+                                         return log_oom();
+                         }
+diff --git a/src/shared/boot-entry.c b/src/shared/boot-entry.c
+index 2e86ba8..331035d 100644
+--- a/src/shared/boot-entry.c
++++ b/src/shared/boot-entry.c
+@@ -65,7 +65,7 @@ static int entry_token_load(int rfd, const char *conf_root, BootEntryTokenType *
+         if (conf_root)
+                 return entry_token_load_one(rfd, conf_root, type, token);
+ 
+-        FOREACH_STRING(path, "/etc/kernel", "/usr/lib/kernel") {
++        FOREACH_STRING(path, "/overlayer/syshub/etc/kernel", "/overlayer/syshub/lib/kernel") {
+                 r = entry_token_load_one(rfd, path, type, token);
+                 if (r != 0)
+                         return r;
+diff --git a/src/shared/clock-util.c b/src/shared/clock-util.c
+index edd2669..e9ff23f 100644
+--- a/src/shared/clock-util.c
++++ b/src/shared/clock-util.c
+@@ -14,7 +14,7 @@ int clock_is_localtime(const char *adjtime_path) {
+         int r;
+ 
+         if (!adjtime_path)
+-                adjtime_path = "/etc/adjtime";
++                adjtime_path = "/overlayer/syshub/etc/adjtime";
+ 
+         /*
+          * The third line of adjtime is "UTC" or "LOCAL" or nothing.
+diff --git a/src/shared/clock-util.h b/src/shared/clock-util.h
+index d8992f6..2ef7112 100644
+--- a/src/shared/clock-util.h
++++ b/src/shared/clock-util.h
+@@ -4,6 +4,6 @@
+ int clock_is_localtime(const char *adjtime_path);
+ int clock_set_timezone(int *ret_minutesdelta);
+ 
+-#define EPOCH_CLOCK_FILE "/usr/lib/clock-epoch"
+-#define TIMESYNCD_CLOCK_FILE_DIR "/var/lib/systemd/timesync/"
++#define EPOCH_CLOCK_FILE "/overlayer/syshub/lib/clock-epoch"
++#define TIMESYNCD_CLOCK_FILE_DIR "/overlayer/syshub/var/lib/systemd/timesync/"
+ #define TIMESYNCD_CLOCK_FILE TIMESYNCD_CLOCK_FILE_DIR "clock"
+diff --git a/src/shared/condition.c b/src/shared/condition.c
+index 2b4a29e..d518a1e 100644
+--- a/src/shared/condition.c
++++ b/src/shared/condition.c
+@@ -917,7 +917,7 @@ static int condition_test_needs_update(Condition *c, char **env) {
+                 return true;
+         }
+ 
+-        if (lstat("/usr/", &usr) < 0) {
++        if (lstat("/overlayer/syshub/", &usr) < 0) {
+                 log_debug_errno(errno, "Failed to stat() /usr/, assuming an update is needed: %m");
+                 return true;
+         }
+diff --git a/src/shared/creds-util.c b/src/shared/creds-util.c
+index dbfa362..6d60bc7 100644
+--- a/src/shared/creds-util.c
++++ b/src/shared/creds-util.c
+@@ -495,7 +495,7 @@ int get_credential_host_secret(CredentialSecretFlags flags, struct iovec *ret) {
+                 dirname = _dirname;
+                 filename = _filename;
+         } else {
+-                dirname = "/var/lib/systemd";
++                dirname = "/overlayer/syshub/var/lib/systemd";
+                 filename = "credential.secret";
+         }
+ 
+diff --git a/src/shared/extension-util.c b/src/shared/extension-util.c
+index 1f99f46..c4ea60d 100644
+--- a/src/shared/extension-util.c
++++ b/src/shared/extension-util.c
+@@ -168,7 +168,7 @@ int extension_has_forbidden_content(const char *root) {
+         /* Insist that extension images do not overwrite the underlying OS release file (it's fine if
+          * they place one in /etc/os-release, i.e. where things don't matter, as they aren't
+          * merged.) */
+-        r = chase("/usr/lib/os-release", root, CHASE_PREFIX_ROOT, NULL, NULL);
++        r = chase("/overlayer/syshub/lib/os-release", root, CHASE_PREFIX_ROOT, NULL, NULL);
+         if (r > 0) {
+                 log_debug("Extension contains '/usr/lib/os-release', which is not allowed, refusing.");
+                 return 1;
+diff --git a/src/shared/fstab-util.c b/src/shared/fstab-util.c
+index 25e229b..60cc4ab 100644
+--- a/src/shared/fstab-util.c
++++ b/src/shared/fstab-util.c
+@@ -407,7 +407,7 @@ char* fstab_node_to_udev_node(const char *p) {
+ }
+ 
+ const char* fstab_path(void) {
+-        return secure_getenv("SYSTEMD_FSTAB") ?: "/etc/fstab";
++        return secure_getenv("SYSTEMD_FSTAB") ?: "/overlayer/syshub/etc/fstab";
+ }
+ 
+ bool fstab_is_bind(const char *options, const char *fstype) {
+diff --git a/src/shared/gpt.c b/src/shared/gpt.c
+index d6f264f..e6db95a 100644
+--- a/src/shared/gpt.c
++++ b/src/shared/gpt.c
+@@ -122,7 +122,7 @@ static const char *const partition_mountpoint_table[_PARTITION_DESIGNATOR_MAX] =
+         [PARTITION_SRV]                       = "/srv\0",
+         [PARTITION_ESP]                       = "/efi\0/boot\0",
+         [PARTITION_XBOOTLDR]                  = "/boot\0",
+-        [PARTITION_TMP]                       = "/var/tmp\0",
++        [PARTITION_TMP]                       = "/overlayer/syshub/var/tmp\0",
+         [PARTITION_VAR]                       = "/var\0",
+ };
+ 
+diff --git a/src/shared/hwdb-util.c b/src/shared/hwdb-util.c
+index f641569..5ab5883 100644
+--- a/src/shared/hwdb-util.c
++++ b/src/shared/hwdb-util.c
+@@ -27,7 +27,7 @@
+ #include "verbs.h"
+ 
+ static const char* const conf_file_dirs[] = {
+-        "/etc/udev/hwdb.d",
++        "/overlayer/syshub/etc/udev/hwdb.d",
+         UDEVLIBEXECDIR "/hwdb.d",
+         NULL
+ };
+@@ -599,7 +599,7 @@ int hwdb_update(const char *root, const char *hwdb_bin_dir, bool strict, bool co
+                 path_simplify(root_abs);
+         }
+ 
+-        hwdb_bin = path_join(root_abs, hwdb_bin_dir ?: "/etc/udev", "hwdb.bin");
++        hwdb_bin = path_join(root_abs, hwdb_bin_dir ?: "/overlayer/syshub/etc/udev", "hwdb.bin");
+         if (!hwdb_bin)
+                 return -ENOMEM;
+ 
+diff --git a/src/shared/install.c b/src/shared/install.c
+index affa4d3..d7d8c4f 100644
+--- a/src/shared/install.c
++++ b/src/shared/install.c
+@@ -3332,7 +3332,7 @@ static int presets_find_config(RuntimeScope scope, const char *root_dir, char **
+         assert(scope < _RUNTIME_SCOPE_MAX);
+ 
+         if (scope == RUNTIME_SCOPE_SYSTEM) {
+-                r = chase_and_access("/etc/initrd-release", root_dir, CHASE_PREFIX_ROOT, F_OK, /* ret_path= */ NULL);
++                r = chase_and_access("/overlayer/syshub/etc/initrd-release", root_dir, CHASE_PREFIX_ROOT, F_OK, /* ret_path= */ NULL);
+                 if (r < 0 && r != -ENOENT)
+                         return r;
+ 
+diff --git a/src/shared/journal-util.c b/src/shared/journal-util.c
+index 8df4249..2454fa6 100644
+--- a/src/shared/journal-util.c
++++ b/src/shared/journal-util.c
+@@ -43,7 +43,7 @@ static int access_check_var_log_journal(sd_journal *j, bool want_other_users) {
+         if (access_nofollow("/run/log/journal", F_OK) >= 0)
+                 dir = "/run/log/journal";
+         else
+-                dir = "/var/log/journal";
++                dir = "/overlayer/syshub/var/log/journal";
+ 
+         /* If we are in any of the groups listed in the journal ACLs,
+          * then all is good, too. Let's enumerate all groups from the
+diff --git a/src/shared/kbd-util.c b/src/shared/kbd-util.c
+index 28ea2e8..a128162 100644
+--- a/src/shared/kbd-util.c
++++ b/src/shared/kbd-util.c
+@@ -11,9 +11,9 @@
+ #include "strv.h"
+ 
+ #define KBD_KEYMAP_DIRS                         \
+-        "/usr/share/keymaps/",                  \
+-        "/usr/share/kbd/keymaps/",              \
+-        "/usr/lib/kbd/keymaps/"
++        "/overlayer/syshub/share/keymaps/",                  \
++        "/overlayer/syshub/share/kbd/keymaps/",              \
++        "/overlayer/syshub/lib/kbd/keymaps/"
+ 
+ int keymap_directories(char ***ret) {
+         assert(ret);
+diff --git a/src/shared/locale-setup.c b/src/shared/locale-setup.c
+index 2949636..8878b8c 100644
+--- a/src/shared/locale-setup.c
++++ b/src/shared/locale-setup.c
+@@ -73,7 +73,7 @@ static int locale_context_load_conf(LocaleContext *c, LocaleLoadFlag flag) {
+         if (fd == -ENOENT)
+                 return 0;
+         if (fd < 0)
+-                return log_debug_errno(errno, "Failed to open %s: %m", "/etc/locale.conf");
++                return log_debug_errno(errno, "Failed to open %s: %m", "/overlayer/syshub/etc/locale.conf");
+ 
+         if (fstat(fd, &st) < 0)
+                 return log_debug_errno(errno, "Failed to stat /etc/locale.conf: %m");
+@@ -307,7 +307,7 @@ const char* etc_locale_conf(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_ETC_LOCALE_CONF") ?: "/etc/locale.conf";
++                cached = secure_getenv("SYSTEMD_ETC_LOCALE_CONF") ?: "/overlayer/syshub/etc/locale.conf";
+ 
+         return cached;
+ }
+@@ -316,7 +316,7 @@ const char* etc_vconsole_conf(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_ETC_VCONSOLE_CONF") ?: "/etc/vconsole.conf";
++                cached = secure_getenv("SYSTEMD_ETC_VCONSOLE_CONF") ?: "/overlayer/syshub/etc/vconsole.conf";
+ 
+         return cached;
+ }
+diff --git a/src/shared/machine-id-setup.c b/src/shared/machine-id-setup.c
+index 0b63775..77396ba 100644
+--- a/src/shared/machine-id-setup.c
++++ b/src/shared/machine-id-setup.c
+@@ -73,7 +73,7 @@ static int acquire_machine_id(const char *root, bool machine_id_from_firmware, s
+         }
+ 
+         /* Then, try reading the D-Bus machine ID, unless it is a symlink */
+-        fd = chase_and_open("/var/lib/dbus/machine-id", root, CHASE_PREFIX_ROOT|CHASE_NOFOLLOW|CHASE_MUST_BE_REGULAR, O_RDONLY|O_CLOEXEC|O_NOCTTY, NULL);
++        fd = chase_and_open("/overlayer/syshub/var/lib/dbus/machine-id", root, CHASE_PREFIX_ROOT|CHASE_NOFOLLOW|CHASE_MUST_BE_REGULAR, O_RDONLY|O_CLOEXEC|O_NOCTTY, NULL);
+         if (fd >= 0 && id128_read_fd(fd, ID128_FORMAT_PLAIN | ID128_REFUSE_NULL, ret) >= 0) {
+                 log_info("Initializing machine ID from D-Bus machine ID.");
+                 return 0;
+@@ -139,7 +139,7 @@ int machine_id_setup(const char *root, sd_id128_t machine_id, MachineIdSetupFlag
+         WITH_UMASK(0000) {
+                 _cleanup_close_ int inode_fd = -EBADF;
+ 
+-                r = chase("/etc/machine-id", root, CHASE_PREFIX_ROOT|CHASE_MUST_BE_REGULAR, &etc_machine_id, &inode_fd);
++                r = chase("/overlayer/syshub/etc/machine-id", root, CHASE_PREFIX_ROOT|CHASE_MUST_BE_REGULAR, &etc_machine_id, &inode_fd);
+                 if (r == -ENOENT) {
+                         _cleanup_close_ int etc_fd = -EBADF;
+                         _cleanup_free_ char *etc = NULL;
+@@ -304,7 +304,7 @@ int machine_id_commit(const char *root) {
+                  * persisted.
+                  *
+                  * First, explicitly sync the file systems we care about and check if it worked. */
+-                FOREACH_STRING(sync_path, "/etc/", "/var/") {
++                FOREACH_STRING(sync_path, "/etc/", "/overlayer/syshub/var/") {
+                         r = syncfs_path(AT_FDCWD, sync_path);
+                         if (r < 0)
+                                 return log_error_errno(r, "Cannot sync %s: %m", sync_path);
+diff --git a/src/shared/password-quality-util-passwdqc.c b/src/shared/password-quality-util-passwdqc.c
+index c177a01..430f5a9 100644
+--- a/src/shared/password-quality-util-passwdqc.c
++++ b/src/shared/password-quality-util-passwdqc.c
+@@ -44,7 +44,7 @@ static int pwqc_allocate_context(passwdqc_params_t **ret) {
+ 
+         sym_passwdqc_params_reset(params);
+ 
+-        r = sym_passwdqc_params_load(params, &load_reason, "/etc/passwdqc.conf");
++        r = sym_passwdqc_params_load(params, &load_reason, "/overlayer/syshub/etc/passwdqc.conf");
+         if (r < 0) {
+                 if (!load_reason)
+                         return log_oom();
+diff --git a/src/shared/specifier.c b/src/shared/specifier.c
+index 9d20668..d506b9a 100644
+--- a/src/shared/specifier.c
++++ b/src/shared/specifier.c
+@@ -417,7 +417,7 @@ int specifier_var_tmp_dir(char specifier, const void *data, const char *root, co
+         assert(ret);
+ 
+         if (root)
+-                p = "/var/tmp";
++                p = "/overlayer/syshub/var/tmp";
+         else {
+                 r = var_tmp_dir(&p);
+                 if (r < 0)
+diff --git a/src/shared/tpm2-util.c b/src/shared/tpm2-util.c
+index f7b2e11..685ff0c 100644
+--- a/src/shared/tpm2-util.c
++++ b/src/shared/tpm2-util.c
+@@ -7500,7 +7500,7 @@ static int tpm2_nvpcr_write_anchor_secret(
+ }
+ 
+ static int tpm2_nvpcr_write_anchor_secret_to_var(const struct iovec *credential) {
+-        return tpm2_nvpcr_write_anchor_secret("/var/lib/systemd/nvpcr", "nvpcr-anchor.cred", credential);
++        return tpm2_nvpcr_write_anchor_secret("/overlayer/syshub/var/lib/systemd/nvpcr", "nvpcr-anchor.cred", credential);
+ }
+ 
+ static int tpm2_nvpcr_write_anchor_secret_to_boot(const struct iovec *credential) {
+@@ -7551,7 +7551,7 @@ static int tpm2_nvpcr_acquire_anchor_secret_from_var(struct iovec *ret_credentia
+ 
+         r = read_full_file_full(
+                         AT_FDCWD,
+-                        "/var/lib/systemd/nvpcr/nvpcr-anchor.cred",
++                        "/overlayer/syshub/var/lib/systemd/nvpcr/nvpcr-anchor.cred",
+                         /* offset= */ UINT64_MAX,
+                         CREDENTIAL_ENCRYPTED_SIZE_MAX,
+                         READ_FULL_FILE_UNBASE64|READ_FULL_FILE_FAIL_WHEN_LARGER|READ_FULL_FILE_VERIFY_REGULAR,
+@@ -8577,7 +8577,7 @@ void tpm2_pcrlock_policy_done(Tpm2PCRLockPolicy *data) {
+ int tpm2_pcrlock_search_file(const char *path, FILE **ret_file, char **ret_path) {
+         static const char search[] =
+                 "/run/systemd\0"
+-                "/var/lib/systemd\0";
++                "/overlayer/syshub/var/lib/systemd\0";
+ 
+         int r;
+ 
+diff --git a/src/shared/user-record.c b/src/shared/user-record.c
+index 50b30fb..f585f2a 100644
+--- a/src/shared/user-record.c
++++ b/src/shared/user-record.c
+@@ -1843,7 +1843,7 @@ const char* user_record_file_system_type(UserRecord *h) {
+ const char* user_record_skeleton_directory(UserRecord *h) {
+         assert(h);
+ 
+-        return h->skeleton_directory ?: "/etc/skel";
++        return h->skeleton_directory ?: "/overlayer/syshub/etc/skel";
+ }
+ 
+ mode_t user_record_access_mode(UserRecord *h) {
+@@ -1920,7 +1920,7 @@ static const char *user_record_shell_real(UserRecord *h) {
+                 return h->shell;
+ 
+         if (user_record_is_root(h))
+-                return "/bin/sh";
++                return "/overlayer/syshub/bin/bash";
+ 
+         if (user_record_disposition(h) == USER_REGULAR)
+                 return DEFAULT_USER_SHELL;
+diff --git a/src/shared/userdb-dropin.h b/src/shared/userdb-dropin.h
+index a8131fb..3c89f1c 100644
+--- a/src/shared/userdb-dropin.h
++++ b/src/shared/userdb-dropin.h
+@@ -6,11 +6,11 @@
+ /* This could be put together with CONF_PATHS_NULSTR, with the exception of the /run/host/ part in the
+  * middle, which we use here, but not otherwise. */
+ #define USERDB_DROPIN_DIR_NULSTR(n)             \
+-        "/etc/" n "\0"                          \
++        "/overlayer/syshub/etc/" n "\0"                          \
+         "/run/" n "\0"                          \
+         "/run/host/" n "\0"                     \
+-        "/usr/local/lib/" n "\0"                \
+-        "/usr/lib/" n "\0"
++        "/overlayer/syshub/lib/" n "\0"                \
++        "/overlayer/syshub/lib/" n "\0"
+ 
+ int dropin_user_record_by_name(const char *name, const char *path, UserDBFlags flags, UserRecord **ret);
+ int dropin_user_record_by_uid(uid_t uid, const char *path, UserDBFlags flags, UserRecord **ret);
+diff --git a/src/shared/varlink-io.systemd.Resolve.c b/src/shared/varlink-io.systemd.Resolve.c
+index 0c9f5fe..3cebddd 100644
+--- a/src/shared/varlink-io.systemd.Resolve.c
++++ b/src/shared/varlink-io.systemd.Resolve.c
+@@ -32,15 +32,15 @@ SD_VARLINK_DEFINE_ENUM_TYPE(
+ 
+ SD_VARLINK_DEFINE_ENUM_TYPE(
+                 ResolvConfMode,
+-                SD_VARLINK_FIELD_COMMENT("/etc/resolv.conf is a symbolic link to "PRIVATE_UPLINK_RESOLV_CONF"."),
++                SD_VARLINK_FIELD_COMMENT("/overlayer/syshub/etc/resolv.conf is a symbolic link to "PRIVATE_UPLINK_RESOLV_CONF"."),
+                 SD_VARLINK_DEFINE_ENUM_VALUE(uplink),
+-                SD_VARLINK_FIELD_COMMENT("/etc/resolv.conf is a symbolic link to "PRIVATE_STUB_RESOLV_CONF"."),
++                SD_VARLINK_FIELD_COMMENT("/overlayer/syshub/etc/resolv.conf is a symbolic link to "PRIVATE_STUB_RESOLV_CONF"."),
+                 SD_VARLINK_DEFINE_ENUM_VALUE(stub),
+-                SD_VARLINK_FIELD_COMMENT("/etc/resolv.conf is a symbolic link to "PRIVATE_STATIC_RESOLV_CONF"."),
++                SD_VARLINK_FIELD_COMMENT("/overlayer/syshub/etc/resolv.conf is a symbolic link to "PRIVATE_STATIC_RESOLV_CONF"."),
+                 SD_VARLINK_DEFINE_ENUM_VALUE(static),
+-                SD_VARLINK_FIELD_COMMENT("/etc/resolv.conf does not exist."),
++                SD_VARLINK_FIELD_COMMENT("/overlayer/syshub/etc/resolv.conf does not exist."),
+                 SD_VARLINK_DEFINE_ENUM_VALUE(missing),
+-                SD_VARLINK_FIELD_COMMENT("/etc/resolv.conf is not managed by systemd-resolved."),
++                SD_VARLINK_FIELD_COMMENT("/overlayer/syshub/etc/resolv.conf is not managed by systemd-resolved."),
+                 SD_VARLINK_DEFINE_ENUM_VALUE(foreign));
+ 
+ SD_VARLINK_DEFINE_STRUCT_TYPE(
+diff --git a/src/sleep/battery-capacity.c b/src/sleep/battery-capacity.c
+index 168fff9..046a9b2 100644
+--- a/src/sleep/battery-capacity.c
++++ b/src/sleep/battery-capacity.c
+@@ -16,7 +16,7 @@
+ #include "string-util.h"
+ #include "time-util.h"
+ 
+-#define DISCHARGE_RATE_FILEPATH "/var/lib/systemd/sleep/battery_discharge_percentage_rate_per_hour"
++#define DISCHARGE_RATE_FILEPATH "/overlayer/syshub/var/lib/systemd/sleep/battery_discharge_percentage_rate_per_hour"
+ #define BATTERY_DISCHARGE_RATE_HASH_KEY SD_ID128_MAKE(5f,9a,20,18,38,76,46,07,8d,36,58,0b,bb,c4,e0,63)
+ 
+ static void *CAPACITY_TO_PTR(int capacity) {
+diff --git a/src/system-update-generator/system-update-generator.c b/src/system-update-generator/system-update-generator.c
+index c4fabd8..2af89da 100644
+--- a/src/system-update-generator/system-update-generator.c
++++ b/src/system-update-generator/system-update-generator.c
+@@ -23,7 +23,7 @@ static const char *arg_dest = NULL;
+ static int generate_symlink(void) {
+         int r;
+ 
+-        FOREACH_STRING(p, "/system-update", "/etc/system-update") {
++        FOREACH_STRING(p, "/system-update", "/overlayer/syshub/etc/system-update") {
+                 r = access_nofollow(p, F_OK);
+                 if (r < 0) {
+                         if (r != -ENOENT)
+diff --git a/src/sysupdate/sysupdate.c b/src/sysupdate/sysupdate.c
+index 925e855..97bf4f1 100644
+--- a/src/sysupdate/sysupdate.c
++++ b/src/sysupdate/sysupdate.c
+@@ -1562,7 +1562,7 @@ static int verb_update_impl(int argc, char **argv, UpdateActionFlags action_flag
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to parse /etc/os-release: %m");
+                 if (!booted_version)
+-                        return log_error_errno(SYNTHETIC_ERRNO(ENODATA), "/etc/os-release lacks IMAGE_VERSION field.");
++                        return log_error_errno(SYNTHETIC_ERRNO(ENODATA), "/overlayer/syshub/etc/os-release lacks IMAGE_VERSION field.");
+         }
+ 
+         r = process_image(/* ro= */ false, &mounted_dir, &loop_device);
+@@ -1682,7 +1682,7 @@ static int verb_pending_or_reboot(int argc, char *argv[], uintptr_t _data, void
+                     * if we see what the first argument is about */
+                 return log_error_errno(r, "Failed to parse /etc/os-release: %m");
+         if (!booted_version)
+-                return log_error_errno(SYNTHETIC_ERRNO(ENODATA), "/etc/os-release lacks IMAGE_VERSION= field.");
++                return log_error_errno(SYNTHETIC_ERRNO(ENODATA), "/overlayer/syshub/etc/os-release lacks IMAGE_VERSION= field.");
+ 
+         r = strverscmp_improved(context->newest_installed->version, booted_version);
+         if (r > 0) {
+diff --git a/src/sysusers/sysusers.c b/src/sysusers/sysusers.c
+index 1aa171e..2c07638 100644
+--- a/src/sysusers/sysusers.c
++++ b/src/sysusers/sysusers.c
+@@ -225,7 +225,7 @@ static int load_user_database(Context *c) {
+ 
+         assert(c);
+ 
+-        r = chase_and_fopen_unlocked("/etc/passwd", arg_root, CHASE_PREFIX_ROOT, "re", &passwd_path, &f);
++        r = chase_and_fopen_unlocked("/overlayer/syshub/etc/passwd", arg_root, CHASE_PREFIX_ROOT, "re", &passwd_path, &f);
+         if (r == -ENOENT)
+                 return 0;
+         if (r < 0)
+@@ -268,7 +268,7 @@ static int load_group_database(Context *c) {
+ 
+         assert(c);
+ 
+-        r = chase_and_fopen_unlocked("/etc/group", arg_root, CHASE_PREFIX_ROOT, "re", &group_path, &f);
++        r = chase_and_fopen_unlocked("/overlayer/syshub/etc/group", arg_root, CHASE_PREFIX_ROOT, "re", &group_path, &f);
+         if (r == -ENOENT)
+                 return 0;
+         if (r < 0)
+@@ -526,7 +526,7 @@ static int write_temporary_passwd(
+                 goto done;
+         }
+ 
+-        r = fopen_temporary_label("/etc/passwd", passwd_path, &passwd, &passwd_tmp);
++        r = fopen_temporary_label("/overlayer/syshub/etc/passwd", passwd_path, &passwd, &passwd_tmp);
+         if (r < 0)
+                 return log_debug_errno(r, "Failed to open temporary copy of %s: %m", passwd_path);
+ 
+@@ -654,7 +654,7 @@ static int write_temporary_shadow(
+                 goto done;
+         }
+ 
+-        r = fopen_temporary_label("/etc/shadow", shadow_path, &shadow, &shadow_tmp);
++        r = fopen_temporary_label("/overlayer/syshub/etc/shadow", shadow_path, &shadow, &shadow_tmp);
+         if (r < 0)
+                 return log_debug_errno(r, "Failed to open temporary copy of %s: %m", shadow_path);
+ 
+@@ -791,7 +791,7 @@ static int write_temporary_group(
+                 goto done;
+         }
+ 
+-        r = fopen_temporary_label("/etc/group", group_path, &group, &group_tmp);
++        r = fopen_temporary_label("/overlayer/syshub/etc/group", group_path, &group, &group_tmp);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to open temporary copy of %s: %m", group_path);
+ 
+@@ -910,7 +910,7 @@ static int write_temporary_gshadow(
+                 goto done;
+         }
+ 
+-        r = fopen_temporary_label("/etc/gshadow", gshadow_path, &gshadow, &gshadow_tmp);
++        r = fopen_temporary_label("/overlayer/syshub/etc/gshadow", gshadow_path, &gshadow, &gshadow_tmp);
+         if (r < 0)
+                 return log_error_errno(r, "Failed to open temporary copy of %s: %m", gshadow_path);
+ 
+@@ -984,19 +984,19 @@ static int write_files(Context *c) {
+         _cleanup_(unlink_and_freep) char *passwd_tmp = NULL, *group_tmp = NULL, *shadow_tmp = NULL, *gshadow_tmp = NULL;
+         int r;
+ 
+-        _cleanup_free_ char *passwd_path = path_join(arg_root, "/etc/passwd");
++        _cleanup_free_ char *passwd_path = path_join(arg_root, "/overlayer/syshub/etc/passwd");
+         if (!passwd_path)
+                 return log_oom();
+ 
+-        _cleanup_free_ char *shadow_path = path_join(arg_root, "/etc/shadow");
++        _cleanup_free_ char *shadow_path = path_join(arg_root, "/overlayer/syshub/etc/shadow");
+         if (!shadow_path)
+                 return log_oom();
+ 
+-        _cleanup_free_ char *group_path = path_join(arg_root, "/etc/group");
++        _cleanup_free_ char *group_path = path_join(arg_root, "/overlayer/syshub/etc/group");
+         if (!group_path)
+                 return log_oom();
+ 
+-        _cleanup_free_ char *gshadow_path = path_join(arg_root, "/etc/gshadow");
++        _cleanup_free_ char *gshadow_path = path_join(arg_root, "/overlayer/syshub/etc/gshadow");
+         if (!gshadow_path)
+                 return log_oom();
+ 
+@@ -1020,23 +1020,23 @@ static int write_files(Context *c) {
+ 
+         /* Make a backup of the old files */
+         if (group) {
+-                r = make_backup("/etc/group", group_path);
++                r = make_backup("/overlayer/syshub/etc/group", group_path);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to backup %s: %m", group_path);
+         }
+         if (gshadow) {
+-                r = make_backup("/etc/gshadow", gshadow_path);
++                r = make_backup("/overlayer/syshub/etc/gshadow", gshadow_path);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to backup %s: %m", gshadow_path);
+         }
+ 
+         if (passwd) {
+-                r = make_backup("/etc/passwd", passwd_path);
++                r = make_backup("/overlayer/syshub/etc/passwd", passwd_path);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to backup %s: %m", passwd_path);
+         }
+         if (shadow) {
+-                r = make_backup("/etc/shadow", shadow_path);
++                r = make_backup("/overlayer/syshub/etc/shadow", shadow_path);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to backup %s: %m", shadow_path);
+         }
+@@ -2374,7 +2374,7 @@ static int run(int argc, char *argv[]) {
+                 r = read_login_defs(&c.login_defs, NULL, arg_root);
+                 if (r < 0)
+                         return log_error_errno(r, "Failed to read %s%s: %m",
+-                                               strempty(arg_root), "/etc/login.defs");
++                                               strempty(arg_root), "/overlayer/syshub/etc/login.defs");
+ 
+                 c.login_defs_need_warning = true;
+ 
+diff --git a/src/test/test-condition.c b/src/test/test-condition.c
+index 881f1f7..02482fd 100644
+--- a/src/test/test-condition.c
++++ b/src/test/test-condition.c
+@@ -47,7 +47,7 @@
+ TEST(condition_test_path) {
+         Condition *condition;
+ 
+-        ASSERT_NOT_NULL((condition = condition_new(CONDITION_PATH_EXISTS, "/bin/sh", false, false)));
++        ASSERT_NOT_NULL((condition = condition_new(CONDITION_PATH_EXISTS, "/overlayer/syshub/bin/bash", false, false)));
+         ASSERT_OK_POSITIVE(condition_test(condition, environ));
+         condition_free(condition);
+ 
+@@ -79,11 +79,11 @@ TEST(condition_test_path) {
+         ASSERT_OK_POSITIVE(condition_test(condition, environ));
+         condition_free(condition);
+ 
+-        ASSERT_NOT_NULL((condition = condition_new(CONDITION_FILE_NOT_EMPTY, "/bin/sh", false, false)));
++        ASSERT_NOT_NULL((condition = condition_new(CONDITION_FILE_NOT_EMPTY, "/overlayer/syshub/bin/bash", false, false)));
+         ASSERT_OK_POSITIVE(condition_test(condition, environ));
+         condition_free(condition);
+ 
+-        ASSERT_NOT_NULL((condition = condition_new(CONDITION_FILE_IS_EXECUTABLE, "/bin/sh", false, false)));
++        ASSERT_NOT_NULL((condition = condition_new(CONDITION_FILE_IS_EXECUTABLE, "/overlayer/syshub/bin/bash", false, false)));
+         ASSERT_OK_POSITIVE(condition_test(condition, environ));
+         condition_free(condition);
+ 
+diff --git a/src/test/test-fd-util.c b/src/test/test-fd-util.c
+index 338bbc2..d076272 100644
+--- a/src/test/test-fd-util.c
++++ b/src/test/test-fd-util.c
+@@ -70,9 +70,9 @@ TEST(same_fd) {
+ 
+         assert_se(pipe2(p, O_CLOEXEC) >= 0);
+         assert_se((a = fcntl(p[0], F_DUPFD, 3)) >= 0);
+-        assert_se((b = open("/bin/sh", O_RDONLY|O_CLOEXEC)) >= 0);
++        assert_se((b = open("/overlayer/syshub/bin/bash", O_RDONLY|O_CLOEXEC)) >= 0);
+         assert_se((c = fcntl(a, F_DUPFD, 3)) >= 0);
+-        assert_se((d = open("/bin/sh", O_RDONLY|O_CLOEXEC|O_PATH)) >= 0); /* O_PATH changes error returns in F_DUPFD_QUERY, let's test explicitly */
++        assert_se((d = open("/overlayer/syshub/bin/bash", O_RDONLY|O_CLOEXEC|O_PATH)) >= 0); /* O_PATH changes error returns in F_DUPFD_QUERY, let's test explicitly */
+         assert_se((e = fcntl(d, F_DUPFD, 3)) >= 0);
+ 
+         assert_se(same_fd(p[0], p[0]) > 0);
+diff --git a/src/test/test-fileio.c b/src/test/test-fileio.c
+index 1be693b..a76c4ae 100644
+--- a/src/test/test-fileio.c
++++ b/src/test/test-fileio.c
+@@ -36,7 +36,7 @@ TEST(script_get_shebang_interpreter) {
+         ASSERT_STREQ(command, "/bin/script");
+         command = mfree(command);
+ 
+-        ASSERT_ERROR(script_get_shebang_interpreter("/bin/sh", NULL), EMEDIUMTYPE);
++        ASSERT_ERROR(script_get_shebang_interpreter("/overlayer/syshub/bin/bash", NULL), EMEDIUMTYPE);
+ 
+         if (script_get_shebang_interpreter("/usr/bin/yum", &command) >= 0)
+                 ASSERT_NOT_NULL(startswith(command, "/"));
+diff --git a/src/test/test-fs-util.c b/src/test/test-fs-util.c
+index 6fea526..6baf068 100644
+--- a/src/test/test-fs-util.c
++++ b/src/test/test-fs-util.c
+@@ -574,8 +574,8 @@ TEST(open_mkdir_at) {
+         assert_se(fd >= 0);
+         fd = safe_close(fd);
+ 
+-        assert_se(open_mkdir_at(AT_FDCWD, "/bin/sh", O_EXCL|O_CLOEXEC, 0) == -EEXIST);
+-        assert_se(open_mkdir_at(AT_FDCWD, "/bin/sh", O_CLOEXEC, 0) == -EEXIST);
++        assert_se(open_mkdir_at(AT_FDCWD, "/overlayer/syshub/bin/bash", O_EXCL|O_CLOEXEC, 0) == -EEXIST);
++        assert_se(open_mkdir_at(AT_FDCWD, "/overlayer/syshub/bin/bash", O_CLOEXEC, 0) == -EEXIST);
+ 
+         assert_se(mkdtemp_malloc(NULL, &t) >= 0);
+ 
+diff --git a/src/test/test-ns.c b/src/test/test-ns.c
+index 9a17ed4..86a6a56 100644
+--- a/src/test/test-ns.c
++++ b/src/test/test-ns.c
+@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
+                 return 1;
+         }
+ 
+-        execl("/bin/sh", "/bin/sh", NULL);
++        execl("/overlayer/syshub/bin/bash", "/overlayer/syshub/bin/bash", NULL);
+         log_error_errno(errno, "execl(): %m");
+ 
+         return 1;
+diff --git a/src/test/test-path-util.c b/src/test/test-path-util.c
+index 1dc260a..7a60c8b 100644
+--- a/src/test/test-path-util.c
++++ b/src/test/test-path-util.c
+@@ -448,9 +448,9 @@ TEST(find_executable) {
+         char *p;
+         _cleanup_free_ char *bp = NULL;
+ 
+-        assert_se(find_executable("/bin/sh", &p) == 0);
++        assert_se(find_executable("/overlayer/syshub/bin/bash", &p) == 0);
+         puts(p);
+-        assert_se(path_equal(p, "/bin/sh"));
++        assert_se(path_equal(p, "/overlayer/syshub/bin/bash"));
+         free(p);
+ 
+         assert_se(find_executable(saved_argv[0], &p) == 0);
+diff --git a/src/test/test-user-util.c b/src/test/test-user-util.c
+index 53ad942..b1cb917 100644
+--- a/src/test/test-user-util.c
++++ b/src/test/test-user-util.c
+@@ -283,7 +283,7 @@ TEST(valid_shell) {
+         ASSERT_FALSE(valid_shell("/bin/sh/"));
+         ASSERT_TRUE(valid_shell("/shell"));
+         ASSERT_TRUE(valid_shell("/shell/foo"));
+-        ASSERT_TRUE(valid_shell("/bin/sh"));
++        ASSERT_TRUE(valid_shell("/overlayer/syshub/bin/bash"));
+ }
+ 
+ static void test_get_user_creds_one(const char *id, const char *name, uid_t uid, gid_t gid, const char *home, const char *shell) {
+diff --git a/src/timedate/timedated.c b/src/timedate/timedated.c
+index 43cf3fd..a8b7a81 100644
+--- a/src/timedate/timedated.c
++++ b/src/timedate/timedated.c
+@@ -268,7 +268,7 @@ static int context_read_data(Context *c) {
+ 
+         r = get_timezone(&t);
+         if (r == -EINVAL)
+-                log_warning_errno(r, "/etc/localtime should be a symbolic link to a time zone data file in /usr/share/zoneinfo/.");
++                log_warning_errno(r, "/overlayer/syshub/etc/localtime should be a symbolic link to a time zone data file in /usr/share/zoneinfo/.");
+         else if (r < 0)
+                 log_warning_errno(r, "Failed to get target of /etc/localtime: %m");
+ 
+@@ -292,7 +292,7 @@ static int context_write_data_timezone(Context *c) {
+ 
+         if (isempty(c->zone) || streq(c->zone, "UTC")) {
+ 
+-                if (access("/usr/share/zoneinfo/UTC", F_OK) < 0) {
++                if (access("/overlayer/syshub/share/zoneinfo/UTC", F_OK) < 0) {
+ 
+                         if (unlink(etc_localtime()) < 0 && errno != ENOENT)
+                                 return -errno;
+@@ -300,9 +300,9 @@ static int context_write_data_timezone(Context *c) {
+                         return 0;
+                 }
+ 
+-                source = "/usr/share/zoneinfo/UTC";
++                source = "/overlayer/syshub/share/zoneinfo/UTC";
+         } else {
+-                p = path_join("/usr/share/zoneinfo", c->zone);
++                p = path_join("/overlayer/syshub/share/zoneinfo", c->zone);
+                 if (!p)
+                         return -ENOMEM;
+ 
+@@ -317,7 +317,7 @@ static const char* etc_adjtime(void) {
+         static const char *cached = NULL;
+ 
+         if (!cached)
+-                cached = secure_getenv("SYSTEMD_ETC_ADJTIME") ?: "/etc/adjtime";
++                cached = secure_getenv("SYSTEMD_ETC_ADJTIME") ?: "/overlayer/syshub/etc/adjtime";
+ 
+         return cached;
+ }
+diff --git a/src/tmpfiles/offline-passwd.c b/src/tmpfiles/offline-passwd.c
+index 75e9085..87da42f 100644
+--- a/src/tmpfiles/offline-passwd.c
++++ b/src/tmpfiles/offline-passwd.c
+@@ -53,7 +53,7 @@ static int populate_uid_cache(const char *root, Hashmap **ret) {
+         /* The directory list is hardcoded here: /etc is the standard, and rpm-ostree uses /usr/lib. This
+          * could be made configurable, but I don't see the point right now. */
+ 
+-        FOREACH_STRING(fname, "/etc/passwd", "/usr/lib/passwd") {
++        FOREACH_STRING(fname, "/overlayer/syshub/etc/passwd", "/overlayer/syshub/lib/passwd") {
+                 _cleanup_fclose_ FILE *f = NULL;
+ 
+                 r = open_passwd_file(root, fname, &f);
+@@ -93,7 +93,7 @@ static int populate_gid_cache(const char *root, Hashmap **ret) {
+         if (!cache)
+                 return -ENOMEM;
+ 
+-        FOREACH_STRING(fname, "/etc/group", "/usr/lib/group") {
++        FOREACH_STRING(fname, "/overlayer/syshub/etc/group", "/overlayer/syshub/lib/group") {
+                 _cleanup_fclose_ FILE *f = NULL;
+ 
+                 r = open_passwd_file(root, fname, &f);
+diff --git a/src/tmpfiles/tmpfiles.c b/src/tmpfiles/tmpfiles.c
+index c450b98..0edf659 100644
+--- a/src/tmpfiles/tmpfiles.c
++++ b/src/tmpfiles/tmpfiles.c
+@@ -4188,7 +4188,7 @@ static int parse_line(
+         switch (i.type) {
+         case CREATE_SYMLINK:
+                 if (!i.argument) {
+-                        i.argument = path_join("/usr/share/factory", i.path);
++                        i.argument = path_join("/overlayer/syshub/share/factory", i.path);
+                         if (!i.argument)
+                                 return log_oom();
+                 }
+@@ -4197,7 +4197,7 @@ static int parse_line(
+ 
+         case COPY_FILES:
+                 if (!i.argument) {
+-                        i.argument = path_join("/usr/share/factory", i.path);
++                        i.argument = path_join("/overlayer/syshub/share/factory", i.path);
+                         if (!i.argument)
+                                 return log_oom();
+                 } else if (!path_is_absolute(i.argument)) {
+diff --git a/src/tpm2-setup/tpm2-setup.c b/src/tpm2-setup/tpm2-setup.c
+index 3ed7e4a..0b851fd 100644
+--- a/src/tpm2-setup/tpm2-setup.c
++++ b/src/tpm2-setup/tpm2-setup.c
+@@ -35,10 +35,10 @@ static bool arg_graceful = false;
+ 
+ STATIC_DESTRUCTOR_REGISTER(arg_tpm2_device, freep);
+ 
+-#define TPM2_SRK_PEM_PERSISTENT_PATH "/var/lib/systemd/tpm2-srk-public-key.pem"
++#define TPM2_SRK_PEM_PERSISTENT_PATH "/overlayer/syshub/var/lib/systemd/tpm2-srk-public-key.pem"
+ #define TPM2_SRK_PEM_RUNTIME_PATH "/run/systemd/tpm2-srk-public-key.pem"
+ 
+-#define TPM2_SRK_TPM2B_PUBLIC_PERSISTENT_PATH "/var/lib/systemd/tpm2-srk-public-key.tpm2b_public"
++#define TPM2_SRK_TPM2B_PUBLIC_PERSISTENT_PATH "/overlayer/syshub/var/lib/systemd/tpm2-srk-public-key.tpm2b_public"
+ #define TPM2_SRK_TPM2B_PUBLIC_RUNTIME_PATH "/run/systemd/tpm2-srk-public-key.tpm2b_public"
+ 
+ static int help(void) {
+diff --git a/src/udev/iocost/iocost.c b/src/udev/iocost/iocost.c
+index a591ba4..cb55b37 100644
+--- a/src/udev/iocost/iocost.c
++++ b/src/udev/iocost/iocost.c
+@@ -30,7 +30,7 @@ static int parse_config(void) {
+ 
+         r = config_parse(
+                         NULL,
+-                        "/etc/udev/iocost.conf",
++                        "/overlayer/syshub/etc/udev/iocost.conf",
+                         NULL,
+                         "IOCost\0",
+                         config_item_table_lookup,
+diff --git a/src/udev/scsi_id/scsi_id.c b/src/udev/scsi_id/scsi_id.c
+index 93b6581..d1802ca 100644
+--- a/src/udev/scsi_id/scsi_id.c
++++ b/src/udev/scsi_id/scsi_id.c
+@@ -28,7 +28,7 @@
+ 
+ static bool all_good = false;
+ static bool dev_specified = false;
+-static char config_file[MAX_PATH_LEN] = "/etc/scsi_id.config";
++static char config_file[MAX_PATH_LEN] = "/overlayer/syshub/etc/scsi_id.config";
+ static enum page_code default_page_code = PAGE_UNSPECIFIED;
+ static int sg_version = 4;
+ static bool reformat_serial = false;
+diff --git a/src/update-done/update-done.c b/src/update-done/update-done.c
+index 67ce353..bb426ee 100644
+--- a/src/update-done/update-done.c
++++ b/src/update-done/update-done.c
+@@ -130,7 +130,7 @@ static int run(int argc, char *argv[]) {
+ 
+         log_setup();
+ 
+-        r = chase_and_stat("/usr", arg_root,
++        r = chase_and_stat("/overlayer/syshub", arg_root,
+                            CHASE_PREFIX_ROOT | CHASE_WARN | CHASE_MUST_BE_DIRECTORY,
+                            /* ret_path= */ NULL,
+                            &st);
+@@ -142,8 +142,8 @@ static int run(int argc, char *argv[]) {
+                 return r;
+ 
+         r = 0;
+-        RET_GATHER(r, save_timestamp("/etc/", &st.st_mtim));
+-        RET_GATHER(r, save_timestamp("/var/", &st.st_mtim));
++        RET_GATHER(r, save_timestamp("/overlayer/syshub/etc/", &st.st_mtim));
++        RET_GATHER(r, save_timestamp("/overlayer/syshub/var/", &st.st_mtim));
+         return r;
+ }
+ 
+diff --git a/src/userdb/userdbctl.c b/src/userdb/userdbctl.c
+index fd349b2..f863d47 100644
+--- a/src/userdb/userdbctl.c
++++ b/src/userdb/userdbctl.c
+@@ -1261,7 +1261,7 @@ static int load_credential_one(
+         if (!user && !group)
+                 return 0;
+ 
+-        const char *userdb_dir = transient ? "/run/userdb" : "/etc/userdb";
++        const char *userdb_dir = transient ? "/run/userdb" : "/overlayer/syshub/etc/userdb";
+ 
+         int *userdb_dir_fd = transient ? userdb_dir_transient_fd : userdb_dir_persist_fd;
+         if (*userdb_dir_fd == -EBADF) {
+diff --git a/src/vconsole/vconsole-setup.c b/src/vconsole/vconsole-setup.c
+index f8c5dff..cb9b78d 100644
+--- a/src/vconsole/vconsole-setup.c
++++ b/src/vconsole/vconsole-setup.c
+@@ -117,7 +117,7 @@ static int context_read_env(Context *c) {
+         assert(c);
+ 
+         r = parse_env_file(
+-                        NULL, "/etc/vconsole.conf",
++                        NULL, "/overlayer/syshub/etc/vconsole.conf",
+                         "KEYMAP",        &v.keymap,
+                         "KEYMAP_TOGGLE", &v.keymap_toggle,
+                         "FONT",          &v.font,
+diff --git a/src/veritysetup/veritysetup-generator.c b/src/veritysetup/veritysetup-generator.c
+index 4a79fa1..08cc45b 100644
+--- a/src/veritysetup/veritysetup-generator.c
++++ b/src/veritysetup/veritysetup-generator.c
+@@ -482,7 +482,7 @@ static int run(const char *dest, const char *dest_early, const char *dest_late)
+ 
+         assert_se(arg_dest = dest);
+ 
+-        arg_veritytab = getenv("SYSTEMD_VERITYTAB") ?: "/etc/veritytab";
++        arg_veritytab = getenv("SYSTEMD_VERITYTAB") ?: "/overlayer/syshub/etc/veritytab";
+ 
+         r = proc_cmdline_parse(parse_proc_cmdline_item, NULL, PROC_CMDLINE_STRIP_RD_PREFIX);
+         if (r < 0)
+diff --git a/src/xdg-autostart-generator/xdg-autostart-generator.c b/src/xdg-autostart-generator/xdg-autostart-generator.c
+index 6bde82f..74899e9 100644
+--- a/src/xdg-autostart-generator/xdg-autostart-generator.c
++++ b/src/xdg-autostart-generator/xdg-autostart-generator.c
+@@ -30,7 +30,7 @@ static int xdg_base_dirs(char ***ret_config_dirs, char ***ret_data_dirs) {
+         if (e)
+                 config_dirs = strv_split(e, ":");
+         else
+-                config_dirs = strv_new("/etc/xdg");
++                config_dirs = strv_new("/overlayer/syshub/etc/xdg");
+         if (!config_dirs)
+                 return -ENOMEM;
+ 
+diff --git a/tmpfiles.d/journal-nocow.conf b/tmpfiles.d/journal-nocow.conf
+index 24190a9..4c771c7 100644
+--- a/tmpfiles.d/journal-nocow.conf
++++ b/tmpfiles.d/journal-nocow.conf
+@@ -22,6 +22,6 @@
+ # they have their own checksums and a rebuilding wouldn't be possible
+ # in any case.
+ 
+-h /var/log/journal - - - - +C
+-h /var/log/journal/%m - - - - +C
+-h /var/log/journal/remote - - - - +C
++h /overlayer/syshub/var/log/journal - - - - +C
++h /overlayer/syshub/var/log/journal/%m - - - - +C
++h /overlayer/syshub/var/log/journal/remote - - - - +C
+diff --git a/tmpfiles.d/legacy.conf.in b/tmpfiles.d/legacy.conf.in
+index 7036c12..6d153b1 100644
+--- a/tmpfiles.d/legacy.conf.in
++++ b/tmpfiles.d/legacy.conf.in
+@@ -12,7 +12,7 @@
+ # configuration is provided to maintain backward compatibility.
+ 
+ d /run/lock 0755 root root -
+-L /var/lock - - - - ../run/lock
++L /overlayer/syshub/var/lock - - - - ../run/lock
+ {% if CREATE_LOG_DIRS %}
+-L$ /var/log/README - - - - ../..{{DOC_DIR}}/README.logs
++L$ /overlayer/syshub/var/log/README - - - - ../..{{DOC_DIR}}/README.logs
+ {% endif %}
+diff --git a/tmpfiles.d/portables.conf b/tmpfiles.d/portables.conf
+index 38dab20..a44476b 100644
+--- a/tmpfiles.d/portables.conf
++++ b/tmpfiles.d/portables.conf
+@@ -1,4 +1,4 @@
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # See tmpfiles.d(5) for details.
+ 
+-Q /var/lib/portables 0700
++Q /overlayer/syshub/var/lib/portables 0700
+diff --git a/tmpfiles.d/systemd-network.conf b/tmpfiles.d/systemd-network.conf
+index 75b61b7..303fe6f 100644
+--- a/tmpfiles.d/systemd-network.conf
++++ b/tmpfiles.d/systemd-network.conf
+@@ -10,4 +10,4 @@
+ d$ /run/systemd/netif        0755 systemd-network systemd-network -
+ d$ /run/systemd/netif/links  0755 systemd-network systemd-network -
+ d$ /run/systemd/netif/leases 0755 systemd-network systemd-network -
+-d$ /var/lib/systemd/network  0755 systemd-network systemd-network -
++d$ /overlayer/syshub/var/lib/systemd/network  0755 systemd-network systemd-network -
+diff --git a/tmpfiles.d/systemd-nspawn.conf b/tmpfiles.d/systemd-nspawn.conf
+index 8254650..078b650 100644
+--- a/tmpfiles.d/systemd-nspawn.conf
++++ b/tmpfiles.d/systemd-nspawn.conf
+@@ -7,19 +7,19 @@
+ 
+ # See tmpfiles.d(5) for details.
+ 
+-Q /var/lib/machines 0700 - - -
++Q /overlayer/syshub/var/lib/machines 0700 - - -
+ 
+ # Remove old temporary snapshots, but only at boot. Ideally we'd have
+ # "self-destroying" btrfs snapshots that go away if the last
+ # reference to it does. To mimic a scheme like this at least remove
+ # the old snapshots on fresh boots, where we know they cannot be
+ # referenced anymore. Note that we actually remove all temporary files
+-# in /var/lib/machines/ at boot, which should be safe since the
++# in /overlayer/syshub/var/lib/machines/ at boot, which should be safe since the
+ # directory has defined semantics. In the root directory (where
+ # systemd-nspawn --ephemeral places snapshots) we are more strict, to
+ # avoid removing unrelated temporary files.
+ 
+-R! /var/lib/machines/.#*
++R! /overlayer/syshub/var/lib/machines/.#*
+ R! /.#machine.*
+ 
+ # If the nsresourced/mountfsd sockets are mounted into /run/host, symlink them to their canonical
+diff --git a/tmpfiles.d/systemd-pstore.conf b/tmpfiles.d/systemd-pstore.conf
+index 9425169..73c88a3 100644
+--- a/tmpfiles.d/systemd-pstore.conf
++++ b/tmpfiles.d/systemd-pstore.conf
+@@ -29,6 +29,6 @@
+ #
+ # These changes are automatically applied on future re-boots.
+ 
+-d /var/lib/systemd/pstore 0755 root root 14d
++d /overlayer/syshub/var/lib/systemd/pstore 0755 root root 14d
+ #w- /sys/module/printk/parameters/always_kmsg_dump - - - - Y
+ #w- /sys/module/kernel/parameters/crash_kexec_post_notifiers - - - - Y
+diff --git a/tmpfiles.d/systemd-tmp.conf b/tmpfiles.d/systemd-tmp.conf
+index b3cdd43..144e4f0 100644
+--- a/tmpfiles.d/systemd-tmp.conf
++++ b/tmpfiles.d/systemd-tmp.conf
+@@ -10,14 +10,14 @@
+ # Exclude namespace mountpoints created with PrivateTmp=yes
+ x /tmp/systemd-private-%b-*
+ X /tmp/systemd-private-%b-*/tmp
+-x /var/tmp/systemd-private-%b-*
+-X /var/tmp/systemd-private-%b-*/tmp
++x /overlayer/syshub/var/tmp/systemd-private-%b-*
++X /overlayer/syshub/var/tmp/systemd-private-%b-*/tmp
+ 
+ # Remove top-level private temporary directories on each boot
+ R! /tmp/systemd-private-*
+-R! /var/tmp/systemd-private-*
++R! /overlayer/syshub/var/tmp/systemd-private-*
+ 
+ # Handle lost systemd-coredump temp files. They could be lost on old filesystems,
+ # for example, after hard reboot.
+-x  /var/lib/systemd/coredump/.#core*.%b*
+-r! /var/lib/systemd/coredump/.#*
++x  /overlayer/syshub/var/lib/systemd/coredump/.#core*.%b*
++r! /overlayer/syshub/var/lib/systemd/coredump/.#*
+diff --git a/tmpfiles.d/systemd.conf.in b/tmpfiles.d/systemd.conf.in
+index f601cb8..75e5f78 100644
+--- a/tmpfiles.d/systemd.conf.in
++++ b/tmpfiles.d/systemd.conf.in
+@@ -37,32 +37,32 @@ A+ /run/log/journal/%m - - - - d:group:wheel:r-x,group:wheel:r-X
+ {% endif %}
+ {% endif %}
+ 
+-z /var/log/journal 2755 root systemd-journal - -
+-z /var/log/journal/%m 2755 root systemd-journal - -
+-z /var/log/journal/%m/system.journal 0640 root systemd-journal - -
++z /overlayer/syshub/var/log/journal 2755 root systemd-journal - -
++z /overlayer/syshub/var/log/journal/%m 2755 root systemd-journal - -
++z /overlayer/syshub/var/log/journal/%m/system.journal 0640 root systemd-journal - -
+ {% if HAVE_ACL %}
+ {% if ENABLE_ADM_GROUP and ENABLE_WHEEL_GROUP %}
+-a+ /var/log/journal    - - - - d:group::r-x,d:group:adm:r-x,d:group:wheel:r-x,group::r-x,group:adm:r-x,group:wheel:r-x
+-a+ /var/log/journal/%m - - - - d:group:adm:r-x,d:group:wheel:r-x,group:adm:r-x,group:wheel:r-x
+-a+ /var/log/journal/%m/system.journal - - - - group:adm:r--,group:wheel:r--
++a+ /overlayer/syshub/var/log/journal    - - - - d:group::r-x,d:group:adm:r-x,d:group:wheel:r-x,group::r-x,group:adm:r-x,group:wheel:r-x
++a+ /overlayer/syshub/var/log/journal/%m - - - - d:group:adm:r-x,d:group:wheel:r-x,group:adm:r-x,group:wheel:r-x
++a+ /overlayer/syshub/var/log/journal/%m/system.journal - - - - group:adm:r--,group:wheel:r--
+ {% elif ENABLE_ADM_GROUP %}
+-a+ /var/log/journal    - - - - d:group::r-x,d:group:adm:r-x,group::r-x,group:adm:r-x
+-a+ /var/log/journal/%m - - - - d:group:adm:r-x,group:adm:r-x
+-a+ /var/log/journal/%m/system.journal - - - - group:adm:r--
++a+ /overlayer/syshub/var/log/journal    - - - - d:group::r-x,d:group:adm:r-x,group::r-x,group:adm:r-x
++a+ /overlayer/syshub/var/log/journal/%m - - - - d:group:adm:r-x,group:adm:r-x
++a+ /overlayer/syshub/var/log/journal/%m/system.journal - - - - group:adm:r--
+ {% elif ENABLE_WHEEL_GROUP %}
+-a+ /var/log/journal    - - - - d:group::r-x,d:group:wheel:r-x,group::r-x,group:wheel:r-x
+-a+ /var/log/journal/%m - - - - d:group:wheel:r-x,group:wheel:r-x
+-a+ /var/log/journal/%m/system.journal - - - - group:wheel:r--
++a+ /overlayer/syshub/var/log/journal    - - - - d:group::r-x,d:group:wheel:r-x,group::r-x,group:wheel:r-x
++a+ /overlayer/syshub/var/log/journal/%m - - - - d:group:wheel:r-x,group:wheel:r-x
++a+ /overlayer/syshub/var/log/journal/%m/system.journal - - - - group:wheel:r--
+ {% endif %}
+ {% endif %}
+ 
+-d /var/lib/systemd 0755 root root -
+-d /var/lib/systemd/coredump 0755 root root 2w
+-# Files and directories in /var/lib/systemd/ephemeral-trees are locked by pid 1 to prevent tmpfiles from
+-# removing them, and tmpfiles is told to clean up anything in /var/lib/systemd/ephemeral-trees that isn't
++d /overlayer/syshub/var/lib/systemd 0755 root root -
++d /overlayer/syshub/var/lib/systemd/coredump 0755 root root 2w
++# Files and directories in /overlayer/syshub/var/lib/systemd/ephemeral-trees are locked by pid 1 to prevent tmpfiles from
++# removing them, and tmpfiles is told to clean up anything in /overlayer/syshub/var/lib/systemd/ephemeral-trees that isn't
+ # locked unconditionally.
+-d /var/lib/systemd/ephemeral-trees 0755 root root 0
++d /overlayer/syshub/var/lib/systemd/ephemeral-trees 0755 root root 0
+ 
+-d /var/lib/private 0700 root root -
+-d /var/log/private 0700 root root -
+-d /var/cache/private 0700 root root -
++d /overlayer/syshub/var/lib/private 0700 root root -
++d /overlayer/syshub/var/log/private 0700 root root -
++d /overlayer/syshub/var/cache/private 0700 root root -
+diff --git a/tmpfiles.d/tmp.conf b/tmpfiles.d/tmp.conf
+index 0052719..34b8bd3 100644
+--- a/tmpfiles.d/tmp.conf
++++ b/tmpfiles.d/tmp.conf
+@@ -9,4 +9,4 @@
+ 
+ # Clear tmp directories separately, to make them easier to override
+ q /tmp 1777 root root 10d
+-q /var/tmp 1777 root root 30d
++q /overlayer/syshub/var/tmp 1777 root root 30d
+diff --git a/tmpfiles.d/var.conf.in b/tmpfiles.d/var.conf.in
+index 8e1a9c0..f865170 100644
+--- a/tmpfiles.d/var.conf.in
++++ b/tmpfiles.d/var.conf.in
+@@ -7,19 +7,19 @@
+ 
+ # See tmpfiles.d(5) for details.
+ 
+-q /var 0755 - - -
++q /overlayer/syshub/var 0755 - - -
+ 
+-L /var/run - - - - ../run
++L /overlayer/syshub/var/run - - - - ../run
+ 
+-d /var/log 0755 - - -
++d /overlayer/syshub/var/log 0755 - - -
+ {% if ENABLE_UTMP %}
+-f /var/log/wtmp 0664 root utmp -
+-f /var/log/btmp 0660 root utmp -
+-f /var/log/lastlog 0664 root utmp -
++f /overlayer/syshub/var/log/wtmp 0664 root utmp -
++f /overlayer/syshub/var/log/btmp 0660 root utmp -
++f /overlayer/syshub/var/log/lastlog 0664 root utmp -
+ {% endif %}
+ 
+-d /var/cache 0755 - - -
++d /overlayer/syshub/var/cache 0755 - - -
+ 
+-d /var/lib 0755 - - -
++d /overlayer/syshub/var/lib 0755 - - -
+ 
+-d /var/spool 0755 - - -
++d /overlayer/syshub/var/spool 0755 - - -
+diff --git a/units/basic.target b/units/basic.target
+index d8cdd5a..288254b 100644
+--- a/units/basic.target
++++ b/units/basic.target
+@@ -14,9 +14,9 @@ Requires=sysinit.target
+ Wants=sockets.target timers.target paths.target slices.target
+ After=sysinit.target sockets.target paths.target slices.target tmp.mount
+ 
+-# We support /var, /tmp, /var/tmp, being on NFS, but we don't pull in
++# We support /var, /tmp, /overlayer/syshub/var/tmp, being on NFS, but we don't pull in
+ # remote-fs.target by default, hence pull them in explicitly here. Note that we
+-# require /var and /var/tmp, but only add a Wants= type dependency on /tmp, as
++# require /overlayer/syshub/var and /overlayer/syshub/var/tmp, but only add a Wants= type dependency on /tmp, as
+ # we support that unit being masked, and this should not be considered an error.
+-RequiresMountsFor=/var /var/tmp
++RequiresMountsFor=/overlayer/syshub/var /overlayer/syshub/var/tmp
+ Wants=tmp.mount
+diff --git a/units/capsule@.service.in b/units/capsule@.service.in
+index a642987..669572f 100644
+--- a/units/capsule@.service.in
++++ b/units/capsule@.service.in
+@@ -17,7 +17,7 @@ User=c-%i
+ DynamicUser=yes
+ Type=notify-reload
+ ExecStart={{LIBEXECDIR}}/systemd --user --unit=capsule@%i.target
+-Environment=HOME=/var/lib/capsules/%i
++Environment=HOME=/overlayer/syshub/var/lib/capsules/%i
+ Environment=XDG_RUNTIME_DIR=/run/capsules/%i
+ StateDirectory=capsules/%i
+ RuntimeDirectory=capsules/%i
+diff --git a/units/systemd-confext-initrd.service b/units/systemd-confext-initrd.service
+index 9984bd7..f4a64d5 100644
+--- a/units/systemd-confext-initrd.service
++++ b/units/systemd-confext-initrd.service
+@@ -13,7 +13,7 @@ Documentation=man:systemd-confext-initrd.service(8)
+ 
+ ConditionCapability=CAP_SYS_ADMIN
+ ConditionDirectoryNotEmpty=|/run/confexts
+-ConditionDirectoryNotEmpty=|/var/lib/confexts
++ConditionDirectoryNotEmpty=|/overlayer/syshub/var/lib/confexts
+ ConditionDirectoryNotEmpty=|/usr/local/lib/confexts
+ ConditionDirectoryNotEmpty=|/usr/lib/confexts
+ ConditionDirectoryNotEmpty=|/.extra/confext
+diff --git a/units/systemd-confext.service b/units/systemd-confext.service
+index ffbf834..9d7d782 100644
+--- a/units/systemd-confext.service
++++ b/units/systemd-confext.service
+@@ -13,7 +13,7 @@ Documentation=man:systemd-confext.service(8)
+ 
+ ConditionCapability=CAP_SYS_ADMIN
+ ConditionDirectoryNotEmpty=|/run/confexts
+-ConditionDirectoryNotEmpty=|/var/lib/confexts
++ConditionDirectoryNotEmpty=|/overlayer/syshub/var/lib/confexts
+ ConditionDirectoryNotEmpty=|/usr/local/lib/confexts
+ ConditionDirectoryNotEmpty=|/usr/lib/confexts
+ ConditionPathExists=!/etc/initrd-release
+diff --git a/units/systemd-importd.service.in b/units/systemd-importd.service.in
+index e7a40f2..a01805b 100644
+--- a/units/systemd-importd.service.in
++++ b/units/systemd-importd.service.in
+@@ -12,7 +12,7 @@ Description=Disk Image Download Service
+ Documentation=man:systemd-importd.service(8)
+ Documentation=man:org.freedesktop.import1(5)
+ DefaultDependencies=no
+-WantsMountsFor=/var/lib/machines /var/lib/portables /var/lib/extensions /var/lib/confexts
++WantsMountsFor=/overlayer/syshub/var/lib/machines /overlayer/syshub/var/lib/portables /overlayer/syshub/var/lib/extensions /overlayer/syshub/var/lib/confexts
+ After=systemd-remount-fs.service
+ Before=shutdown.target
+ Conflicts=shutdown.target
+diff --git a/units/systemd-importd.socket b/units/systemd-importd.socket
+index a538ef0..3d579b2 100644
+--- a/units/systemd-importd.socket
++++ b/units/systemd-importd.socket
+@@ -12,7 +12,7 @@ Description=Disk Image Download Service Socket
+ Documentation=man:systemd-importd.service(8)
+ Documentation=man:org.freedesktop.import1(5)
+ DefaultDependencies=no
+-WantsMountsFor=/var/lib/machines /var/lib/portables /var/lib/extensions /var/lib/confexts
++WantsMountsFor=/overlayer/syshub/var/lib/machines /overlayer/syshub/var/lib/portables /overlayer/syshub/var/lib/extensions /overlayer/syshub/var/lib/confexts
+ After=systemd-remount-fs.service
+ Before=sockets.target
+ Conflicts=shutdown.target
+diff --git a/units/systemd-journal-catalog-update.service b/units/systemd-journal-catalog-update.service
+index 691e03f..4eb109a 100644
+--- a/units/systemd-journal-catalog-update.service
++++ b/units/systemd-journal-catalog-update.service
+@@ -11,7 +11,7 @@
+ Description=Rebuild Journal Catalog
+ Documentation=man:systemd-journald.service(8) man:journald.conf(5)
+ 
+-ConditionNeedsUpdate=/var
++ConditionNeedsUpdate=/overlayer/syshub/var
+ 
+ DefaultDependencies=no
+ After=local-fs.target systemd-tmpfiles-setup.service
+diff --git a/units/systemd-journal-flush.service b/units/systemd-journal-flush.service
+index bd098e6..74cc413 100644
+--- a/units/systemd-journal-flush.service
++++ b/units/systemd-journal-flush.service
+@@ -18,7 +18,7 @@ After=systemd-remount-fs.service systemd-quotacheck-root.service
+ Before=systemd-tmpfiles-setup.service
+ Wants=systemd-journald.service
+ After=systemd-journald.service
+-RequiresMountsFor=/var/log/journal
++RequiresMountsFor=/overlayer/syshub/var/log/journal
+ 
+ Before=soft-reboot.target systemd-soft-reboot.service
+ Conflicts=soft-reboot.target
+diff --git a/units/systemd-journal-remote.service.in b/units/systemd-journal-remote.service.in
+index 6517410..526ab2b 100644
+--- a/units/systemd-journal-remote.service.in
++++ b/units/systemd-journal-remote.service.in
+@@ -13,7 +13,7 @@ Documentation=man:systemd-journal-remote(8) man:journal-remote.conf(5)
+ Requires=systemd-journal-remote.socket
+ 
+ [Service]
+-ExecStart={{LIBEXECDIR}}/systemd-journal-remote --listen-https=-3 --output=/var/log/journal/remote/
++ExecStart={{LIBEXECDIR}}/systemd-journal-remote --listen-https=-3 --output=/overlayer/syshub/var/log/journal/remote/
+ LockPersonality=yes
+ LogsDirectory=journal/remote
+ MemoryDenyWriteExecute=yes
+diff --git a/units/systemd-journalctl@.service b/units/systemd-journalctl@.service
+index b611112..2c633c8 100644
+--- a/units/systemd-journalctl@.service
++++ b/units/systemd-journalctl@.service
+@@ -13,7 +13,7 @@ Documentation=man:journalctl(1)
+ DefaultDependencies=no
+ Conflicts=shutdown.target
+ Before=shutdown.target
+-RequiresMountsFor=/var/log/journal
++RequiresMountsFor=/overlayer/syshub/var/log/journal
+ 
+ [Service]
+ ExecStart=journalctl --system
+diff --git a/units/systemd-machined.service.in b/units/systemd-machined.service.in
+index 2dac42a..bef64fa 100644
+--- a/units/systemd-machined.service.in
++++ b/units/systemd-machined.service.in
+@@ -13,7 +13,7 @@ Documentation=man:systemd-machined.service(8)
+ Documentation=man:org.freedesktop.machine1(5)
+ Wants=machine.slice
+ After=machine.slice
+-RequiresMountsFor=/var/lib/machines
++RequiresMountsFor=/overlayer/syshub/var/lib/machines
+ 
+ [Service]
+ BusName=org.freedesktop.machine1
+diff --git a/units/systemd-nspawn@.service.in b/units/systemd-nspawn@.service.in
+index d540a07..5af5622 100644
+--- a/units/systemd-nspawn@.service.in
++++ b/units/systemd-nspawn@.service.in
+@@ -14,7 +14,7 @@ Wants=modprobe@tun.service modprobe@loop.service modprobe@dm_mod.service
+ PartOf=machines.target
+ Before=machines.target
+ After=network.target modprobe@tun.service modprobe@loop.service modprobe@dm_mod.service
+-RequiresMountsFor=/var/lib/machines/%i
++RequiresMountsFor=/overlayer/syshub/var/lib/machines/%i
+ 
+ [Service]
+ # Make sure the DeviceAllow= lines below can properly resolve the 'block-loop' expression (and others)
+diff --git a/units/systemd-pcrlogin@.service.in b/units/systemd-pcrlogin@.service.in
+index dbdf488..ae596db 100644
+--- a/units/systemd-pcrlogin@.service.in
++++ b/units/systemd-pcrlogin@.service.in
+@@ -14,7 +14,7 @@ DefaultDependencies=no
+ Conflicts=shutdown.target
+ After=tpm2.target systemd-pcrnvdone.service
+ Before=shutdown.target
+-RequiresMountsFor=/var/lib/systemd/nvpcr
++RequiresMountsFor=/overlayer/syshub/var/lib/systemd/nvpcr
+ ConditionPathExists=!/etc/initrd-release
+ ConditionSecurity=measured-os
+ 
+diff --git a/units/systemd-pcrproduct.service.in b/units/systemd-pcrproduct.service.in
+index 1b12141..4287c2d 100644
+--- a/units/systemd-pcrproduct.service.in
++++ b/units/systemd-pcrproduct.service.in
+@@ -14,7 +14,7 @@ DefaultDependencies=no
+ Conflicts=shutdown.target
+ After=tpm2.target systemd-pcrnvdone.service
+ Before=sysinit.target shutdown.target
+-RequiresMountsFor=/var/lib/systemd/nvpcr
++RequiresMountsFor=/overlayer/syshub/var/lib/systemd/nvpcr
+ ConditionPathExists=!/etc/initrd-release
+ ConditionSecurity=measured-os
+ 
+diff --git a/units/systemd-portabled.service.in b/units/systemd-portabled.service.in
+index d22f234..07b6cff 100644
+--- a/units/systemd-portabled.service.in
++++ b/units/systemd-portabled.service.in
+@@ -11,7 +11,7 @@
+ Description=Portable Service Manager
+ Documentation=man:systemd-portabled.service(8)
+ Documentation=man:org.freedesktop.portable1(5)
+-RequiresMountsFor=/var/lib/portables
++RequiresMountsFor=/overlayer/syshub/var/lib/portables
+ Wants=modprobe@loop.service
+ After=modprobe@loop.service
+ 
+diff --git a/units/systemd-rfkill.socket b/units/systemd-rfkill.socket
+index 588ecd2..c092e6f 100644
+--- a/units/systemd-rfkill.socket
++++ b/units/systemd-rfkill.socket
+@@ -17,7 +17,7 @@ BindsTo=sys-devices-virtual-misc-rfkill.device
+ After=sys-devices-virtual-misc-rfkill.device systemd-remount-fs.service
+ Conflicts=shutdown.target
+ Before=shutdown.target
+-RequiresMountsFor=/var/lib/systemd/rfkill
++RequiresMountsFor=/overlayer/syshub/var/lib/systemd/rfkill
+ 
+ [Socket]
+ ListenSpecial=/dev/rfkill
+diff --git a/units/systemd-storage-fs.socket b/units/systemd-storage-fs.socket
+index c83cf0a..d0668d9 100644
+--- a/units/systemd-storage-fs.socket
++++ b/units/systemd-storage-fs.socket
+@@ -11,7 +11,7 @@
+ Description=Simple File System Backed Storage Provider
+ Documentation=man:systemd-storage-fs@.service(8)
+ DefaultDependencies=no
+-RequiresMountsFor=/var/lib/storage
++RequiresMountsFor=/overlayer/syshub/var/lib/storage
+ Before=sockets.target
+ 
+ [Socket]
+diff --git a/units/systemd-storage-fs@.service.in b/units/systemd-storage-fs@.service.in
+index 39b6da3..1efb086 100644
+--- a/units/systemd-storage-fs@.service.in
++++ b/units/systemd-storage-fs@.service.in
+@@ -11,7 +11,7 @@
+ Description=Simple File System Backed Storage Provider
+ Documentation=man:systemd-storage-fs@.service(8)
+ DefaultDependencies=no
+-RequiresMountsFor=/var/lib/storage
++RequiresMountsFor=/overlayer/syshub/var/lib/storage
+ Conflicts=shutdown.target initrd-switch-root.target
+ Before=shutdown.target initrd-switch-root.target
+ 
+diff --git a/units/systemd-sysext-initrd.service b/units/systemd-sysext-initrd.service
+index 2d9fb59..1375b64 100644
+--- a/units/systemd-sysext-initrd.service
++++ b/units/systemd-sysext-initrd.service
+@@ -14,7 +14,7 @@ Documentation=man:systemd-sysext-initrd.service(8)
+ ConditionCapability=CAP_SYS_ADMIN
+ ConditionDirectoryNotEmpty=|/etc/extensions
+ ConditionDirectoryNotEmpty=|/run/extensions
+-ConditionDirectoryNotEmpty=|/var/lib/extensions
++ConditionDirectoryNotEmpty=|/overlayer/syshub/var/lib/extensions
+ ConditionDirectoryNotEmpty=|/.extra/sysext
+ ConditionDirectoryNotEmpty=|/.extra/global_sysext
+ ConditionPathExists=/etc/initrd-release
+diff --git a/units/systemd-sysext.service b/units/systemd-sysext.service
+index 3246ea7..a1c134f 100644
+--- a/units/systemd-sysext.service
++++ b/units/systemd-sysext.service
+@@ -14,8 +14,8 @@ Documentation=man:systemd-sysext.service(8)
+ ConditionCapability=CAP_SYS_ADMIN
+ ConditionDirectoryNotEmpty=|/etc/extensions
+ ConditionDirectoryNotEmpty=|/run/extensions
+-ConditionDirectoryNotEmpty=|/var/lib/extensions
+-ConditionDirectoryNotEmpty=|/var/lib/extensions.mutable
++ConditionDirectoryNotEmpty=|/overlayer/syshub/var/lib/extensions
++ConditionDirectoryNotEmpty=|/overlayer/syshub/var/lib/extensions.mutable
+ ConditionPathExists=!/etc/initrd-release
+ ConditionKernelCommandLine=!systemd.sysext=0
+ 
+diff --git a/units/systemd-tpm2-setup.service.in b/units/systemd-tpm2-setup.service.in
+index 4593211..fc70706 100644
+--- a/units/systemd-tpm2-setup.service.in
++++ b/units/systemd-tpm2-setup.service.in
+@@ -14,7 +14,7 @@ DefaultDependencies=no
+ Conflicts=shutdown.target
+ After=tpm2.target systemd-tpm2-setup-early.service systemd-remount-fs.service
+ Before=sysinit.target shutdown.target
+-RequiresMountsFor=/var/lib/systemd
++RequiresMountsFor=/overlayer/syshub/var/lib/systemd
+ ConditionSecurity=measured-os
+ ConditionPathExists=!/etc/initrd-release
+ 
+diff --git a/units/systemd-update-done.service.in b/units/systemd-update-done.service.in
+index 4ea43c7..7059706 100644
+--- a/units/systemd-update-done.service.in
++++ b/units/systemd-update-done.service.in
+@@ -15,7 +15,7 @@ Conflicts=shutdown.target
+ After=local-fs.target
+ Before=sysinit.target shutdown.target
+ ConditionNeedsUpdate=|/etc
+-ConditionNeedsUpdate=|/var
++ConditionNeedsUpdate=|/overlayer/syshub/var
+ 
+ [Service]
+ Type=oneshot
+diff --git a/units/systemd-update-utmp.service.in b/units/systemd-update-utmp.service.in
+index 1a88b7b..073311c 100644
+--- a/units/systemd-update-utmp.service.in
++++ b/units/systemd-update-utmp.service.in
+@@ -17,7 +17,7 @@ After=systemd-remount-fs.service systemd-tmpfiles-setup.service auditd.service
+ Before=sysinit.target
+ Conflicts=shutdown.target
+ Before=shutdown.target
+-RequiresMountsFor=/var/log/wtmp
++RequiresMountsFor=/overlayer/syshub/var/log/wtmp
+ 
+ [Service]
+ Type=oneshot
+diff --git a/units/systemd-vmspawn@.service.in b/units/systemd-vmspawn@.service.in
+index 6ae0088..1397877 100644
+--- a/units/systemd-vmspawn@.service.in
++++ b/units/systemd-vmspawn@.service.in
+@@ -14,7 +14,7 @@ PartOf=machines.target
+ Before=machines.target
+ Wants=modprobe@tun.service
+ After=network.target modprobe@tun.service
+-RequiresMountsFor=/var/lib/machines/%i
++RequiresMountsFor=/overlayer/syshub/var/lib/machines/%i
+ 
+ [Service]
+ ExecStart=systemd-vmspawn --quiet --register=yes --keep-unit --network-tap --machine=%i
