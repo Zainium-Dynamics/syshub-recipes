@@ -1,11 +1,12 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=systemd
 pkgver=261.2
-pkgrel=4
+pkgrel=5
 subpackages="$pkgname-dev"
 source="https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz
 0001-zainium-paths.patch
-ima-policy"
+ima-policy
+60-zainium-hardening.conf"
 sha256sums="ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec  v$pkgver.tar.gz"
 makedepends="meson ninja pkgconf gperf python3 py3-jinja2 build-base linux-headers gettext-dev libucontext-dev coreutils
     libcap-dev libseccomp-dev kmod-dev pcre2-dev
@@ -38,7 +39,7 @@ build() {
         -Dman=disabled \
         -Dhtml=disabled \
         -Dbootloader=disabled \
-        -Defi=false \
+        -Defi=true \
         -Dukify=disabled \
         -Dbpf-framework=disabled \
         -Dselinux=disabled \
@@ -172,6 +173,8 @@ package() {
 
     # measure-only IMA policy for PID 1's loader (-Dima=true)
     install -Dm644 "$RECIPE_DIR/ima-policy" "$PAYLOAD_DIR/overlayer/syshub/etc/ima/ima-policy"
+    # kptr_restrict, no setuid core dumps, no ICMP redirects
+    install -Dm644 "$RECIPE_DIR/60-zainium-hardening.conf" "$PAYLOAD_DIR/overlayer/syshub/lib/sysctl.d/60-zainium-hardening.conf"
 }
 
 dev() {
