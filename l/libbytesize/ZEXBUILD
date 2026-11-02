@@ -1,0 +1,32 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libbytesize
+pkgver=2.12
+pkgrel=0
+source="https://github.com/storaged-project/libbytesize/releases/download/$pkgver/libbytesize-$pkgver.tar.gz"
+sha256sums="8356bac2cafd2f31f39bf1ad373cef8448cab08b817aeaee5c526d54e81c3c5a  libbytesize-$pkgver.tar.gz"
+makedepends="pkgconf gmp-dev mpfr-dev pcre2-dev gettext-dev"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --sbindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --disable-static \
+        --without-python3 \
+        --without-gtk-doc \
+        --without-tools
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}
