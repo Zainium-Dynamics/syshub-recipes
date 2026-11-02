@@ -1,0 +1,30 @@
+[package]
+name             = "cryptsetup"
+version          = "2.8.8"
+description      = "Disk encryption library (LUKS)"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://gitlab.com/cryptsetup/cryptsetup"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["lvm2", "json-c", "util-linux", "openssl"]
+provides         = ["cryptsetup"]
+tags             = ["base", "system", "storage"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
