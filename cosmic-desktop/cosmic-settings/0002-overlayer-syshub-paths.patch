@@ -1,0 +1,39 @@
+--- a/cosmic-settings/src/pages/system/info.rs
++++ b/cosmic-settings/src/pages/system/info.rs
+@@ -256,2 +256,2 @@ fn operating_system() -> String {
+-    let content = read_to_string("/etc/os-release").unwrap_or_default();
++    let content = read_to_string("/overlayer/syshub/etc/os-release").unwrap_or_default();
+
+--- a/cosmic-settings/src/pages/desktop/appearance/icon_themes.rs
++++ b/cosmic-settings/src/pages/desktop/appearance/icon_themes.rs
+@@ -142,7 +142,7 @@
+     let xdg_data_dirs = xdg_data_dirs
+         .as_deref()
+         // Default from the XDG Base Directory Specification
+-        .or(Some("/usr/local/share/:/usr/share/"))
++        .or(Some("/overlayer/syshub/share/"))
+         .into_iter()
+         .flat_map(|arg| std::env::split_paths(arg).map(|dir| dir.join("icons")));
+ 
+--- a/cosmic-settings/src/pages/desktop/wallpaper/config.rs
++++ b/cosmic-settings/src/pages/desktop/wallpaper/config.rs
+@@ -132,7 +132,7 @@
+                 }
+             }
+         }
+-        PathBuf::from("/usr/share").join(BACKGROUNDS_DIR)
++        PathBuf::from("/overlayer/syshub/share").join(BACKGROUNDS_DIR)
+     }
+ 
+     /// Sets the current background folder
+--- a/cosmic-settings/src/pages/system/users/mod.rs
++++ b/cosmic-settings/src/pages/system/users/mod.rs
+@@ -23,7 +23,7 @@
+ use url::Url;
+ use zbus_polkit::policykit1::CheckAuthorizationFlags;
+ 
+-const DEFAULT_ICON_FILE: &str = "/usr/share/pixmaps/faces/pop-robot.png";
++const DEFAULT_ICON_FILE: &str = "/overlayer/syshub/share/pixmaps/faces/cute-panda.png";
+ const USERS_ADMIN_POLKIT_POLICY_ID: &str = "com.system76.CosmicSettings.Users.Admin";
+ 
+ // AccountsService has a hard limit of 1MB for icon files

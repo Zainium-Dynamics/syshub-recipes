@@ -1,0 +1,37 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-settings
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-settings/archive/refs/tags/epoch-$pkgver.tar.gz
+0002-overlayer-syshub-paths.patch
+0003-login-defs-path.patch
+9999-zainium-branding-logos.patch"
+sha256sums="213459e770dc899da7f9d47557b7d3e4e27e1debb8d7af590995bd0f63da0a5e  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf glib-dev wayland-dev libxkbcommon-dev dav1d-dev eudev-dev libinput-dev"
+
+build() {
+    cd cosmic-settings-epoch-$pkgver
+    # config, icon and data paths under /overlayer/syshub
+    patch -p1 < ../0002-overlayer-syshub-paths.patch
+    # the users page reads login.defs from the base
+    patch -p1 < ../0003-login-defs-path.patch
+    # Zainium logos on the About page
+    patch -p1 < ../9999-zainium-branding-logos.patch
+    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    export VERGEN_GIT_COMMIT_DATE="$(date -u '+%Y-%m-%d')"
+    export VERGEN_GIT_SHA="unknown"
+    cargo build --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+    # still in the source dir build() changed into
+    just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
+        cargo-target-dir=target/x86_64-unknown-linux-musl install
+}
