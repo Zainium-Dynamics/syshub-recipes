@@ -30,7 +30,10 @@ build() {
         --disable-readline
     make device-mapper
     DESTDIR="$(pwd)/_zexbuild-install" make install_device-mapper
-    DESTDIR="$(pwd)/_zexbuild-install" make -C udev install
+    # the dm rules only; 11-dm-lvm and 69-dm-lvm are for LVM volumes
+    DESTDIR="$(pwd)/_zexbuild-install" make -C udev install_device-mapper
+    # blkdeactivate is LVM's shutdown script, not part of device-mapper
+    rm -f _zexbuild-install/overlayer/syshub/bin/blkdeactivate
 }
 
 package() {
