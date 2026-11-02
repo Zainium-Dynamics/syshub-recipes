@@ -1,0 +1,31 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=mpfr
+pkgver=4.2.2
+pkgrel=0
+source="https://www.mpfr.org/mpfr-$pkgver/mpfr-$pkgver.tar.xz"
+sha256sums="b67ba0383ef7e8a8563734e2e889ef5ec3c3b898a01d00fa0a6869ad81c6ce01  mpfr-$pkgver.tar.xz"
+makedepends="gmp-dev"
+
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --sbindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --disable-static \
+        --enable-shared \
+        --enable-thread-safe
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}
