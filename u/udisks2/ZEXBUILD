@@ -4,10 +4,11 @@ pkgver=2.11.2
 pkgrel=0
 source="https://github.com/storaged-project/udisks/releases/download/udisks-$pkgver/udisks-$pkgver.tar.bz2"
 sha256sums="18630a8aad806bea0bc626ce97e71e50ec82c742956ac1c834a4275f8f22207b  udisks-$pkgver.tar.bz2"
-makedepends="pkgconf glib-dev polkit-dev libgudev-dev eudev-dev util-linux-dev acl-dev gettext-dev libxslt linux-headers"
+makedepends="pkgconf glib-dev polkit-dev libgudev-dev eudev-dev kmod-dev util-linux-dev acl-dev gettext-dev libxslt linux-headers"
 needs_toolchain="systemd systemd-dev libblockdev libblockdev-dev"
 
 # Drives are mounted under /run/media/<user>, as on other desktops; SMART is off.
+# kmod-dev: libblockdev's libbd_utils links libkmod, which the linker has to find too.
 build() {
     # the tree is udisks-<version>, not udisks2-<version>
     cd udisks-$pkgver
