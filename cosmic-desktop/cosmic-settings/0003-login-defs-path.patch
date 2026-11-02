@@ -1,0 +1,22 @@
+diff --git a/cosmic-settings/src/pages/system/users/mod.rs b/cosmic-settings/src/pages/system/users/mod.rs
+index d2e7554..c01c140 100644
+--- a/cosmic-settings/src/pages/system/users/mod.rs
++++ b/cosmic-settings/src/pages/system/users/mod.rs
+@@ -935,7 +935,7 @@ async fn check_authorization(conn: &zbus::Connection) -> anyhow::Result<()> {
+ 
+ fn uid_range() -> (u64, u64) {
+     let (mut min, mut max) = (1000, 60000);
+-    let Ok(file) = std::fs::File::open("/etc/login.defs") else {
++    let Ok(file) = std::fs::File::open("/overlayer/syshub/etc/login.defs") else {
+         return (min, max);
+     };
+ 
+@@ -1011,7 +1011,7 @@ fn hash_password(password_plain: &str) -> String {
+ // For now, just grabbing what we need
+ fn get_encrypt_method() -> String {
+     let mut value = String::new();
+-    let login_defs = if let Ok(file) = File::open("/etc/login.defs") {
++    let login_defs = if let Ok(file) = File::open("/overlayer/syshub/etc/login.defs") {
+         file
+     } else {
+         return value;

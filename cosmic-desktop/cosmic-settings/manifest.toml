@@ -1,0 +1,30 @@
+# manifest.toml — cosmic-settings (syshub tier)
+
+[package]
+name             = "cosmic-settings"
+version          = "1.11.0"
+description      = "COSMIC settings app, systemd/dbus/flatpak free"
+license          = "GPL-3.0-only"
+maintainer       = "Ali Zain <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-settings"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+provides         = ["cosmic-settings"]
+tags             = ["desktop", "cosmic"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   ="/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
