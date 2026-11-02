@@ -1,8 +1,9 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=udisks2
 pkgver=2.11.2
-pkgrel=0
-source="https://github.com/storaged-project/udisks/releases/download/udisks-$pkgver/udisks-$pkgver.tar.bz2"
+pkgrel=1
+source="https://github.com/storaged-project/udisks/releases/download/udisks-$pkgver/udisks-$pkgver.tar.bz2
+80-zainium-udisks.rules"
 sha256sums="18630a8aad806bea0bc626ce97e71e50ec82c742956ac1c834a4275f8f22207b  udisks-$pkgver.tar.bz2"
 makedepends="pkgconf glib-dev polkit-dev libgudev-dev eudev-dev kmod-dev util-linux-dev acl-dev gettext-dev libxslt linux-headers"
 needs_toolchain="systemd systemd-dev libblockdev libblockdev-dev"
@@ -14,6 +15,8 @@ build() {
     cd udisks-$pkgver
     # Zainium's libblockdev (3.4 or newer) and libsystemd for login sessions
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # configure checks for <blockdev/part.h> with only the GLib flags; CPPFLAGS is the one it keeps
+    export CPPFLAGS="-I/overlayer/syshub/include${CPPFLAGS:+ $CPPFLAGS}"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
@@ -42,4 +45,7 @@ package() {
     rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
         "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
     find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+    # the Zainium system partition is mounted at /home and /overlayer, not /, so udisks would
+    # offer it as an ordinary drive: hide it like the root of other systems
+    install -Dm644 "$RECIPE_DIR/80-zainium-udisks.rules" "$PAYLOAD_DIR/lib/udev/rules.d/80-zainium-udisks.rules"
 }
