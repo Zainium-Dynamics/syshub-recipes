@@ -1,0 +1,29 @@
+[package]
+name             = "cosmic-viewer"
+version          = "1.11.0"
+description      = "Image viewer for the COSMIC Desktop Environment"
+license          = "GPL-3.0-only"
+maintainer       = "Zainium <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-viewer"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cosmic-icons"]
+provides         = ["cosmic-viewer"]
+tags             = ["desktop", "cosmic", "app"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
