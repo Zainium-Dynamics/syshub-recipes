@@ -1,0 +1,28 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-osk
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-osk/archive/refs/tags/epoch-$pkgver.tar.gz"
+sha256sums="bdb94386f451e672c2512ddb65bd0c8691921d5488595d0988fd935ce7e43bb6  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf eudev-dev libxkbcommon-dev wayland-dev"
+
+build() {
+    cd cosmic-osk-epoch-$pkgver
+    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    export VERGEN_GIT_COMMIT_DATE="$(date -u '+%Y-%m-%d')"
+    export VERGEN_GIT_SHA="unknown"
+    cargo build --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+    # still in the source dir build() changed into
+    just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
+        cargo-target-dir=target/x86_64-unknown-linux-musl install
+}
