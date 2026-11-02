@@ -1,10 +1,11 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=systemd
 pkgver=261.2
-pkgrel=2
+pkgrel=3
 subpackages="$pkgname-dev"
 source="https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz
-0001-zainium-paths.patch"
+0001-zainium-paths.patch
+ima-policy"
 sha256sums="ed1059ff964f5df35b6056434cc17cc83f86dc913f10489948a0b19b6081c5ec  v$pkgver.tar.gz"
 makedepends="meson ninja pkgconf gperf python3 py3-jinja2 build-base linux-headers gettext-dev libucontext-dev coreutils
     libcap-dev libseccomp-dev kmod-dev pcre2-dev
@@ -167,6 +168,9 @@ package() {
             sed -i -E 's#^(Exec(Start|Stop|Reload)[a-zA-Z]*=)([-+:!@]{1,3})?(systemctl|journalctl|networkctl|resolvectl|timedatectl|hostnamectl|loginctl|localectl|machinectl|coredumpctl|bootctl|portablectl|homectl|oomctl|busctl|udevadm|userdbctl|systemd-[a-zA-Z0-9_-]*)([[:space:]]|$)#\1\3/overlayer/syshub/bin/\4\5#' "$f"
         done
     done
+
+    # measure-only IMA policy for PID 1's loader (-Dima=true)
+    install -Dm644 "$RECIPE_DIR/ima-policy" "$PAYLOAD_DIR/overlayer/syshub/etc/ima/ima-policy"
 }
 
 dev() {
