@@ -1,0 +1,16 @@
+--- a/plugins/src/terminal/mod.rs
++++ b/plugins/src/terminal/mod.rs
+@@ -160,11 +160,11 @@
+         return (PathBuf::from(exec), arg);
+     }
+
+-    const SYMLINK: &str = "/usr/bin/x-terminal-emulator";
++    const SYMLINK: &str = "/overlayer/syshub/bin/x-terminal-emulator";
+
+     if let Ok(found) = read_link(SYMLINK) {
+         return (read_link(&found).unwrap_or(found), "-e");
+     }
+
+-    (PathBuf::from("/usr/bin/gnome-terminal"), "--")
++    (PathBuf::from("/overlayer/syshub/bin/cosmic-term"), "-e")
+ }

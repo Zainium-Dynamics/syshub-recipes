@@ -1,0 +1,42 @@
+--- a/src/page/appearance.rs
++++ b/src/page/appearance.rs
+@@ -104,7 +104,7 @@
+         #[cfg(feature = "nixos")]
+         let themes_dir_path = "/run/current-system/sw/share/cosmic-themes/";
+         #[cfg(not(feature = "nixos"))]
+-        let themes_dir_path = "/usr/share/cosmic-themes/";
++        let themes_dir_path = "/overlayer/syshub/share/cosmic-themes/";
+         if let Ok(directory) = std::fs::read_dir(themes_dir_path) {
+             let mut extra_themes = BTreeSet::new();
+             let mut buffer = Vec::with_capacity(8 * 1024);
+--- a/src/page/layout.rs
++++ b/src/page/layout.rs
+@@ -65,7 +65,7 @@
+         #[cfg(feature = "nixos")]
+         let layouts_dir_path = "/run/current-system/sw/share/cosmic-layouts/";
+         #[cfg(not(feature = "nixos"))]
+-        let layouts_dir_path = "/usr/share/cosmic-layouts/";
++        let layouts_dir_path = "/overlayer/syshub/share/cosmic-layouts/";
+         let Ok(layouts_dir) = std::fs::read_dir(layouts_dir_path) else {
+             return cosmic::Task::none();
+         };
+--- a/src/page/user.rs
++++ b/src/page/user.rs
+@@ -17,7 +17,7 @@
+ use url::Url;
+ use zbus_polkit::policykit1::CheckAuthorizationFlags;
+ 
+-const DEFAULT_ICON_FILE: &str = "/usr/share/pixmaps/faces/pop-robot.png";
++const DEFAULT_ICON_FILE: &str = "/overlayer/syshub/share/pixmaps/faces/pop-robot.png";
+ const USERS_ADMIN_POLKIT_POLICY_ID: &str = "com.system76.CosmicSettings.Users.Admin";
+ 
+ #[derive(Clone, Debug, PartialEq, Eq)]
+@@ -353,7 +353,7 @@
+ // For now, just grabbing what we need
+ fn get_encrypt_method() -> String {
+     let mut value = String::new();
+-    let login_defs = if let Ok(file) = File::open("/etc/login.defs") {
++    let login_defs = if let Ok(file) = File::open("/overlayer/syshub/etc/login.defs") {
+         file
+     } else {
+         return value;

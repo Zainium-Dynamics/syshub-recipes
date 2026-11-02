@@ -1,0 +1,136 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=plymouth
+pkgver=26.134.222
+pkgrel=1
+source="https://www.freedesktop.org/software/plymouth/releases/plymouth-$pkgver.tar.xz
+0001-overlayer-syshub-font-paths.patch
+0002-script-null-console-viewer.patch"
+sha256sums="6ee1068216c5047923fabf0f6aa583e9d77cab383077358df3fc22f2ee398bb0  plymouth-$pkgver.tar.xz"
+
+makedepends="meson ninja pkgconf libpng-dev eudev-dev pango-dev cairo-dev freetype-dev gtk+3.0-dev libdrm-dev libevdev-dev libxkbcommon-dev xkeyboard-config"
+needs_toolchain="systemd systemd-dev xkeyboard-config"
+
+build() {
+	export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+	export PATH="/overlayer/syshub/bin:$PATH"
+	patch -p1 < ../0001-overlayer-syshub-font-paths.patch
+	# script themes crashed when no font could be loaded (console viewer left NULL)
+	patch -p1 < ../0002-script-null-console-viewer.patch
+	# our xkeyboard-config syshub pkg ships no .pc (data files only);
+	# plymouth only existence-checks this dep, never reads a variable
+	sed -i "s#dependency('xkeyboard-config')#dependency('xkeyboard-config', required: false)#" meson.build
+	# same story for systemd.pc -- our systemd-dev ships libsystemd.pc
+	# but not the top-level systemd.pc metadata package; systemd_dep is
+	# only ever used to derive systemdsystemunitdir, so hardcode it
+	python3 - <<'EOF'
+import re
+src = open("meson.build").read()
+src = src.replace(
+    "systemd_dep = dependency('systemd')\n"
+    "  systemd_unit_dir = systemd_dep.get_variable('systemdsystemunitdir',\n"
+    "    pkgconfig_define: [ 'rootprefix', get_option('prefix') ],\n"
+    "  )",
+    "systemd_unit_dir = '/overlayer/syshub/lib/systemd/system'"
+)
+open("meson.build", "w").write(src)
+EOF
+	# execinfo.h is glibc-only; musl has no backtrace(), stub the crash
+	# handler's debug dump instead of losing the whole build over it
+	python3 - <<'PYEOF'
+src = open("src/main.c").read()
+src = src.replace("#include <execinfo.h>\n", "")
+src = src.replace(
+    'static void\n'
+    'write_backtrace (int output_fd)\n'
+    '{\n'
+    '        void *addresses[BACKTRACE_SIZE];\n'
+    '        int number_of_addresses;\n'
+    '\n'
+    '        write (output_fd, "backtrace:\\n", strlen ("backtrace:\\n"));\n'
+    '        number_of_addresses = backtrace (addresses, BACKTRACE_SIZE);\n'
+    '\n'
+    '        if (number_of_addresses <= BACKTRACE_FRAMES_TO_SKIP)\n'
+    '                return;\n'
+    '\n'
+    '        backtrace_symbols_fd (addresses + BACKTRACE_FRAMES_TO_SKIP,\n'
+    '                              number_of_addresses - BACKTRACE_FRAMES_TO_SKIP,\n'
+    '                              output_fd);\n'
+    '}',
+    'static void\n'
+    'write_backtrace (int output_fd)\n'
+    '{\n'
+    '        write (output_fd, "backtrace: unavailable (musl)\\n", strlen ("backtrace: unavailable (musl)\\n"));\n'
+    '}'
+)
+open("src/main.c", "w").write(src)
+PYEOF
+	# rpmatch() is a glibc extension, musl doesn't have it -- shim it
+	python3 - <<'PYEOF2'
+src = open("src/libply/ply-command-parser.c").read()
+anchor = (
+    "static bool\n"
+    "argument_is_option (const char *argument)\n"
+    "{\n"
+    "        return argument[0] == '-' && argument[1] == '-';\n"
+    "}\n"
+    "\n"
+    "static bool\n"
+    "ply_command_option_read_arguments (ply_command_option_t *option,"
+)
+shim = (
+    "static bool\n"
+    "argument_is_option (const char *argument)\n"
+    "{\n"
+    "        return argument[0] == '-' && argument[1] == '-';\n"
+    "}\n"
+    "\n"
+    "static int\n"
+    "rpmatch (const char *response)\n"
+    "{\n"
+    "        if (response[0] == 'y' || response[0] == 'Y' || strcmp (response, \"1\") == 0)\n"
+    "                return 1;\n"
+    "        if (response[0] == 'n' || response[0] == 'N' || strcmp (response, \"0\") == 0)\n"
+    "                return 0;\n"
+    "        return -1;\n"
+    "}\n"
+    "\n"
+    "static bool\n"
+    "ply_command_option_read_arguments (ply_command_option_t *option,"
+)
+assert anchor in src
+src = src.replace(anchor, shim)
+open("src/libply/ply-command-parser.c", "w").write(src)
+PYEOF2
+	meson setup output --prefix=/overlayer/syshub --sysconfdir=/overlayer/syshub/etc \
+		-Dsystemd-integration=true -Ddocs=false
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$PAYLOAD_DIR" meson install --no-rebuild -C output
+
+	is_text_file() {
+		case "$(file -b --mime-type "$1")" in
+			text/*) return 0 ;;
+			*) return 1 ;;
+		esac
+	}
+
+	for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+		is_text_file "$f" || continue
+		sed -i \
+			-e 's#/usr/lib/#/overlayer/syshub/lib/#g' \
+			-e 's#/usr/sbin/#/overlayer/syshub/bin/#g' \
+			-e 's#/usr/bin/#/overlayer/syshub/bin/#g' \
+			-e 's#/usr/share/#/overlayer/syshub/share/#g' \
+			-e 's#/usr/#/overlayer/syshub/#g' \
+			"$f"
+	done
+
+	# shutdown, reboot, halt, kexec take a second or two: keep the splash up for a second
+	# so the theme's line fills (systemd-poweroff/-reboot wait for these units to start)
+	for u in poweroff reboot halt kexec; do
+		sed -i '/^ExecStartPost=.*plymouth show-splash$/a ExecStartPost=-/overlayer/syshub/bin/sleep 1' \
+			"$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system/plymouth-$u.service"
+	done
+}

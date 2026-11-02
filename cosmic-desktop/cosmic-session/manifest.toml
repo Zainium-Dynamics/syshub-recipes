@@ -1,0 +1,30 @@
+# manifest.toml — cosmic-session (syshub tier)
+
+[package]
+name             = "cosmic-session"
+version          = "1.11.0"
+description      = "COSMIC session launcher, systemd/dbus/flatpak free (login1 via quantra-logind + oxibus)"
+license          = "GPL-3.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-session"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cosmic-comp", "systemd"]
+provides         = ["cosmic-session"]
+tags             = ["desktop", "cosmic"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

@@ -1,0 +1,61 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-session
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-session/archive/refs/tags/epoch-$pkgver.tar.gz
+0003-overlayer-syshub-path.patch
+0004-desktop-file-path.patch
+0005-start-cosmic-no-usr-path.patch
+0006-qt-plugin-path-syshub.patch
+0007-etc-xdg-autostart-syshub-path.patch
+0008-start-cosmic-shebang-syshub-path.patch
+0009-start-cosmic-bg-first.patch
+0010-start-cosmic-import-set-variables-only.patch
+0011-dconf-profile-syshub-path.patch"
+sha256sums="0c3d3e1f0ef534a063621932cdcc15c8af258df5c12ce6023615dc33222ebca5  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev"
+
+build() {
+    cd cosmic-session-epoch-$pkgver
+
+    patch -p1 < ../0003-overlayer-syshub-path.patch
+    patch -p1 < ../0004-desktop-file-path.patch
+    patch -p1 < ../0005-start-cosmic-no-usr-path.patch
+    patch -p1 < ../0006-qt-plugin-path-syshub.patch
+    # src/main.rs's autostart dir scan falls back to a hardcoded /etc/xdg/
+    # when $XDG_CONFIG_DIRS isn't set. Currently dead code (this recipe
+    # doesn't build with --features autostart, so the block isn't even
+    # compiled in) -- fixed anyway so the path is correct the day that
+    # feature gets turned on, instead of shipping another silent /etc
+    # leftover to rediscover later.
+    patch -p1 < ../0007-etc-xdg-autostart-syshub-path.patch
+    # data/start-cosmic's own shebang was still #!/bin/sh -- 0005/0006 only
+    # fixed paths *inside* the script, not the interpreter line greetd's
+    # exec relies on to find it. /bin/sh doesn't exist on Zainium, only
+    # /overlayer/syshub/bin/sh does, so this was a launch-time failure
+    # waiting to happen.
+    patch -p1 < ../0008-start-cosmic-shebang-syshub-path.patch
+    # cosmic-bg first, so the wallpaper replaces the compositor's black screen sooner
+    patch -p1 < ../0009-start-cosmic-bg-first.patch
+    # no "SSH_AUTH_SOCK not set" warning on the screen between the greeter and the desktop
+    patch -p1 < ../0010-start-cosmic-import-set-variables-only.patch
+    # DCONF_PROFILE as a full path, as on the installed system
+    patch -p1 < ../0011-dconf-profile-syshub-path.patch
+
+    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    export VERGEN_GIT_COMMIT_DATE="$(date -u '+%Y-%m-%d')"
+    export VERGEN_GIT_SHA="unknown"
+    cargo build --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+    just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
+        cargo-target-dir=target/x86_64-unknown-linux-musl install
+}

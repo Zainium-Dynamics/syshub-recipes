@@ -1,0 +1,31 @@
+# manifest.toml — cosmic-panel
+
+[package]
+name             = "cosmic-panel"
+version          = "1.11.0"
+description      = "Panel component for the COSMIC Desktop Environment"
+license          = "GPL-3.0-or-later"
+maintainer       = "Zainium <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-panel"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["wayland"]
+provides         = ["cosmic-panel"]
+tags             = ["desktop", "cosmic"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

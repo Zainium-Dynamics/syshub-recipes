@@ -1,0 +1,11 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -105,7 +105,7 @@
+ }
+ 
+ fn run_command(command: String) {
+-    let mut child = match Command::new("/bin/sh").arg("-c").arg(&command).spawn() {
++    let mut child = match Command::new("/overlayer/syshub/bin/sh").arg("-c").arg(&command).spawn() {
+         Ok(child) => child,
+         Err(err) => {
+             log::error!("failed to execute command '{}': {}", command, err);

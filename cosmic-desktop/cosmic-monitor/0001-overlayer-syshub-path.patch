@@ -1,0 +1,11 @@
+--- a/src/info/platform/linux/mod.rs
++++ b/src/info/platform/linux/mod.rs
+@@ -135,7 +135,7 @@
+ impl LinuxPlatform {
+     pub fn new() -> Self {
+         let mut amdgpu_ids = HashMap::new();
+-        if let Ok(data) = fs::read_to_string("/usr/share/libdrm/amdgpu.ids") {
++        if let Ok(data) = fs::read_to_string("/overlayer/syshub/share/libdrm/amdgpu.ids") {
+             for line in data.lines() {
+                 if line.starts_with("#") {
+                     continue;

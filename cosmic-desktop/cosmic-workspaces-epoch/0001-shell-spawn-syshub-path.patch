@@ -1,0 +1,20 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -339,7 +339,7 @@
+             };
+             if let Some(cmd) = cmd {
+                 tokio::spawn(async {
+-                    let mut child = Command::new("/bin/sh")
++                    let mut child = Command::new("/overlayer/syshub/bin/sh")
+                         .arg("-c")
+                         .arg(cmd)
+                         .arg("_")
+@@ -1035,7 +1035,7 @@
+                 };
+                 if let Some(cmd) = cmd {
+                     tokio::spawn(async {
+-                        let mut child = Command::new("/bin/sh")
++                        let mut child = Command::new("/overlayer/syshub/bin/sh")
+                             .arg("-c")
+                             .arg(cmd)
+                             .arg("_")

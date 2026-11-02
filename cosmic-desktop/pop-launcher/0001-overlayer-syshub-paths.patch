@@ -1,0 +1,22 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -19,7 +19,7 @@
+ pub const SYSTEM: &str = "/etc/pop-launcher";
+ pub const SYSTEM_PLUGINS: &str = concatcp!(SYSTEM, "/plugins");
+ 
+-pub const DISTRIBUTION: &str = "/usr/lib/pop-launcher";
++pub const DISTRIBUTION: &str = "/overlayer/syshub/lib/pop-launcher";
+ pub const DISTRIBUTION_PLUGINS: &str = concatcp!(DISTRIBUTION, "/plugins");
+ 
+ pub const PLUGIN_PATHS: &[&str] = &[LOCAL_PLUGINS, SYSTEM_PLUGINS, DISTRIBUTION_PLUGINS];
+--- a/plugins/src/scripts/mod.rs
++++ b/plugins/src/scripts/mod.rs
+@@ -15,7 +15,7 @@
+ 
+ const LOCAL_PATH: &str = ".local/share/pop-launcher/scripts";
+ const SYSTEM_ADMIN_PATH: &str = "/etc/pop-launcher/scripts";
+-const DISTRIBUTION_PATH: &str = "/usr/lib/pop-launcher/scripts";
++const DISTRIBUTION_PATH: &str = "/overlayer/syshub/lib/pop-launcher/scripts";
+ 
+ pub async fn main() {
+     let mut requests = json_input_stream(async_stdin());

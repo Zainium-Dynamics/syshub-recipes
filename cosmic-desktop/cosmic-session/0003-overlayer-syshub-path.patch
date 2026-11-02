@@ -1,0 +1,11 @@
+--- a/src/a11y.rs
++++ b/src/a11y.rs
+@@ -42,7 +42,7 @@
+ 			match pman
+ 				.start(
+ 					launch_pad::process::Process::new()
+-						.with_executable(ORCA.unwrap_or("/usr/bin/orca"))
++						.with_executable(ORCA.unwrap_or("/overlayer/syshub/bin/orca"))
+ 						.with_env(env_vars.clone())
+ 						.with_on_stdout(move |_, _, line| {
+ 							let stdout_span = stdout_span.clone();

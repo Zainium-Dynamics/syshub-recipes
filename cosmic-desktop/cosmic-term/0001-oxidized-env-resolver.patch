@@ -1,0 +1,170 @@
+diff -ruN '--exclude=.git' '--exclude=target' a/Cargo.toml b/Cargo.toml
+--- a/Cargo.toml	2026-08-16 23:01:11.635846252 +0500
++++ b/Cargo.toml	2026-08-26 16:19:03.344306745 +0500
+@@ -39,6 +39,9 @@
+ git = "https://github.com/pop-os/cosmic-files.git"
+ default-features = false
+ 
++[dependencies.oxidized-environment-core]
++git = "https://github.com/Zainium-Dynamics/oxidized-environment.git"
++
+ [dependencies.cosmic-text]
+ version = "0.19"
+ features = ["monospace_fallback", "shape-run-cache"]
+diff -ruN '--exclude=.git' '--exclude=target' a/i18n/en/cosmic_term.ftl b/i18n/en/cosmic_term.ftl
+--- a/i18n/en/cosmic_term.ftl	2026-08-16 23:01:11.642846565 +0500
++++ b/i18n/en/cosmic_term.ftl	2026-08-26 16:19:46.994341193 +0500
+@@ -66,6 +66,8 @@
+ show-header-description = Reveal the header from the right-click menu
+ tab-new-inherit-working-directory = New tabs and windows use current directory
+ tab-new-inherit-working-directory-description = Open new tabs and windows in the active tab's working directory
++env-resolver-enabled = Zainium environment resolver
++env-resolver-enabled-description = Resolve PATH and other variables from oxienv.toml for every new terminal
+ 
+ ### Keyboard shortcuts
+ add-another-keybinding = Add another keybinding
+diff -ruN '--exclude=.git' '--exclude=target' a/src/config.rs b/src/config.rs
+--- a/src/config.rs	2026-08-16 23:01:11.654847101 +0500
++++ b/src/config.rs	2026-08-26 16:17:40.139085175 +0500
+@@ -17,6 +17,10 @@
+ pub const COSMIC_THEME_DARK: &str = "COSMIC Dark";
+ pub const COSMIC_THEME_LIGHT: &str = "COSMIC Light";
+ 
++fn default_env_resolver_enabled() -> bool {
++    true
++}
++
+ #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+ pub enum AppTheme {
+     Dark,
+@@ -238,6 +242,8 @@
+     pub focus_follow_mouse: bool,
+     #[serde(default)]
+     pub tab_new_inherit_working_directory: bool,
++    #[serde(default = "default_env_resolver_enabled")]
++    pub env_resolver_enabled: bool,
+     pub default_profile: Option<ProfileId>,
+     #[serde(default)]
+     pub shortcuts_custom: Shortcuts,
+@@ -253,6 +259,7 @@
+             dim_font_weight: Weight::NORMAL.0,
+             focus_follow_mouse: false,
+             tab_new_inherit_working_directory: false,
++            env_resolver_enabled: default_env_resolver_enabled(),
+             font_name: "Noto Sans Mono".to_string(),
+             font_size: 14,
+             font_size_zoom_step_mul_100: 100,
+diff -ruN '--exclude=.git' '--exclude=target' a/src/env_resolver.rs b/src/env_resolver.rs
+--- a/src/env_resolver.rs	1970-01-01 05:00:00.000000000 +0500
++++ b/src/env_resolver.rs	2026-08-26 16:17:59.380945418 +0500
+@@ -0,0 +1,45 @@
++// SPDX-License-Identifier: GPL-3.0-only
++
++use std::collections::HashMap;
++use std::path::{Path, PathBuf};
++
++fn oxienv_dir() -> PathBuf {
++    if let Ok(over) = std::env::var(oxidized_environment::ROOT_OVERRIDE_ENV) {
++        return PathBuf::from(over);
++    }
++    let zainium = Path::new("/overlayer/syshub");
++    if zainium.is_dir() {
++        zainium.join("etc")
++    } else {
++        PathBuf::from("/etc")
++    }
++}
++
++pub fn resolve() -> HashMap<String, String> {
++    oxidized_environment::resolve(&oxienv_dir())
++}
++
++const PATH_LIST_VARS: &[&str] = &[
++    "PATH",
++    "LD_LIBRARY_PATH",
++    "XDG_DATA_DIRS",
++    "PKG_CONFIG_PATH",
++];
++
++pub fn resolve_merged() -> HashMap<String, String> {
++    let mut merged = resolve();
++    for key in PATH_LIST_VARS {
++        let Some(resolved) = merged.get(*key).cloned() else {
++            continue;
++        };
++        let mut parts: Vec<&str> = resolved.split(':').filter(|s| !s.is_empty()).collect();
++        let existing = std::env::var(key).unwrap_or_default();
++        for part in existing.split(':') {
++            if !part.is_empty() && !parts.contains(&part) {
++                parts.push(part);
++            }
++        }
++        merged.insert((*key).to_string(), parts.join(":"));
++    }
++    merged
++}
+diff -ruN '--exclude=.git' '--exclude=target' a/src/main.rs b/src/main.rs
+--- a/src/main.rs	2026-08-16 23:01:11.655847146 +0500
++++ b/src/main.rs	2026-08-26 16:17:20.444204684 +0500
+@@ -80,6 +80,8 @@
+ 
+ mod dnd;
+ 
++mod env_resolver;
++
+ use clap_lex::RawArgs;
+ 
+ static ICON_CACHE: LazyLock<Mutex<IconCache>> = LazyLock::new(|| Mutex::new(IconCache::new()));
+@@ -433,6 +435,7 @@
+     SyntaxTheme(ColorSchemeKind, usize),
+     SystemThemeChange,
+     TabNewInheritWorkingDirectory(bool),
++    EnvResolverEnabled(bool),
+     TabActivate(segmented_button::Entity),
+     TabActivateJump(usize),
+     TabClose(Option<segmented_button::Entity>),
+@@ -1528,6 +1531,14 @@
+                         self.config.tab_new_inherit_working_directory,
+                         Message::TabNewInheritWorkingDirectory,
+                     ),
++            )
++            .add(
++                widget::settings::item::builder(fl!("env-resolver-enabled"))
++                    .description(fl!("env-resolver-enabled-description"))
++                    .toggler(
++                        self.config.env_resolver_enabled,
++                        Message::EnvResolverEnabled,
++                    ),
+             );
+ 
+         widget::settings::view_column(vec![
+@@ -1579,7 +1590,7 @@
+                     Some(colors) => {
+                         let current_pane = self.pane_model.focused();
+                         if let Some(tab_model) = self.pane_model.active_mut() {
+-                            let (options, tab_title_override) = if let Some(profile) =
++                            let (mut options, tab_title_override) = if let Some(profile) =
+                                 profile_id_opt
+                                     .and_then(|profile_id| self.config.profiles.get(&profile_id))
+                             {
+@@ -1621,6 +1632,10 @@
+                                 (options, None)
+                             };
+ 
++                            if self.config.env_resolver_enabled {
++                                options.env.extend(env_resolver::resolve_merged());
++                            }
++
+                             let entity = tab_model
+                                 .insert()
+                                 .text(
+@@ -2789,6 +2804,9 @@
+                     tab_new_inherit_working_directory
+                 );
+             }
++            Message::EnvResolverEnabled(env_resolver_enabled) => {
++                config_set!(env_resolver_enabled, env_resolver_enabled);
++            }
+             Message::ShowPaneBorders(show_pane_borders) => {
+                 if show_pane_borders != self.config.show_pane_borders {
+                     config_set!(show_pane_borders, show_pane_borders);

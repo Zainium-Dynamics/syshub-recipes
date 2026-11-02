@@ -1,0 +1,94 @@
+diff --git a/src/dbus/mod.rs b/src/dbus/mod.rs
+index 9138cae..d5aab8e 100644
+--- a/src/dbus/mod.rs
++++ b/src/dbus/mod.rs
+@@ -162,18 +162,16 @@ pub fn ready(common: &Common) -> Result<()> {
+         let conn = common.dbus_state.session_conn().await?;
+         let dbus = zbus::fdo::DBusProxy::new(conn).await?;
+ 
+-        dbus.update_activation_environment(HashMap::from([
+-            ("WAYLAND_DISPLAY", common.socket.to_str().unwrap()),
+-            (
+-                "DISPLAY",
+-                &common
+-                    .xwayland_state
+-                    .as_ref()
+-                    .map(|s| format!(":{}", s.display))
+-                    .unwrap_or_default(),
+-            ),
+-        ]))
+-        .await
++        let display = common
++            .xwayland_state
++            .as_ref()
++            .map(|s| format!(":{}", s.display));
++        let mut env = HashMap::from([("WAYLAND_DISPLAY", common.socket.to_str().unwrap())]);
++        // without Xwayland DISPLAY stays unset: an empty one breaks programs that pass it on
++        if let Some(display) = display.as_deref() {
++            env.insert("DISPLAY", display);
++        }
++        dbus.update_activation_environment(env).await
+     })?;
+     Ok(())
+ }
+diff --git a/src/input/actions.rs b/src/input/actions.rs
+index 91de26c..46260fd 100644
+--- a/src/input/actions.rs
++++ b/src/input/actions.rs
+@@ -1077,18 +1077,21 @@ impl State {
+             .common
+             .xwayland_state
+             .as_ref()
+-            .map(|s| format!(":{}", s.display))
+-            .unwrap_or_default();
++            .map(|s| format!(":{}", s.display));
+ 
+         let mut cmd = std::process::Command::new("/overlayer/syshub/bin/sh");
+ 
+         cmd.arg("-c")
+             .arg(&command)
+             .env("WAYLAND_DISPLAY", &wayland_display)
+-            .env("DISPLAY", &display)
+             .env("XDG_ACTIVATION_TOKEN", &*token)
+             .env("DESKTOP_STARTUP_ID", &*token)
+             .env_remove("COSMIC_SESSION_SOCK");
++        // without Xwayland DISPLAY stays unset: an empty one breaks programs that pass it on
++        match &display {
++            Some(display) => cmd.env("DISPLAY", display),
++            None => cmd.env_remove("DISPLAY"),
++        };
+         unsafe {
+             cmd.pre_exec(|| {
+                 crate::utils::rlimit::restore_nofile_limit();
+diff --git a/src/systemd.rs b/src/systemd.rs
+index 36720d9..6525ca1 100644
+--- a/src/systemd.rs
++++ b/src/systemd.rs
+@@ -7,19 +7,14 @@ use tracing::{error, warn};
+ 
+ pub fn ready(common: &Common) {
+     if booted() {
+-        match Command::new("systemctl")
+-            .args(["--user", "import-environment", "WAYLAND_DISPLAY", "DISPLAY"])
+-            .env("WAYLAND_DISPLAY", &common.socket)
+-            .env(
+-                "DISPLAY",
+-                common
+-                    .xwayland_state
+-                    .as_ref()
+-                    .map(|s| format!(":{}", s.display))
+-                    .unwrap_or_default(),
+-            )
+-            .status()
+-        {
++        let mut cmd = Command::new("systemctl");
++        cmd.args(["--user", "import-environment", "WAYLAND_DISPLAY"])
++            .env("WAYLAND_DISPLAY", &common.socket);
++        // without Xwayland DISPLAY stays unset: an empty one breaks programs that pass it on
++        if let Some(s) = common.xwayland_state.as_ref() {
++            cmd.arg("DISPLAY").env("DISPLAY", format!(":{}", s.display));
++        }
++        match cmd.status() {
+             Ok(x) if x.success() => {}
+             Ok(x) => warn!(
+                 exit_code = ?x.code(),

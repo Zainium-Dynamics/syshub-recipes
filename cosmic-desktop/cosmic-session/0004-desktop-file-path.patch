@@ -1,0 +1,10 @@
+--- a/data/cosmic.desktop
++++ b/data/cosmic.desktop
+@@ -2,6 +2,6 @@
+ Name=COSMIC
+ Comment=This session logs you into the COSMIC desktop
+ Comment[sv]=Denna session loggar in dig till skrivbordsmiljön COSMIC
+-Exec=/usr/bin/start-cosmic
++Exec=/overlayer/syshub/bin/start-cosmic
+ Type=Application
+ DesktopNames=COSMIC

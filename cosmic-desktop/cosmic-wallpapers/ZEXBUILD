@@ -1,0 +1,11 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-wallpapers
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-wallpapers/archive/refs/tags/epoch-$pkgver.tar.gz"
+sha256sums="3bc7580caabef7e42c161180bc1a27095962c377acbde7ec0ee4d8da130e7857  epoch-$pkgver.tar.gz"
+
+package() {
+	cd cosmic-wallpapers-epoch-$pkgver
+	make DESTDIR="$PAYLOAD_DIR" prefix=/overlayer/syshub install
+}

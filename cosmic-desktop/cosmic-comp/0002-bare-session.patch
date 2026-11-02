@@ -1,0 +1,70 @@
+--- a/data/cosmic-service
++++ b/data/cosmic-service
+@@ -1,32 +1,32 @@
+-#!/bin/bash
++#!/overlayer/syshub/bin/sh
+ 
+ # From: https://people.debian.org/~mpitt/systemd.conf-2016-graphical-session.pdf
+ 
+ # robustness: if the previous graphical session left some failed units,
+ # reset them so that they don't break this startup
+-for unit in $(systemctl --user --no-legend --state=failed --plain list-units | cut -f1 -d' '); do
+-	partof="$(systemctl --user show -p PartOf --value "$unit")"
++for unit in $(/overlayer/syshub/bin/systemctl --user --no-legend --state=failed --plain list-units | cut -f1 -d' '); do
++	partof="$(/overlayer/syshub/bin/systemctl --user show -p PartOf --value "$unit")"
+ 	for target in cosmic-session.target graphical-session.target; do
+ 		if [ "$partof" = "$target" ]; then
+-			systemctl --user reset-failed "$unit"
++			/overlayer/syshub/bin/systemctl --user reset-failed "$unit"
+ 			break
+ 		fi
+ 	done
+ done
+ 
+ # /etc/profile contains a lot of important environment variables
+-source /etc/profile
++source /overlayer/syshub/etc/profile
+ 
+ export XDG_CURRENT_DESKTOP=cosmic
+ 
+ # save environment variables that will be added to systemd
+-new_env=$(systemctl --user show-environment | cut -d'=' -f 1 | sort | comm -13 - <(env | cut -d'=' -f 1 | sort))
++new_env=$(/overlayer/syshub/bin/systemctl --user show-environment | cut -d'=' -f 1 | sort | comm -13 - <(env | cut -d'=' -f 1 | sort))
+ 
+ # import environment variables from the login manager
+-systemctl --user import-environment
++/overlayer/syshub/bin/systemctl --user import-environment
+ 
+ # then start the service
+-systemctl --wait --user start cosmic-comp.service
++/overlayer/syshub/bin/systemctl --wait --user start cosmic-comp.service
+ 
+ # cleanup environment
+-systemctl --user unset-environment $new_env
+\ No newline at end of file
++/overlayer/syshub/bin/systemctl --user unset-environment $new_env
+\ No newline at end of file
+--- a/data/cosmic.desktop
++++ b/data/cosmic.desktop
+@@ -1,8 +1,8 @@
+ [Desktop Entry]
+-Name=Cosmic
++Name=Cosmic (Bare)
+ Commment=This session logs you into Cosmic
+ Commment[sv]=Denna session loggar in dig till Cosmic
+-Exec=/usr/bin/cosmic-service
++Exec=/overlayer/syshub/bin/cosmic-service
+ Type=Application
+ DesktopNames=pop:COSMIC
+ X-GDM-SessionRegisters=false
+--- a/data/cosmic-comp.service
++++ b/data/cosmic-comp.service
+@@ -9,4 +9,4 @@
+ Type=notify
+-ExecStart=/usr/bin/cosmic-comp
++ExecStart=/overlayer/syshub/bin/cosmic-comp
+ Restart=never
+-ExecStopPost=/usr/bin/systemctl --user unset-environment DISPLAY WAYLAND_DISPLAY
+\ No newline at end of file
++ExecStopPost=/overlayer/syshub/bin/systemctl --user unset-environment DISPLAY WAYLAND_DISPLAY
+\ No newline at end of file

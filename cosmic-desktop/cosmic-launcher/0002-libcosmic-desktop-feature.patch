@@ -1,0 +1,10 @@
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -26,6 +26,7 @@
+     "wayland",
+     "tokio",
+     "single-instance",
++    "desktop",
+     "desktop-systemd-scope",
+     "xdg-portal",
+ ] }

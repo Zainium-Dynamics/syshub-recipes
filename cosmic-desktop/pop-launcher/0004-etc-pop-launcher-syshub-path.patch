@@ -1,0 +1,26 @@
+diff --git a/plugins/src/scripts/mod.rs b/plugins/src/scripts/mod.rs
+index b5dafee..730ea36 100644
+--- a/plugins/src/scripts/mod.rs
++++ b/plugins/src/scripts/mod.rs
+@@ -14,7 +14,7 @@ use tokio::io::AsyncBufReadExt;
+ use tokio::process::Command;
+ 
+ const LOCAL_PATH: &str = ".local/share/pop-launcher/scripts";
+-const SYSTEM_ADMIN_PATH: &str = "/etc/pop-launcher/scripts";
++const SYSTEM_ADMIN_PATH: &str = "/overlayer/syshub/etc/pop-launcher/scripts";
+ const DISTRIBUTION_PATH: &str = "/overlayer/syshub/lib/pop-launcher/scripts";
+ 
+ pub async fn main() {
+diff --git a/src/lib.rs b/src/lib.rs
+index e6e2adb..b698d0a 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -16,7 +16,7 @@ use std::{
+ pub const LOCAL: &str = "~/.local/share/pop-launcher";
+ pub const LOCAL_PLUGINS: &str = concatcp!(LOCAL, "/plugins");
+ 
+-pub const SYSTEM: &str = "/etc/pop-launcher";
++pub const SYSTEM: &str = "/overlayer/syshub/etc/pop-launcher";
+ pub const SYSTEM_PLUGINS: &str = concatcp!(SYSTEM, "/plugins");
+ 
+ pub const DISTRIBUTION: &str = "/overlayer/syshub/lib/pop-launcher";

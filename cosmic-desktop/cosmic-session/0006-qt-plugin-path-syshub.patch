@@ -1,0 +1,20 @@
+--- a/data/start-cosmic
++++ b/data/start-cosmic
+@@ -42,7 +42,7 @@
+ # Set the QT platform theme to CuteCosmic. Fallback to qt6ct if CuteCosmic is not installed.
+ if [ -z "$QT_QPA_PLATFORMTHEME" ]; then
+     export QT_QPA_PLATFORMTHEME=cosmic
+-    for QT_PLUGIN_PATH in /usr/lib*/qt6/plugins /usr/lib/*/qt6/plugins; do
++    for QT_PLUGIN_PATH in /overlayer/syshub/lib*/qt6/plugins /overlayer/syshub/lib/*/qt6/plugins; do
+         if [ -f "${QT_PLUGIN_PATH}/platformthemes/libcutecosmictheme.so" ]; then
+             # CuteCosmic found, no need for a fallback.
+             export QT_QPA_PLATFORMTHEME=cosmic
+@@ -59,7 +59,7 @@
+ # -> check if $XDG_RUNTIME_DIR/keyring exists
+ if [ -d "$XDG_RUNTIME_DIR/keyring" ]; then
+ 
+-    # Use PATH lookup instead of hardcoding /usr/bin
++    # Use PATH lookup instead of a hardcoded system binary path
+     if command -v gnome-keyring-daemon >/dev/null 2>&1; then
+         eval "$(gnome-keyring-daemon --start --components=pkcs11,secrets,ssh > /dev/null 2>&1)"
+     else
