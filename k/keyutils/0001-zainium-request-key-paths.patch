@@ -1,0 +1,27 @@
+From: Ali Zain <alizain@zainiumdynamics.tech>
+Subject: [PATCH] request-key.conf: helpers under /overlayer/syshub
+
+Zainium has no /bin or /usr at the root.
+---
+diff --git a/request-key.conf b/request-key.conf
+index ff16a95..ce5b5a2 100644
+--- a/request-key.conf
++++ b/request-key.conf
+@@ -32,10 +32,10 @@
+ #OP	TYPE	DESCRIPTION	CALLOUT INFO	PROGRAM ARG1 ARG2 ARG3 ...
+ #======	=======	===============	===============	===============================
+ create  dns_resolver *		*               /sbin/key.dns_resolver %k
+-create	user	debug:*		negate		/bin/keyctl negate %k 30 %S
+-create  user    debug:*         rejected        /bin/keyctl reject %k 30 %c %S
+-create  user    debug:*         expired         /bin/keyctl reject %k 30 %c %S
+-create  user    debug:*         revoked         /bin/keyctl reject %k 30 %c %S
+-create	user	debug:loop:*	*		|/bin/cat
+-create	user	debug:*		*		/usr/share/keyutils/request-key-debug.sh %k %d %c %S
+-negate	*	*		*		/bin/keyctl negate %k 30 %S
++create	user	debug:*		negate		/overlayer/syshub/bin/keyctl negate %k 30 %S
++create  user    debug:*         rejected        /overlayer/syshub/bin/keyctl reject %k 30 %c %S
++create  user    debug:*         expired         /overlayer/syshub/bin/keyctl reject %k 30 %c %S
++create  user    debug:*         revoked         /overlayer/syshub/bin/keyctl reject %k 30 %c %S
++create	user	debug:loop:*	*		|/overlayer/syshub/bin/cat
++create	user	debug:*		*		/overlayer/syshub/share/keyutils/request-key-debug.sh %k %d %c %S
++negate	*	*		*		/overlayer/syshub/bin/keyctl negate %k 30 %S
