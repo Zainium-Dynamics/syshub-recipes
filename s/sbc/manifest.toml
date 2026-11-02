@@ -1,0 +1,28 @@
+[package]
+name             = "sbc"
+version          = "2.2"
+description      = "Bluetooth SBC audio codec library"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://git.kernel.org/pub/scm/bluetooth/sbc.git"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["sbc", "libsbc"]
+tags             = ["base", "audio", "bluetooth"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

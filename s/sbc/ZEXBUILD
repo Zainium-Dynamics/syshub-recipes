@@ -1,0 +1,24 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=sbc
+pkgver=2.2
+pkgrel=0
+source="https://www.kernel.org/pub/linux/bluetooth/sbc-$pkgver.tar.xz"
+makedepends="pkgconf"
+
+# SBC, the codec every Bluetooth audio device supports; PipeWire's bluez5 plugin needs it.
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --disable-static \
+        --disable-tools \
+        --disable-tester
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    cp -P "$inst"/lib/libsbc.so.* "$PAYLOAD_DIR/lib/"
+}

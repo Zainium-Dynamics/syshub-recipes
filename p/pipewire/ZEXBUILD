@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=pipewire
 pkgver=1.6.8
-pkgrel=2
+pkgrel=3
 subpackages="pipewire-dev"
 source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
 sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
@@ -10,14 +10,15 @@ sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $p
 # CI container pull in transitively via glib-dev): "breaks:
 # gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
 # itself, so this still gets libintl.h without the conflict.
-makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev"
+makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev sbc-dev"
 needs_toolchain="systemd systemd-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev mesa mesa-dev libdrm libdrm-dev"
 
+# Bluetooth audio (bluez5 plugin) with SBC; the other codecs need
+# libraries the base doesn't have yet.
 # Minimal first pass: core pipewire daemon + client library + ALSA
 # backend + udev device detection only. session-managers=[] -- the
 # wireplumber recipe (next) is the real session manager, not the
-# deprecated built-in media-session. Everything else (bluetooth,
-# video/v4l2, jack compat, pulseaudio compat, gstreamer, ffmpeg,
+# deprecated built-in media-session. Everything else (video/v4l2, jack compat, pulseaudio compat, gstreamer, ffmpeg,
 # systemd, dbus, x11, vulkan, codecs...) disabled -- optional, no
 # recipes published for their own deps yet, follow-up work.
 build() {
@@ -62,7 +63,19 @@ EOF
         -Djack=disabled \
         -Dpipewire-v4l2=disabled \
         -Dv4l2=disabled \
-        -Dbluez5=disabled \
+        -Dbluez5=enabled \
+        -Dbluez5-backend-hsp-native=enabled \
+        -Dbluez5-backend-hfp-native=enabled \
+        -Dbluez5-backend-native-mm=disabled \
+        -Dbluez5-codec-g722=enabled \
+        -Dbluez5-codec-aptx=disabled \
+        -Dbluez5-codec-ldac=disabled \
+        -Dbluez5-codec-ldac-dec=disabled \
+        -Dbluez5-codec-aac=disabled \
+        -Dbluez5-codec-lc3plus=disabled \
+        -Dbluez5-codec-opus=disabled \
+        -Dbluez5-codec-lc3=disabled \
+        -Dbluez5-plc-spandsp=disabled \
         -Dffmpeg=disabled \
         -Ddbus=enabled \
         -Dsdl2=disabled \
@@ -100,6 +113,8 @@ package() {
     cp -a "$inst/lib/spa-0.2" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
     cp -a "$inst"/bin/. "$PAYLOAD_DIR/bin/"
     cp -a "$inst/share/pipewire" "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    # bluez5 device quirks (share/spa-0.2/bluez5/bluez-hardware.conf)
+    cp -a "$inst/share/spa-0.2" "$PAYLOAD_DIR/share/" 2>/dev/null || true
     cp -a "$inst"/share/alsa* "$PAYLOAD_DIR/share/" 2>/dev/null || true
     cp -a "$inst/lib/systemd" "$PAYLOAD_DIR/lib/"
     cp -a "$inst/lib/udev" "$PAYLOAD_DIR/lib/" 2>/dev/null || true
