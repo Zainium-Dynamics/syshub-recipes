@@ -1,0 +1,53 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libblockdev
+pkgver=3.5.0
+pkgrel=0
+subpackages="libblockdev-dev"
+source="https://github.com/storaged-project/libblockdev/releases/download/$pkgver/libblockdev-$pkgver.tar.gz"
+sha256sums="bccd30e6b5d11504de60d9889ff6a2a25b07a4ec8f04070f2387e168301b3e3a  libblockdev-$pkgver.tar.gz"
+makedepends="pkgconf python3 glib-dev eudev-dev kmod-dev cryptsetup-dev keyutils-dev util-linux-dev e2fsprogs-dev libbytesize-dev libnvme-dev linux-headers"
+
+# The plugins udisks loads: crypto, fs, loop, mdraid, nvme, part and swap.
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --sbindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --disable-static \
+        --disable-introspection \
+        --without-python3 \
+        --without-gtk-doc \
+        --without-tools \
+        --without-btrfs \
+        --without-lvm \
+        --without-lvm_dbus \
+        --without-dm \
+        --without-mpath \
+        --without-nvdimm \
+        --without-s390 \
+        --without-escrow \
+        --without-smart \
+        --without-smartmontools
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+    find "$inst/lib" -maxdepth 1 -name '*.so' -type l -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
