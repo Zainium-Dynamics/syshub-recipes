@@ -1,0 +1,30 @@
+[package]
+name             = "libblockdev"
+version          = "3.5.0"
+description      = "Library for low-level block device work"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/storaged-project/libblockdev"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["glib", "eudev", "kmod", "cryptsetup", "keyutils", "util-linux", "e2fsprogs", "libbytesize", "libnvme"]
+provides         = ["libblockdev"]
+tags             = ["base", "system", "storage"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
