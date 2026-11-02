@@ -1,16 +1,16 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=pipewire
-pkgver=1.6.8
-pkgrel=3
+pkgver=1.6.11
+pkgrel=0
 subpackages="pipewire-dev"
 source="https://github.com/PipeWire/pipewire/archive/refs/tags/$pkgver.tar.gz"
-sha256sums="8181172a1d95131f6af8bbc0b98f90b2a33349b042b84c3ce57dd5d11348cc58  $pkgver.tar.gz"
+sha256sums="f3f70c4af173cc93d05070a9d412efe3ef5889bdf4ac32298e2c0d9ae1350559  $pkgver.tar.gz"
 # gettext-dev, not bare musl-libintl -- installing musl-libintl
 # directly conflicts with gettext-dev (which other recipes in the same
 # CI container pull in transitively via glib-dev): "breaks:
 # gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
 # itself, so this still gets libintl.h without the conflict.
-makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev sbc-dev"
+makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev sbc-dev bluez-dev"
 needs_toolchain="systemd systemd-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev mesa mesa-dev libdrm libdrm-dev"
 
 # Bluetooth audio (bluez5 plugin) with SBC; the other codecs need

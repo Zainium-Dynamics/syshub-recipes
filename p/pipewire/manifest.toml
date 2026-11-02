@@ -1,6 +1,6 @@
 [package]
 name             = "pipewire"
-version          = "1.6.8"
+version          = "1.6.11"
 description      = "Multimedia processing graph — audio/video routing server"
 license          = "MIT"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
