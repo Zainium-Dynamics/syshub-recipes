@@ -1,0 +1,30 @@
+[package]
+name             = "libnvme"
+version          = "1.16.2"
+description      = "NVMe management library"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/linux-nvme/libnvme"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["json-c", "keyutils"]
+provides         = ["libnvme"]
+tags             = ["base", "system", "storage"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

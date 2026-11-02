@@ -1,0 +1,33 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libnvme
+pkgver=1.16.2
+pkgrel=0
+source="https://github.com/linux-nvme/libnvme/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="1d850d5a871559abf641d6e6b63bb86047e4cb26f3ad144597c2c64b3cff7231  v$pkgver.tar.gz"
+makedepends="meson pkgconf json-c-dev keyutils-dev linux-headers"
+
+build() {
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dpython=disabled \
+        -Dopenssl=disabled \
+        -Dlibdbus=disabled \
+        -Djson-c=enabled \
+        -Dkeyutils=enabled \
+        -Ddocs=false \
+        -Dexamples=false \
+        -Dtests=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}
