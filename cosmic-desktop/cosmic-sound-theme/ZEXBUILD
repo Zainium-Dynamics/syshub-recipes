@@ -1,0 +1,17 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-sound-theme
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-sound-theme/archive/refs/tags/epoch-$pkgver.tar.gz"
+sha256sums="b523afe23c4b5bb58261156564b7527a1f719bc9b9917f9c6bd3c763d823291c  epoch-$pkgver.tar.gz"
+makedepends="meson"
+
+build() {
+	cd cosmic-sound-theme-epoch-$pkgver
+	meson setup output --prefix=/overlayer/syshub
+	meson compile -C output
+}
+
+package() {
+	DESTDIR="$PAYLOAD_DIR" meson install --no-rebuild -C output
+}

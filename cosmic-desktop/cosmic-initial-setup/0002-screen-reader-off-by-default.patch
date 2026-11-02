@@ -1,0 +1,12 @@
+--- a/src/page/a11y.rs	2026-10-13 10:03:11.556576846 +0500
++++ b/src/page/a11y.rs	2026-10-13 10:03:11.580135939 +0500
+@@ -270,8 +270,8 @@
+                 a11y_bus::Response::IsEnabled(_) => (),
+                 a11y_bus::Response::Init(enabled, tx) => {
+                     self.reader_enabled = enabled;
++                    // Zainium ships no screen reader: show the real state, don't switch it on
+                     self.screen_reader_dbus_sender = Some(tx);
+-                    return cosmic::Task::done(Message::ScreenReaderEnabled(true).into());
+                 }
+             },
+             Message::Display(entity) => self.set_active_display(entity),

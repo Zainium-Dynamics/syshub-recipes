@@ -1,0 +1,45 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-comp
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-comp/archive/refs/tags/epoch-$pkgver.tar.gz
+0002-bare-session.patch
+0003-shell-spawn-syshub-path.patch
+0004-touch-single-output.patch
+0005-no-empty-display.patch"
+sha256sums="c07778440f25e909358a37f293ddf403a28a153b02eedb30b61b846a7142ba60  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev fontconfig-dev libdisplay-info-dev libseat-dev libxcb-dev mesa-dev pixman-dev"
+
+build() {
+	cd cosmic-comp-epoch-$pkgver
+	patch -p1 < ../0002-bare-session.patch
+	patch -p1 < ../0003-shell-spawn-syshub-path.patch
+	# touch was only routed to an eDP/LVDS/DSI panel; desktop touch monitors got nothing
+	patch -p1 < ../0004-touch-single-output.patch
+	# no Xwayland: leave DISPLAY unset instead of empty (gpg rejects --display=, so flatpak can't verify Flathub)
+	patch -p1 < ../0005-no-empty-display.patch
+
+    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    export VERGEN_GIT_COMMIT_DATE="$(date -u '+%Y-%m-%d')"
+    export VERGEN_GIT_SHA="unknown"
+	cargo fetch --target x86_64-unknown-linux-musl
+	cargo build --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+
+	just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
+		cargo-target-dir=target/x86_64-unknown-linux-musl install-bare-session
+	# cosmic-session ships the real cosmic-session.target; comp's copy has
+	# RefuseManualStart=yes, which makes `systemctl --user start` fail
+	rm -f "$PAYLOAD_DIR"/overlayer/syshub/lib/systemd/user/cosmic-session.target
+	mv "$PAYLOAD_DIR"/overlayer/syshub/share/wayland-sessions/cosmic.desktop \
+		"$PAYLOAD_DIR"/overlayer/syshub/share/wayland-sessions/cosmic-bare.desktop
+}

@@ -1,0 +1,14 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-icons
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-icons/archive/refs/tags/epoch-$pkgver.tar.gz"
+sha256sums="1cbe6ca6ad3743a26b84ab17d3f7b8e5a885fcbcbb2d071ff0b74bccb5b44a53  epoch-$pkgver.tar.gz"
+makedepends="just"
+
+package() {
+	# No build() here -- nothing else cd's into the extracted dir for a
+	# data-only package, package() has to do it itself.
+	cd cosmic-icons-epoch-$pkgver
+	just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub install
+}

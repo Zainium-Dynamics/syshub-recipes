@@ -1,0 +1,8 @@
+--- a/data/start-cosmic
++++ b/data/start-cosmic
+@@ -1,4 +1,4 @@
+-#!/bin/sh
++#!/overlayer/syshub/bin/sh
+ 
+ set -e
+ 

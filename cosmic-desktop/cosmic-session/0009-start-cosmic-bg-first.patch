@@ -1,0 +1,25 @@
+diff --git a/src/main.rs b/src/main.rs
+index 7c2022d..e2fd840 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -267,6 +267,10 @@ async fn start(
+ 		systemd::stop_systemd_target();
+ 	}
+ 
++	// the wallpaper first: until cosmic-bg draws, the compositor shows plain black (Zainium)
++	let span = info_span!(parent: None, "cosmic-bg");
++	start_component("cosmic-bg", span, &process_manager, &env_vars).await;
++
+ 	// start a11y if configured
+ 	tokio::spawn(a11y::start_a11y(env_vars.clone(), process_manager.clone()));
+ 
+@@ -343,9 +347,6 @@ async fn start(
+ 	let span = info_span!(parent: None, "cosmic-osk");
+ 	start_component("cosmic-osk", span, &process_manager, &env_vars).await;
+ 
+-	let span = info_span!(parent: None, "cosmic-bg");
+-	start_component("cosmic-bg", span, &process_manager, &env_vars).await;
+-
+ 	let span = info_span!(parent: None, "cosmic-greeter");
+ 	start_component("cosmic-greeter", span, &process_manager, &env_vars).await;
+ 

@@ -1,0 +1,31 @@
+# manifest.toml — cosmic-applibrary
+
+[package]
+name             = "cosmic-applibrary"
+version          = "1.11.0"
+description      = "COSMIC app library launcher, systemd/dbus/flatpak free"
+license          = "GPL-3.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-applibrary"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["cosmic-applibrary"]
+tags             = ["desktop", "cosmic"]
+
+[install]
+bin     = "/overlayer/syshub/bin" 
+share   =  "/overlayer/syshub/share" 
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

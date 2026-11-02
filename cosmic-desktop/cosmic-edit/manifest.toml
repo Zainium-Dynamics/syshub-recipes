@@ -1,0 +1,29 @@
+[package]
+name             = "cosmic-edit"
+version          = "1.11.0"
+description      = "Text editor for the COSMIC Desktop Environment"
+license          = "GPL-3.0-only"
+maintainer       = "Zainium <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-edit"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cosmic-icons"]
+provides         = ["cosmic-edit"]
+tags             = ["desktop", "cosmic", "app"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

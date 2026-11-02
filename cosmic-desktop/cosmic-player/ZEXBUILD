@@ -1,0 +1,27 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-player
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-player/archive/refs/tags/epoch-$pkgver.tar.gz"
+sha256sums="25a9edfdaaa0b6b46a03315d1cae0b7590e2827e4172801688db4b7a2ff96f1f  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev clang-libclang glib-dev gst-plugins-base-dev gstreamer-dev"
+
+build() {
+	cd cosmic-player-epoch-$pkgver
+	    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    export VERGEN_GIT_COMMIT_DATE="$(date -u '+%Y-%m-%d')"
+    export VERGEN_GIT_SHA="unknown"
+cargo build --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+	just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
+		cargo-target-dir=target/x86_64-unknown-linux-musl install
+}

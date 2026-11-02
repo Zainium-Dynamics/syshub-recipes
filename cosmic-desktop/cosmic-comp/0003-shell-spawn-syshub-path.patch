@@ -1,0 +1,11 @@
+--- a/src/input/actions.rs
++++ b/src/input/actions.rs
+@@ -1080,7 +1080,7 @@
+             .map(|s| format!(":{}", s.display))
+             .unwrap_or_default();
+ 
+-        let mut cmd = std::process::Command::new("/bin/sh");
++        let mut cmd = std::process::Command::new("/overlayer/syshub/bin/sh");
+ 
+         cmd.arg("-c")
+             .arg(&command)

@@ -1,0 +1,30 @@
+# manifest.toml — xdg-desktop-portal-cosmic (syshub tier)
+
+[package]
+name             = "xdg-desktop-portal-cosmic"
+version          = "1.11.0"
+description      = "XDG desktop portal backend for COSMIC, systemd/dbus/flatpak free"
+license          = "GPL-3.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/xdg-desktop-portal-cosmic"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["xdg-desktop-portal-cosmic"]
+tags             = ["desktop", "cosmic"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

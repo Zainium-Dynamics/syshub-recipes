@@ -1,0 +1,16 @@
+--- a/src/input/mod.rs	2026-10-13 19:23:44.193054945 +0500
++++ b/src/input/mod.rs	2026-10-13 19:23:50.135127207 +0500
+@@ -3240,7 +3240,12 @@
+     } else {
+         None
+     };
+-    map_to_output.or_else(|| shell.builtin_output())
++    map_to_output.or_else(|| shell.builtin_output()).or_else(|| {
++        // Zainium: no built-in panel (desktop touch monitor, VM) but a single screen: use it
++        let mut outputs = shell.outputs();
++        let first = outputs.next();
++        outputs.next().is_none().then_some(first).flatten()
++    })
+ }
+ 
+ pub fn update_output_image_copy_cursor_position(

@@ -1,0 +1,53 @@
+--- a/src/plugins/controls/label-freetype/plugin.c
++++ b/src/plugins/controls/label-freetype/plugin.c
+@@ -41,10 +41,10 @@
+ #include "ply-label-plugin.h"
+ 
+ /* This is used if fontconfig (fc-match) is not available, like in the initrd. */
+-#define FONT_FALLBACK "/usr/share/fonts/Plymouth.ttf"
+-#define BOLD_FONT_FALLBACK "/usr/share/fonts/Plymouth-bold.ttf"
+-#define MONOSPACE_FONT_FALLBACK "/usr/share/fonts/Plymouth-monospace.ttf"
+-#define MONOSPACE_BOLD_FONT_FALLBACK "/usr/share/fonts/Plymouth-monospace-bold.ttf"
++#define FONT_FALLBACK "/overlayer/syshub/share/fonts/Plymouth.ttf"
++#define BOLD_FONT_FALLBACK "/overlayer/syshub/share/fonts/Plymouth-bold.ttf"
++#define MONOSPACE_FONT_FALLBACK "/overlayer/syshub/share/fonts/Plymouth-monospace.ttf"
++#define MONOSPACE_BOLD_FONT_FALLBACK "/overlayer/syshub/share/fonts/Plymouth-monospace-bold.ttf"
+ 
+ /* This is a little sketchy... It relies on implementation details of the compiler
+  * but it makes dealing with the fixed point math freetype uses much more pleasant,
+@@ -130,7 +130,7 @@
+         FILE *fp;
+         static char fc_match_out[PATH_MAX];
+ 
+-        fp = popen ("/usr/bin/fc-match -f %{file}", "r");
++        fp = popen ("/overlayer/syshub/bin/fc-match -f %{file}", "r");
+         if (!fp)
+                 return FONT_FALLBACK;
+ 
+@@ -150,7 +150,7 @@
+         FILE *fp;
+         static char fc_match_out[PATH_MAX];
+ 
+-        fp = popen ("/usr/bin/fc-match -f %{file} :weight=bold", "r");
++        fp = popen ("/overlayer/syshub/bin/fc-match -f %{file} :weight=bold", "r");
+         if (!fp)
+                 return BOLD_FONT_FALLBACK;
+ 
+@@ -170,7 +170,7 @@
+         FILE *fp;
+         static char fc_match_out[PATH_MAX];
+ 
+-        fp = popen ("/usr/bin/fc-match -f %{file} monospace", "r");
++        fp = popen ("/overlayer/syshub/bin/fc-match -f %{file} monospace", "r");
+         if (!fp)
+                 return MONOSPACE_FONT_FALLBACK;
+ 
+@@ -190,7 +190,7 @@
+         FILE *fp;
+         static char fc_match_out[PATH_MAX];
+ 
+-        fp = popen ("/usr/bin/fc-match -f %{file} monospace:weight=bold", "r");
++        fp = popen ("/overlayer/syshub/bin/fc-match -f %{file} monospace:weight=bold", "r");
+         if (!fp)
+                 return MONOSPACE_BOLD_FONT_FALLBACK;
+ 

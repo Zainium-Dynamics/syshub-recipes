@@ -1,8 +1,8 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=cosmic-greeter
-pkgver=1.10.0
-pkgrel=4
-source="https://github.com/pop-os/cosmic-greeter/archive/refs/tags/epoch-1.10.0.tar.gz
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-greeter/archive/refs/tags/epoch-$pkgver.tar.gz
 0001-main-no-systemd-default-and-elevate-pam.patch
 0003-overlayer-syshub-path.patch
 0004-elevate-pam-integration.patch
@@ -10,13 +10,12 @@ source="https://github.com/pop-os/cosmic-greeter/archive/refs/tags/epoch-1.10.0.
 0007-login-defs-syshub-path.patch
 0008-error-text-wraps-in-column.patch
 0009-default-wallpaper-before-first-login.patch"
-
-sha256sums=""
+sha256sums="f31c5bac8e50ed5df75cb7d07fb8167e7835dc22b3438a48c8c1f27e7de36e48  epoch-$pkgver.tar.gz"
 makedepends="rustup just eudev-dev libinput-dev libseat-dev libxkbcommon-dev wayland-dev dav1d-dev"
 
 build() {
 
-    cd cosmic-greeter-epoch-1.10.0
+    cd cosmic-greeter-epoch-$pkgver
 
     patch -p1 < ../0001-main-no-systemd-default-and-elevate-pam.patch
     patch -p1 < ../0003-overlayer-syshub-path.patch

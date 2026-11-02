@@ -1,0 +1,32 @@
+--- a/plugins/src/desktop_entries/utils.rs
++++ b/plugins/src/desktop_entries/utils.rs
+@@ -20,10 +20,26 @@
+     }
+ }
+ 
+-pub fn get_description<'a>(de: &'a DesktopEntry, locales: &[String]) -> String {
+-    let path_source = PathSource::guess_from(&de.path);
++/// freedesktop-desktop-entry only knows the FHS locations, so every
++/// Zainium app would show up as "unknown". Label the overlayer paths.
++fn zainium_source(path: &std::path::Path) -> Option<String> {
++    const SOURCES: &[(&str, &str)] = &[
++        ("/overlayer/zexlib/union/var/lib/flatpak", "Flatpak (System)"),
++        ("/overlayer/syshub/share", "System"),
++        ("/overlayer/zexlib/union/share", "Userland"),
++    ];
++
++    SOURCES
++        .iter()
++        .find(|(prefix, _)| path.starts_with(prefix))
++        .map(|(_, label)| (*label).to_string())
++}
+ 
+-    let desc_source = path_string(&path_source).to_string();
++pub fn get_description<'a>(de: &'a DesktopEntry, locales: &[String]) -> String {
++    let desc_source = zainium_source(&de.path).unwrap_or_else(|| {
++        let path_source = PathSource::guess_from(&de.path);
++        path_string(&path_source).to_string()
++    });
+ 
+     match de.comment(locales) {
+         Some(desc) => {

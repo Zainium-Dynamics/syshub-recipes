@@ -1,0 +1,30 @@
+# manifest.toml — cosmic-wallpapers (userland tier)
+
+[package]
+name             = "cosmic-wallpapers"
+version          = "1.11.0"
+description      = "Wallpapers for the COSMIC Desktop Environment"
+license          = "GPL-3.0-or-later AND CC-BY-SA-4.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-wallpapers"
+build_type       = "noarch"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["cosmic-wallpapers"]
+tags             = ["desktop", "cosmic", "wallpapers"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

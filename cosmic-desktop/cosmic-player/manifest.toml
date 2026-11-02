@@ -1,0 +1,31 @@
+# manifest.toml — cosmic-player (userland tier)
+
+[package]
+name             = "cosmic-player"
+version          = "1.11.0"
+description      = "Media player for the COSMIC Desktop Environment"
+license          = "GPL-3.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-player"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["gst-plugins-good"]
+provides         = ["cosmic-player"]
+tags             = ["desktop", "cosmic", "app"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]

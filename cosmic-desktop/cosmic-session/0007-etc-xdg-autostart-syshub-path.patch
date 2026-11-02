@@ -1,0 +1,11 @@
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -374,7 +374,7 @@
+ 				directories_to_scan.push(PathBuf::from(dir).join(AUTOSTART_DIR));
+ 			}
+ 		} else {
+-			directories_to_scan.push(PathBuf::from("/etc/xdg/").join(AUTOSTART_DIR));
++			directories_to_scan.push(PathBuf::from("/overlayer/syshub/etc/xdg/").join(AUTOSTART_DIR));
+ 		}
+ 
+ 		info!("found autostart folders: {:?}", directories_to_scan);

@@ -1,0 +1,39 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-workspaces-epoch
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-workspaces-epoch/archive/refs/tags/epoch-$pkgver.tar.gz
+0001-shell-spawn-syshub-path.patch"
+sha256sums="4dad3cd1fffe5b377c84948598c666493e5a053e6e1105a958f20a73bea92eab  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev desktop-file-utils mesa-dev wayland-protocols"
+
+build() {
+	cd cosmic-workspaces-epoch-epoch-$pkgver
+	# System-action keybinds (open launcher/app-library) were spawned via
+	# a hardcoded /bin/sh -- doesn't exist on Zainium, only
+	# /overlayer/syshub/bin/sh does.
+	patch -p1 < ../0001-shell-spawn-syshub-path.patch
+	# No explicit --target here: the Makefile's own `install` target
+	# hardcodes target/release/$(BINARY) (no cross-target awareness),
+	# and Alpine's host toolchain already IS x86_64-unknown-linux-musl,
+	# so a plain build lands there directly -- explicit --target would
+	# instead output to target/x86_64-unknown-linux-musl/release/...,
+	# which the Makefile never looks for. Still gets our custom
+	# musl-loader RUSTFLAGS: cargo keys CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS
+	# off the resolved target triple, not off whether --target was passed.
+	    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    export VERGEN_GIT_COMMIT_DATE="$(date -u '+%Y-%m-%d')"
+    export VERGEN_GIT_SHA="unknown"
+cargo build --release
+}
+
+package() {
+	make DESTDIR="$PAYLOAD_DIR" prefix=/overlayer/syshub install
+}

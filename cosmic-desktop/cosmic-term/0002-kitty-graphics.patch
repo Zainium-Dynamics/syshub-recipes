@@ -1,0 +1,641 @@
+diff --git a/Cargo.toml b/Cargo.toml
+index 5dd39b3..1445d99 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -8,6 +8,10 @@ rust-version = "1.93"
+ 
+ [dependencies]
+ alacritty_terminal = "0.25.1"
++# kitty graphics (src/graphics.rs)
++base64 = "0.22"
++image = { version = "0.25", default-features = false, features = ["png"] }
++polling = "3"
+ hex_color = { version = "3", features = ["serde"] }
+ indexmap = "2"
+ log = "0.4"
+diff --git a/src/graphics.rs b/src/graphics.rs
+new file mode 100644
+index 0000000..caf7e5f
+--- /dev/null
++++ b/src/graphics.rs
+@@ -0,0 +1,493 @@
++//! Images in the terminal: the part of the kitty graphics protocol that image tools use
++//! (transmit and display PNG or raw pixels, query, delete).
++//!
++//! alacritty_terminal drops APC sequences, so the PTY reader takes `ESC _ G ... ESC \` out of
++//! the stream before the parser sees it, decodes the image, and writes its place into the grid
++//! as placeholder characters (U+100000 + row * 256 + column) coloured with the image's id. The
++//! grid then carries the image like text: it scrolls, clears and is overwritten like text, and
++//! the renderer draws the image over the placeholder cells.
++
++use alacritty_terminal::{
++    event::{OnResize, WindowSize},
++    tty::{ChildEvent, EventedPty, EventedReadWrite, Pty},
++};
++use base64::{Engine, engine::general_purpose::STANDARD as B64};
++use cosmic::iced::advanced::image::Handle;
++use polling::{Event, PollMode, Poller};
++use std::{
++    collections::HashMap,
++    fs::File,
++    io::{self, Read, Write},
++    sync::{Arc, Mutex},
++};
++
++const PLACEHOLDER_BASE: u32 = 0x10_0000;
++/// Placeholders encode row and column in one byte each.
++const MAX_CELLS: u32 = 255;
++/// Bigger transfers are dropped rather than buffered.
++const MAX_APC: usize = 64 << 20;
++/// Images kept for redrawing; the oldest go first.
++const MAX_IMAGES: usize = 64;
++
++/// `(row, column)` inside its image, if `c` is a placeholder.
++pub fn placeholder(c: char) -> Option<(u32, u32)> {
++    let v = (c as u32).checked_sub(PLACEHOLDER_BASE)?;
++    (v <= 0xFFFF).then_some((v >> 8, v & 0xFF))
++}
++
++pub struct Image {
++    pub handle: Handle,
++    pub cols: u32,
++    pub rows: u32,
++}
++
++/// Decoded images, shared by the PTY thread (which adds them) and the renderer.
++#[derive(Default)]
++pub struct Graphics {
++    images: HashMap<u32, Image>,
++    /// insertion order, for eviction
++    order: Vec<u32>,
++    /// the application's image ids (`i=`) to ours
++    by_client: HashMap<u32, u32>,
++    next_id: u32,
++    /// cell size in pixels, for images sent without a cell size
++    pub cell: (f32, f32),
++}
++
++impl Graphics {
++    pub fn image(&self, id: u32) -> Option<&Image> {
++        self.images.get(&id)
++    }
++
++    fn insert(&mut self, image: Image) -> u32 {
++        self.next_id = self.next_id % 0xFF_FFFF + 1;
++        let id = self.next_id;
++        if self.order.len() >= MAX_IMAGES {
++            let old = self.order.remove(0);
++            self.images.remove(&old);
++            self.by_client.retain(|_, v| *v != old);
++        }
++        self.images.insert(id, image);
++        self.order.push(id);
++        id
++    }
++
++    fn remove(&mut self, id: u32) {
++        self.images.remove(&id);
++        self.order.retain(|&i| i != id);
++        self.by_client.retain(|_, v| *v != id);
++    }
++}
++
++/// An image's place in the grid: the cell holding image row `row`, column `col`.
++#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
++pub struct ImageCell {
++    pub id: u32,
++    pub row: u32,
++    pub col: u32,
++    pub view_row: i32,
++    pub view_col: i32,
++}
++
++impl ImageCell {
++    /// Top-left cell of the whole image, in view coordinates.
++    pub fn origin(&self) -> (i32, i32) {
++        (self.view_row - self.row as i32, self.view_col - self.col as i32)
++    }
++}
++
++/// The PTY with kitty graphics taken out of its output.
++pub struct GraphicsPty {
++    pty: Pty,
++    reader: Filter,
++}
++
++impl GraphicsPty {
++    pub fn new(pty: Pty, graphics: Arc<Mutex<Graphics>>) -> io::Result<Self> {
++        let file = pty.file();
++        let reader = Filter {
++            file: file.try_clone()?,
++            reply: file.try_clone()?,
++            graphics,
++            state: State::Text,
++            apc: Vec::new(),
++            out: Vec::new(),
++            out_pos: 0,
++            pending: None,
++        };
++        Ok(Self { pty, reader })
++    }
++}
++
++impl EventedReadWrite for GraphicsPty {
++    type Reader = Filter;
++    type Writer = File;
++
++    unsafe fn register(&mut self, poll: &Arc<Poller>, interest: Event, mode: PollMode) -> io::Result<()> {
++        unsafe { self.pty.register(poll, interest, mode) }
++    }
++
++    fn reregister(&mut self, poll: &Arc<Poller>, interest: Event, mode: PollMode) -> io::Result<()> {
++        self.pty.reregister(poll, interest, mode)
++    }
++
++    fn deregister(&mut self, poll: &Arc<Poller>) -> io::Result<()> {
++        self.pty.deregister(poll)
++    }
++
++    fn reader(&mut self) -> &mut Filter {
++        &mut self.reader
++    }
++
++    fn writer(&mut self) -> &mut File {
++        self.pty.writer()
++    }
++}
++
++impl EventedPty for GraphicsPty {
++    fn next_child_event(&mut self) -> Option<ChildEvent> {
++        self.pty.next_child_event()
++    }
++}
++
++impl OnResize for GraphicsPty {
++    fn on_resize(&mut self, window_size: WindowSize) {
++        if window_size.cell_width > 0 && window_size.cell_height > 0 {
++            self.reader.graphics.lock().unwrap().cell =
++                (window_size.cell_width as f32, window_size.cell_height as f32);
++        }
++        self.pty.on_resize(window_size);
++    }
++}
++
++enum State {
++    Text,
++    /// saw ESC
++    Esc,
++    /// inside `ESC _ G`, collecting
++    Apc,
++    /// saw ESC inside the APC
++    ApcEsc,
++}
++
++/// A chunked transfer (`m=1`) still waiting for its last chunk.
++struct Pending {
++    keys: Keys,
++    data: Vec<u8>,
++}
++
++pub struct Filter {
++    file: File,
++    reply: File,
++    graphics: Arc<Mutex<Graphics>>,
++    state: State,
++    apc: Vec<u8>,
++    out: Vec<u8>,
++    out_pos: usize,
++    pending: Option<Pending>,
++}
++
++impl Read for Filter {
++    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
++        loop {
++            if self.out_pos < self.out.len() {
++                let n = buf.len().min(self.out.len() - self.out_pos);
++                buf[..n].copy_from_slice(&self.out[self.out_pos..self.out_pos + n]);
++                self.out_pos += n;
++                if self.out_pos == self.out.len() {
++                    self.out.clear();
++                    self.out_pos = 0;
++                }
++                return Ok(n);
++            }
++            let mut chunk = [0u8; 0x10000];
++            let n = self.file.read(&mut chunk)?;
++            if n == 0 {
++                return Ok(0);
++            }
++            // a read that only fed an unfinished image loops to the next read, which ends with
++            // WouldBlock once the PTY is drained: the event loop's "nothing more for now"
++            self.feed(&chunk[..n]);
++        }
++    }
++}
++
++impl Filter {
++    fn feed(&mut self, bytes: &[u8]) {
++        let mut i = 0;
++        while i < bytes.len() {
++            let b = bytes[i];
++            match self.state {
++                State::Text => match memchr(0x1b, &bytes[i..]) {
++                    Some(at) => {
++                        self.out.extend_from_slice(&bytes[i..i + at]);
++                        self.state = State::Esc;
++                        i += at;
++                    }
++                    None => {
++                        self.out.extend_from_slice(&bytes[i..]);
++                        return;
++                    }
++                },
++                State::Esc => {
++                    if b == b'_' {
++                        self.state = State::Apc;
++                        self.apc.clear();
++                    } else {
++                        self.out.extend_from_slice(&[0x1b, b]);
++                        self.state = State::Text;
++                    }
++                }
++                State::Apc => {
++                    if self.apc.is_empty() && b != b'G' {
++                        // some other APC: not ours, the parser can have it
++                        self.out.extend_from_slice(&[0x1b, b'_', b]);
++                        self.state = State::Text;
++                    } else if b == 0x1b {
++                        self.state = State::ApcEsc;
++                    } else if self.apc.len() < MAX_APC {
++                        self.apc.push(b);
++                    }
++                }
++                State::ApcEsc => {
++                    if b == b'\\' {
++                        let apc = std::mem::take(&mut self.apc);
++                        if apc.len() < MAX_APC {
++                            self.command(&apc[1..]);
++                        }
++                        self.state = State::Text;
++                    } else {
++                        self.apc.extend_from_slice(&[0x1b, b]);
++                        self.state = State::Apc;
++                    }
++                }
++            }
++            i += 1;
++        }
++    }
++
++    /// One complete `G` command (control data `;` payload).
++    fn command(&mut self, cmd: &[u8]) {
++        let (control, payload) = match memchr(b';', cmd) {
++            Some(at) => (&cmd[..at], &cmd[at + 1..]),
++            None => (cmd, &[][..]),
++        };
++        let keys = Keys::parse(control);
++        // chunked transfer: the first chunk carries the keys, later ones only m= and data
++        let (keys, data) = match (self.pending.take(), keys.more) {
++            (None, true) => {
++                self.pending = Some(Pending { keys, data: payload.to_vec() });
++                return;
++            }
++            (Some(mut p), true) => {
++                p.data.extend_from_slice(payload);
++                self.pending = Some(p);
++                return;
++            }
++            (Some(mut p), false) => {
++                p.data.extend_from_slice(payload);
++                (p.keys, p.data)
++            }
++            (None, false) => (keys, payload.to_vec()),
++        };
++        let result = match keys.action {
++            b'q' => decode(&keys, &data).map(|_| ()),
++            b't' | b'T' => decode(&keys, &data).map(|(w, h, rgba)| {
++                let (cols, rows) = self.cells(&keys, w, h);
++                let image = Image { handle: Handle::from_rgba(w, h, rgba), cols, rows };
++                let mut g = self.graphics.lock().unwrap();
++                let id = g.insert(image);
++                if keys.id != 0 {
++                    g.by_client.insert(keys.id, id);
++                }
++                drop(g);
++                if keys.action == b'T' {
++                    self.place(id, &keys);
++                }
++            }),
++            b'p' => {
++                let id = self.graphics.lock().unwrap().by_client.get(&keys.id).copied();
++                match id {
++                    Some(id) => {
++                        self.place(id, &keys);
++                        Ok(())
++                    }
++                    None => Err("ENOENT:no such image"),
++                }
++            }
++            b'd' => {
++                let mut g = self.graphics.lock().unwrap();
++                match keys.delete {
++                    b'i' | b'I' => {
++                        if let Some(id) = g.by_client.get(&keys.id).copied() {
++                            g.remove(id);
++                        }
++                    }
++                    // a, A and anything else: everything
++                    _ => {
++                        let (cell, next_id) = (g.cell, g.next_id);
++                        *g = Graphics { cell, next_id, ..Default::default() };
++                    }
++                }
++                Ok(())
++            }
++            _ => Err("EINVAL:unsupported action"),
++        };
++        // kitty answers when the command named an image id, unless told to be quiet
++        if keys.id != 0 && keys.action != b'd' {
++            let reply = match result {
++                Ok(()) if keys.quiet == 0 => Some("OK".to_string()),
++                Err(e) if keys.quiet < 2 => Some(e.to_string()),
++                _ => None,
++            };
++            if let Some(r) = reply {
++                let _ = write!(self.reply, "\x1b_Gi={};{r}\x1b\\", keys.id);
++            }
++        }
++    }
++
++    /// The image's size in cells: as asked, else from its pixels and the cell size.
++    fn cells(&self, keys: &Keys, w: u32, h: u32) -> (u32, u32) {
++        let (cw, ch) = self.graphics.lock().unwrap().cell;
++        let (cw, ch) = (cw.max(1.0), ch.max(1.0));
++        let (cols, rows) = match (keys.cols, keys.rows) {
++            (0, 0) => ((w as f32 / cw).ceil() as u32, (h as f32 / ch).ceil() as u32),
++            (c, 0) => (c, ((c as f32 * cw * h as f32 / w.max(1) as f32) / ch).ceil() as u32),
++            (0, r) => (((r as f32 * ch * w as f32 / h.max(1) as f32) / cw).ceil() as u32, r),
++            (c, r) => (c, r),
++        };
++        (cols.clamp(1, MAX_CELLS), rows.clamp(1, MAX_CELLS))
++    }
++
++    /// Writes the placeholders for image `id` at the cursor.
++    fn place(&mut self, id: u32, keys: &Keys) {
++        let (cols, rows) = match self.graphics.lock().unwrap().image(id) {
++            Some(img) => (img.cols, img.rows),
++            None => return,
++        };
++        let (r, g, b) = (id >> 16 & 0xFF, id >> 8 & 0xFF, id & 0xFF);
++        // DECSC/DECRC keep the cursor and colours when the app asked not to move (C=1)
++        let mut s = format!("\x1b7\x1b[38;2;{r};{g};{b}m");
++        for row in 0..rows {
++            for col in 0..cols {
++                s.push(char::from_u32(PLACEHOLDER_BASE + row * 256 + col).unwrap());
++            }
++            if row + 1 < rows {
++                // LF scrolls at the bottom margin, CUD would not
++                s += &format!("\x1b[{cols}D\n");
++            }
++        }
++        if keys.no_cursor_move {
++            s += "\x1b8";
++        } else {
++            // kitty: the cursor ends up right of and below the image
++            s += "\x1b[39m\n";
++        }
++        self.out.extend_from_slice(s.as_bytes());
++    }
++}
++
++#[derive(Default)]
++struct Keys {
++    action: u8,
++    format: u32,
++    medium: u8,
++    width: u32,
++    height: u32,
++    id: u32,
++    cols: u32,
++    rows: u32,
++    no_cursor_move: bool,
++    quiet: u32,
++    more: bool,
++    delete: u8,
++}
++
++impl Keys {
++    fn parse(control: &[u8]) -> Self {
++        let mut k = Keys { action: b't', format: 32, medium: b'd', ..Default::default() };
++        for kv in control.split(|&b| b == b',') {
++            let [key, b'=', value @ ..] = kv else { continue };
++            let num = || std::str::from_utf8(value).ok().and_then(|v| v.parse::<u32>().ok()).unwrap_or(0);
++            let ch = value.first().copied().unwrap_or(0);
++            match key {
++                b'a' => k.action = ch,
++                b'f' => k.format = num(),
++                b't' => k.medium = ch,
++                b's' => k.width = num(),
++                b'v' => k.height = num(),
++                b'i' => k.id = num(),
++                b'c' => k.cols = num(),
++                b'r' => k.rows = num(),
++                b'C' => k.no_cursor_move = num() == 1,
++                b'q' => k.quiet = num(),
++                b'm' => k.more = num() == 1,
++                b'd' => k.delete = ch,
++                _ => {}
++            }
++        }
++        k
++    }
++}
++
++/// `(width, height, rgba)` of the transmitted image.
++fn decode(keys: &Keys, data: &[u8]) -> Result<(u32, u32, Vec<u8>), &'static str> {
++    if keys.medium != b'd' {
++        return Err("EINVAL:only direct transmission is supported");
++    }
++    let raw: Vec<u8> = data.iter().copied().filter(|b| !b.is_ascii_whitespace()).collect();
++    let bytes = B64.decode(raw).map_err(|_| "EINVAL:bad base64")?;
++    match keys.format {
++        100 => {
++            let img = image::load_from_memory_with_format(&bytes, image::ImageFormat::Png)
++                .map_err(|_| "EINVAL:bad PNG")?
++                .to_rgba8();
++            Ok((img.width(), img.height(), img.into_raw()))
++        }
++        32 | 24 => {
++            let (w, h) = (keys.width, keys.height);
++            let px = if keys.format == 32 { 4 } else { 3 };
++            if w == 0 || h == 0 || bytes.len() < (w * h) as usize * px {
++                return Err("EINVAL:bad size");
++            }
++            let rgba = if px == 4 {
++                bytes[..(w * h) as usize * 4].to_vec()
++            } else {
++                bytes[..(w * h) as usize * 3].chunks(3).flat_map(|c| [c[0], c[1], c[2], 255]).collect()
++            };
++            Ok((w, h, rgba))
++        }
++        _ => Err("EINVAL:unsupported format"),
++    }
++}
++
++fn memchr(needle: u8, hay: &[u8]) -> Option<usize> {
++    hay.iter().position(|&b| b == needle)
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn placeholder_round_trip() {
++        let c = char::from_u32(PLACEHOLDER_BASE + 3 * 256 + 7).unwrap();
++        assert_eq!(placeholder(c), Some((3, 7)));
++        assert_eq!(placeholder('a'), None);
++        assert_eq!(placeholder('\u{10FFFF}'), Some((255, 255)));
++    }
++
++    #[test]
++    fn keys_parse() {
++        let k = Keys::parse(b"a=T,f=100,c=40,r=20,C=1,q=2,m=1");
++        assert_eq!((k.action, k.format, k.cols, k.rows, k.no_cursor_move, k.quiet, k.more), (b'T', 100, 40, 20, true, 2, true));
++        let k = Keys::parse(b"i=31,s=1,v=1,a=q,t=d,f=24");
++        assert_eq!((k.action, k.id, k.width, k.height, k.format), (b'q', 31, 1, 1, 24));
++    }
++
++    #[test]
++    fn decodes_raw_rgb() {
++        let k = Keys::parse(b"f=24,s=1,v=1");
++        assert_eq!(decode(&k, b"AAAA").unwrap(), (1, 1, vec![0, 0, 0, 255]));
++    }
++}
+diff --git a/src/main.rs b/src/main.rs
+index 3a0dbaf..3e88c85 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -49,6 +49,7 @@ use config::{
+     AppTheme, CONFIG_VERSION, ColorScheme, ColorSchemeId, ColorSchemeKind, Config, Profile,
+     ProfileId,
+ };
++mod graphics;
+ mod config;
+ mod mouse_reporter;
+ 
+diff --git a/src/terminal.rs b/src/terminal.rs
+index 55aec3b..18b8139 100644
+--- a/src/terminal.rs
++++ b/src/terminal.rs
+@@ -41,6 +41,7 @@ pub use alacritty_terminal::grid::Scroll as TerminalScroll;
+ 
+ use crate::{
+     config::{ColorSchemeKind, Config as AppConfig, ProfileId},
++    graphics::{self, Graphics, GraphicsPty, ImageCell},
+     menu::MenuState,
+     mouse_reporter::MouseReporter,
+ };
+@@ -247,6 +248,9 @@ pub struct Terminal {
+     pub regex_matches: Vec<alacritty_terminal::term::search::Match>,
+     pub active_regex_match: Option<alacritty_terminal::term::search::Match>,
+     pub active_hyperlink_id: Option<String>,
++    /// images (kitty graphics) and the visible cells they cover
++    pub graphics: Arc<Mutex<Graphics>>,
++    pub image_cells: Vec<ImageCell>,
+     bold_font_weight: Weight,
+     buffer: Arc<Buffer>,
+     is_focused: bool,
+@@ -335,6 +339,10 @@ impl Terminal {
+         #[cfg(windows)]
+         let shell_pid = pty.child_watcher().pid().map(|pid| pid.get());
+ 
++        let graphics = Arc::new(Mutex::new(Graphics::default()));
++        graphics.lock().unwrap().cell = (cell_width, cell_height);
++        let pty = GraphicsPty::new(pty, graphics.clone())?;
++
+         let pty_event_loop =
+             EventLoop::new(term.clone(), event_proxy, pty, options.drain_on_exit, false)?;
+         let notifier = Notifier(pty_event_loop.channel());
+@@ -345,6 +353,8 @@ impl Terminal {
+             active_hyperlink_id: None,
+             url_regex_search: url_regex_search(),
+             regex_matches: Vec::new(),
++            graphics,
++            image_cells: Vec::new(),
+             bold_font_weight: Weight(bold_font_weight),
+             buffer: Arc::new(buffer),
+             colors,
+@@ -804,6 +814,8 @@ impl Terminal {
+                 }
+ 
+                 let grid = term.grid();
++                self.image_cells.clear();
++                let display_offset = grid.display_offset() as i32;
+                 for indexed in grid.display_iter() {
+                     if indexed.point.line != last_point.unwrap_or(indexed.point).line {
+                         while line_i >= buffer.lines.len() {
+@@ -838,11 +850,25 @@ impl Terminal {
+                     }
+ 
+                     let start = text.len();
+-                    // Tab skip/stop is handled by alacritty_terminal
+-                    text.push(match indexed.cell.c {
+-                        '\t' => ' ',
+-                        c => c,
+-                    });
++                    // an image's placeholder: remember the cell, draw nothing as text
++                    if let Some((row, col)) = graphics::placeholder(indexed.cell.c)
++                        && let Color::Spec(rgb) = indexed.cell.fg
++                    {
++                        self.image_cells.push(ImageCell {
++                            id: u32::from(rgb.r) << 16 | u32::from(rgb.g) << 8 | u32::from(rgb.b),
++                            row,
++                            col,
++                            view_row: indexed.point.line.0 + display_offset,
++                            view_col: indexed.point.column.0 as i32,
++                        });
++                        text.push(' ');
++                    } else {
++                        // Tab skip/stop is handled by alacritty_terminal
++                        text.push(match indexed.cell.c {
++                            '\t' => ' ',
++                            c => c,
++                        });
++                    }
+                     if let Some(zerowidth) = indexed.cell.zerowidth() {
+                         for &c in zerowidth {
+                             text.push(c);
+diff --git a/src/terminal_box.rs b/src/terminal_box.rs
+index d3b743a..7514f81 100644
+--- a/src/terminal_box.rs
++++ b/src/terminal_box.rs
+@@ -730,6 +730,28 @@ where
+             clip_bounds: Rectangle::new(view_position, Size::new(view_w as f32, view_h as f32)),
+         });
+ 
++        // Images (kitty graphics), over the placeholder cells they cover
++        if !terminal.image_cells.is_empty() {
++            use cosmic::iced::advanced::image::{Image, Renderer as _};
++            let size = terminal.size();
++            let (cw, ch) = (size.cell_width, size.cell_height);
++            let clip = Rectangle::new(view_position, Size::new(view_w as f32, view_h as f32));
++            let graphics = terminal.graphics.lock().unwrap();
++            let mut drawn = std::collections::HashSet::new();
++            for cell in &terminal.image_cells {
++                let (row, col) = cell.origin();
++                if !drawn.insert((cell.id, row, col)) {
++                    continue;
++                }
++                let Some(img) = graphics.image(cell.id) else { continue };
++                let bounds = Rectangle::new(
++                    view_position + Vector::new(col as f32 * cw, row as f32 * ch),
++                    Size::new(img.cols as f32 * cw, img.rows as f32 * ch),
++                );
++                renderer.draw_image(Image::new(img.handle.clone()), bounds, clip);
++            }
++        }
++
+         // Draw scrollbar
+         if let Some((start, end)) = terminal.scrollbar() {
+             let scrollbar_y = start * view_h as f32;

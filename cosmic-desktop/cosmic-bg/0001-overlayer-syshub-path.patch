@@ -1,0 +1,11 @@
+--- a/config/src/lib.rs
++++ b/config/src/lib.rs
+@@ -141,7 +141,7 @@
+         Self {
+             output: String::from("all"),
+             source: Source::Path(PathBuf::from(
+-                "/usr/share/backgrounds/cosmic/orion_nebula_nasa_heic0601a.jpg",
++                "/overlayer/syshub/share/backgrounds/cosmic/earth_from_orbit.jpg",
+             )),
+             filter_by_theme: true,
+             rotation_frequency: 3600,

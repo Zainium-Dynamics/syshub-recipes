@@ -1,0 +1,30 @@
+# manifest.toml — cosmic-icons (userland tier)
+
+[package]
+name             = "cosmic-icons"
+version          = "1.11.0"
+description      = "Icons for the COSMIC Desktop Environment"
+license          = "GPL-3.0-or-later AND CC-BY-SA-4.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://github.com/pop-os/cosmic-icons"
+build_type       = "noarch"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = []
+provides         = ["cosmic-icons"]
+tags             = ["desktop", "cosmic", "icons"]
+
+[install]
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
