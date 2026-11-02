@@ -1,0 +1,27 @@
+From: Ali Zain <alizain@zainiumdynamics.tech>
+Subject: [PATCH] iproute2 tables under /overlayer/syshub
+
+Zainium has no /etc or /usr at the root.
+---
+diff --git a/src/datatype.c b/src/datatype.c
+index 5025b27..c837bb4 100644
+--- a/src/datatype.c
++++ b/src/datatype.c
+@@ -889,7 +889,7 @@ static FILE *open_iproute2_db(const char *filename, char **path)
+ 	if (filename[0] == '/')
+ 		return fopen(filename, "r");
+ 
+-	if (asprintf(path, "/etc/iproute2/%s", filename) == -1)
++	if (asprintf(path, "/overlayer/syshub/etc/iproute2/%s", filename) == -1)
+ 		goto fail;
+ 
+ 	ret = fopen(*path, "r");
+@@ -897,7 +897,7 @@ static FILE *open_iproute2_db(const char *filename, char **path)
+ 		return ret;
+ 
+ 	free(*path);
+-	if (asprintf(path, "/usr/share/iproute2/%s", filename) == -1)
++	if (asprintf(path, "/overlayer/syshub/share/iproute2/%s", filename) == -1)
+ 		goto fail;
+ 
+ 	ret = fopen(*path, "r");

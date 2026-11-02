@@ -1,0 +1,29 @@
+[package]
+name             = "nftables"
+version          = "1.1.7"
+description      = "Firewall"
+license          = " the nft tool, its service and Zainium's default rule set"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.netfilter.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = GPL-2.0-only:["libmnl", "libnftnl"]
+provides         = ["nftables"]
+tags             = ["base", "system", "network", "firewall"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

@@ -1,0 +1,28 @@
+# Zainium OS default firewall, loaded at boot by nftables.service.
+# Nothing from the network may connect in; everything this machine starts may go out.
+
+table inet filter {
+	chain input {
+		type filter hook input priority filter; policy drop;
+
+		iif "lo" accept
+		ct state established,related accept
+		ct state invalid drop
+
+		# ping, path MTU and IPv6 neighbour discovery
+		meta l4proto icmp accept
+		meta l4proto ipv6-icmp accept
+
+		# DHCP replies for this machine's own addresses
+		udp dport 68 accept
+		udp dport 546 accept
+	}
+
+	chain forward {
+		type filter hook forward priority filter; policy drop;
+	}
+
+	chain output {
+		type filter hook output priority filter; policy accept;
+	}
+}
