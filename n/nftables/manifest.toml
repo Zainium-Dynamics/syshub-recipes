@@ -1,8 +1,8 @@
 [package]
 name             = "nftables"
 version          = "1.1.7"
-description      = "Firewall"
-license          = " the nft tool, its service and Zainium's default rule set"
+description      = "Firewall: the nft tool, its service and the default rule set"
+license          = "GPL-2.0-only"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
 homepage         = "https://www.netfilter.org"
 build_type       = "dynamic"
@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = GPL-2.0-only:["libmnl", "libnftnl"]
+depends          = ["libmnl", "libnftnl"]
 provides         = ["nftables"]
 tags             = ["base", "system", "network", "firewall"]
 
