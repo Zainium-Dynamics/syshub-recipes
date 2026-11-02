@@ -3,8 +3,9 @@ Zainium OS base recipes
 
 These are the recipes for syshub, the base of Zainium OS: the C library,
 the toolchain, systemd, the desktop and everything else the system ships.
-Each directory is one package: a ZEXBUILD build script, a manifest.toml
-and any patches it needs.
+Each package directory holds a ZEXBUILD build script, a manifest.toml
+and any patches it needs. Packages sit in a folder named after their
+first letter (a/acl, s/systemd); the COSMIC desktop is in cosmic-desktop.
 
 The core team maintains this repository. Software you would like users to
 be able to install belongs in userland-recipes, which also explains the
