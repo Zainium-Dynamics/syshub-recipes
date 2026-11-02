@@ -15,6 +15,8 @@ build() {
     cd udisks-$pkgver
     # Zainium's libblockdev (3.4 or newer) and libsystemd for login sessions
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # configure checks for <blockdev/part.h> with only the GLib flags; CPPFLAGS is the one it keeps
+    export CPPFLAGS="-I/overlayer/syshub/include${CPPFLAGS:+ $CPPFLAGS}"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
