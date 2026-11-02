@@ -1,0 +1,40 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=gvfs
+pkgver=1.62.0
+pkgrel=0
+source="https://download.gnome.org/sources/gvfs/${pkgver%.*}/gvfs-$pkgver.tar.xz"
+sha256sums="dd8e6c255fd3bed5eeb190b59027c88b38e63c1be0932ddce9cfeb48f3c43d0f  gvfs-$pkgver.tar.xz"
+makedepends="meson gettext dbus-dev gsettings-desktop-schemas-dev libgudev-dev eudev-dev fuse3-dev udisks2-dev"
+needs_toolchain="glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev gettext gettext-dev systemd systemd-dev"
+
+# Only what drives need: the udisks2 volume monitor, gvfsd and the FUSE bridge.
+build() {
+    # glib-dev's python tools (glib-mkenums, gdbus-codegen) start with #!/overlayer/syshub/bin/env
+    [ -e /overlayer/syshub/bin/env ] || ln -s /usr/bin/env /overlayer/syshub/bin/env
+    # Zainium's glib (gvfs needs 2.83 or newer) and libsystemd
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    meson setup builddir \
+        --wrap-mode=nofallback \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --sysconfdir=/overlayer/syshub/etc \
+        -Dsystemduserunitdir=/overlayer/syshub/lib/systemd/user \
+        -Dtmpfilesdir=/overlayer/syshub/lib/tmpfiles.d \
+        -Dudisks2=true -Dfuse=true -Dgudev=true -Dlogind=true \
+        -Dadmin=false -Dafc=false -Dafp=false -Darchive=false -Dcdda=false -Ddnssd=false \
+        -Dgoa=false -Dgoogle=false -Dgphoto2=false -Dhttp=false -Dmtp=false -Dnfs=false \
+        -Donedrive=false -Dsftp=false -Dsmb=false -Dwsdd=false -Dbluray=false \
+        -Dgcr=false -Dgcrypt=false -Dkeyring=false -Dlibusb=false -Dman=false
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}
