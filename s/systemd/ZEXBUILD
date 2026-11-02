@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=systemd
 pkgver=261.2
-pkgrel=3
+pkgrel=4
 subpackages="$pkgname-dev"
 source="https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz
 0001-zainium-paths.patch
@@ -157,7 +157,8 @@ package() {
     for unitdir in "$PAYLOAD_DIR/overlayer/syshub/lib/systemd/system" "$PAYLOAD_DIR/overlayer/syshub/lib/systemd/user"; do
         [ -d "$unitdir" ] || continue
         for f in "$unitdir"/*.service; do
-            [ -f "$f" ] || continue
+            # sed -i turns a symlink into a copy: dbus-org.freedesktop.*.service aliases must stay links
+            [ -f "$f" ] && [ ! -L "$f" ] || continue
             # systemd.service(5) exec-line modifier chars ('-' ignore
             # exit, '+' full privileges, ':' no var substitution, '@'
             # argv0 override, combinable up to 3) can sit right after
