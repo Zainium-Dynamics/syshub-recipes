@@ -1,0 +1,43 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=lvm2
+pkgver=2.03.38
+pkgrel=0
+source="https://sourceware.org/pub/lvm2/LVM2.$pkgver.tgz"
+sha256sums="322d44bf40de318e6e6b52c56999aaeb86b16c8267187ac2e01a44d4dc526960  LVM2.$pkgver.tgz"
+makedepends="pkgconf eudev-dev util-linux-dev linux-headers"
+
+# Only device-mapper (libdevmapper and dmsetup): cryptsetup and libblockdev need it; LVM itself is not built.
+build() {
+    # ci/build.sh unpacks *.tar.* only, and the tree is LVM2.<version>, not lvm2-<version>
+    tar xzf LVM2.$pkgver.tgz
+    cd LVM2.$pkgver
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --sbindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --disable-static \
+        --with-default-system-dir=/overlayer/syshub/etc/lvm \
+        --with-default-run-dir=/run/lvm \
+        --with-default-locking-dir=/run/lock/lvm \
+        --with-udevdir=/overlayer/syshub/lib/udev/rules.d \
+        --enable-pkgconfig \
+        --enable-udev_sync \
+        --enable-udev_rules \
+        --disable-selinux \
+        --disable-readline
+    make device-mapper
+    DESTDIR="$(pwd)/_zexbuild-install" make install_device-mapper
+    DESTDIR="$(pwd)/_zexbuild-install" make -C udev install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}
