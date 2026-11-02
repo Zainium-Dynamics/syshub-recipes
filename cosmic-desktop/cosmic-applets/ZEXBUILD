@@ -1,0 +1,18 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-applets
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-applets/archive/refs/tags/epoch-$pkgver.tar.gz"
+sha256sums="d2ad09b72a2dcba2a17f12e557f0e21dc60171eefa54390e4b67bb058f9180e2  epoch-$pkgver.tar.gz"
+makedepends="cargo just pkgconf dbus-dev eudev-dev libinput-dev libxkbcommon-dev wayland-dev"
+
+build() {
+	cd cosmic-applets-epoch-$pkgver
+	cargo build --release --target x86_64-unknown-linux-musl
+}
+
+package() {
+	cd cosmic-applets-epoch-$pkgver
+	CARGO_TARGET_DIR=target/x86_64-unknown-linux-musl \
+		just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub install
+}
