@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=gvfs
 pkgver=1.62.0
-pkgrel=0
+pkgrel=1
 source="https://download.gnome.org/sources/gvfs/${pkgver%.*}/gvfs-$pkgver.tar.xz"
 sha256sums="dd8e6c255fd3bed5eeb190b59027c88b38e63c1be0932ddce9cfeb48f3c43d0f  gvfs-$pkgver.tar.xz"
 makedepends="meson gettext dbus-dev gsettings-desktop-schemas-dev libgudev-dev eudev-dev fuse3-dev udisks2-dev"
