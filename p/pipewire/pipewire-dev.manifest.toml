@@ -1,6 +1,6 @@
 [package]
 name             = "pipewire-dev"
-version          = "1.6.8"
+version          = "1.6.11"
 description      = "pipewire headers, pkgconfig"
 license          = "MIT"
 maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
