@@ -2,10 +2,13 @@ maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=keyutils
 pkgver=1.6.3
 pkgrel=0
-source="https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-$pkgver.tar.gz"
+source="https://git.kernel.org/pub/scm/linux/kernel/git/dhowells/keyutils.git/snapshot/keyutils-$pkgver.tar.gz
+0001-zainium-request-key-paths.patch"
 sha256sums="a61d5706136ae4c05bd48f86186bcfdbd88dd8bd5107e3e195c924cfc1b39bb4  keyutils-$pkgver.tar.gz"
 
 build() {
+    # keyctl, cat and the debug helper that request-key.conf runs, under /overlayer/syshub
+    patch -p1 < ../0001-zainium-request-key-paths.patch
     # its Makefile picks LIBDIR from ldd and takes the rest as make variables
     set -- NO_ARLIB=1 LIBDIR=/overlayer/syshub/lib USRLIBDIR=/overlayer/syshub/lib \
         BINDIR=/overlayer/syshub/bin SBINDIR=/overlayer/syshub/bin ETCDIR=/overlayer/syshub/etc \
