@@ -1,0 +1,22 @@
+# Zainium OS IMA policy, loaded by systemd at boot: it measures into PCR 10 and never blocks
+# pseudo and memory filesystems are not measured
+dont_measure fsmagic=0x9fa0
+dont_measure fsmagic=0x62656572
+dont_measure fsmagic=0x64626720
+dont_measure fsmagic=0x01021994
+dont_measure fsmagic=0x858458f6
+dont_measure fsmagic=0x1cd1
+dont_measure fsmagic=0x42494e4d
+dont_measure fsmagic=0x73636673
+dont_measure fsmagic=0x6e736673
+dont_measure fsmagic=0x27e0eb
+dont_measure fsmagic=0x63677270
+# every program run, kernel module, firmware, kexec image, policy, key and kernel record
+measure func=BPRM_CHECK mask=MAY_EXEC
+measure func=MODULE_CHECK
+measure func=FIRMWARE_CHECK
+measure func=KEXEC_KERNEL_CHECK
+measure func=KEXEC_INITRAMFS_CHECK
+measure func=POLICY_CHECK
+measure func=KEY_CHECK
+measure func=CRITICAL_DATA
