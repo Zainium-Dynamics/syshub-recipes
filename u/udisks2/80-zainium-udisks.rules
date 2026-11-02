@@ -1,0 +1,2 @@
+# The Zainium system partition (label zainium-root) is not a drive for the file manager.
+SUBSYSTEM=="block", ENV{ID_FS_LABEL}=="zainium-root", ENV{UDISKS_IGNORE}="1"
