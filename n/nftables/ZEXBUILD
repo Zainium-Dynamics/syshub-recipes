@@ -1,0 +1,48 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=nftables
+pkgver=1.1.7
+pkgrel=0
+_libnftnl=1.3.2
+source="https://www.netfilter.org/pub/nftables/nftables-$pkgver.tar.xz
+https://www.netfilter.org/pub/libnftnl/libnftnl-$_libnftnl.tar.xz
+0001-zainium-iproute2-paths.patch
+main.nft"
+sha256sums="a6fbf060d8d4fff001517a2b94f356bb4366bfbf0ba366366f9d27cc38caa58f  nftables-$pkgver.tar.xz
+c97abc3409f8fa396b4462b2bb7f147a3a47a4ddc97cfa0b2f18890c9cfde8b0  libnftnl-$_libnftnl.tar.xz"
+makedepends="pkgconf libmnl-dev linux-headers bison flex"
+
+# The nft command and its systemd service, with Zainium's default rule set: nothing from the
+# network may connect in. mini-gmp, no interactive shell and no JSON, so no gmp, readline or jansson.
+build() {
+    # libnftnl headers for this build only (nft needs 1.3.2, newer than Alpine's); at run time
+    # nft uses libnftnl.so from the libnftnl package, built from the same release
+    (cd ../libnftnl-$_libnftnl && ./configure --prefix="$SRCDIR/_libnftnl" --disable-static && make install)
+    export PKG_CONFIG_PATH="$SRCDIR/_libnftnl/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+
+    # iproute2 tables under /overlayer/syshub
+    patch -p1 < ../0001-zainium-iproute2-paths.patch
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --sbindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --with-unitdir=/overlayer/syshub/lib/systemd/system \
+        --with-mini-gmp \
+        --without-cli \
+        --without-json \
+        --disable-man-doc \
+        --disable-static
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" "$PAYLOAD_DIR/share/doc"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+    install -Dm644 "$RECIPE_DIR/main.nft" "$PAYLOAD_DIR/etc/nftables/rules/main.nft"
+    # on from the first boot, like the other base services
+    mkdir -p "$PAYLOAD_DIR/lib/systemd/system/sysinit.target.wants"
+    ln -sf ../nftables.service "$PAYLOAD_DIR/lib/systemd/system/sysinit.target.wants/nftables.service"
+}
