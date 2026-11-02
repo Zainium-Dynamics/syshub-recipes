@@ -1,0 +1,65 @@
+diff --git a/src/battery.rs b/src/battery.rs
+index a5aacd4..2f4b207 100644
+--- a/src/battery.rs
++++ b/src/battery.rs
+@@ -237,7 +237,7 @@ async fn critical_battery_nag(mut watch: Receiver<bool>) {
+ fn on_ac_plug(is_plugged: bool, battery_level: BatteryLevel) {
+     let (theme, sound) = if is_plugged {
+         ("freedesktop", "power-plug")
+-    } else if Path::new("/usr/share/sounds/Pop/").exists()
++    } else if Path::new("/overlayer/syshub/share/sounds/Pop/").exists()
+         && matches!(battery_level, BatteryLevel::Low | BatteryLevel::Critical)
+     {
+         ("Pop", "power-unplug-battery-low")
+diff --git a/src/location.rs b/src/location.rs
+index 0105443..2b87fa1 100644
+--- a/src/location.rs
++++ b/src/location.rs
+@@ -25,7 +25,7 @@ pub fn decode_geodata() -> BTreeMap<String, GeoPosition> {
+ pub fn receive_timezones() -> (PollWatcher, impl Stream<Item = io::Result<String>>) {
+     let (tx, rx) = tokio::sync::mpsc::channel(1);
+ 
+-    let timezone_path: Rc<Path> = Rc::from(Path::new("/etc/localtime"));
++    let timezone_path: Rc<Path> = Rc::from(Path::new("/overlayer/syshub/etc/localtime"));
+ 
+     futures::executor::block_on(async {
+         _ = tx.send(()).await;
+@@ -94,7 +94,7 @@ mod tests {
+ 
+     #[test]
+     fn timezone_from_path() {
+-        let mut path = Path::new("/usr/share/zoneinfo/America/Denver");
++        let mut path = Path::new("/overlayer/syshub/share/zoneinfo/America/Denver");
+         assert_eq!(
+             super::timezone_from_path(path),
+             String::from("America/Denver")
+diff --git a/src/pipewire.rs b/src/pipewire.rs
+index 7f5e635..ec825f8 100644
+--- a/src/pipewire.rs
++++ b/src/pipewire.rs
+@@ -26,7 +26,7 @@ pub fn play_sound(theme: &'static str, sound: &'static str) {
+ 
+ #[memoize::memoize]
+ fn sound_path(theme: &'static str, sound: &'static str) -> Option<PathBuf> {
+-    let entries = WalkDir::new(["/usr/share/sounds/", theme].concat())
++    let entries = WalkDir::new(["/overlayer/syshub/share/sounds/", theme].concat())
+         .follow_links(true)
+         .into_iter()
+         .filter_map(Result::ok);
+diff --git a/src/theme.rs b/src/theme.rs
+index bc14129..f4f2356 100644
+--- a/src/theme.rs
++++ b/src/theme.rs
+@@ -580,10 +580,10 @@ fn set_gnome_desktop_interface(is_dark: bool) {
+         (
+             "prefer-dark",
+             "adw-gtk3-dark",
+-            "/usr/share/themes/adw-gtk3-dark",
++            "/overlayer/syshub/share/themes/adw-gtk3-dark",
+         )
+     } else {
+-        ("prefer-light", "adw-gtk3", "/usr/share/themes/adw-gtk3")
++        ("prefer-light", "adw-gtk3", "/overlayer/syshub/share/themes/adw-gtk3")
+     };
+ 
+     tokio::spawn(async {

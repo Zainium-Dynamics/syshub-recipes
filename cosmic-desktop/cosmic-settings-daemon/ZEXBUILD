@@ -1,0 +1,31 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cosmic-settings-daemon
+pkgver=1.11.0
+pkgrel=0
+source="https://github.com/pop-os/cosmic-settings-daemon/archive/refs/tags/epoch-$pkgver.tar.gz
+0001-overlayer-syshub-paths.patch"
+sha256sums="1cc494c028a59a0356547c834421495da326622f837221726c15fceb14f3f9f0  epoch-$pkgver.tar.gz"
+makedepends="rustup just pkgconf clang-libclang eudev-dev libinput-dev libxkbcommon-dev openssl-dev pipewire-dev"
+
+build() {
+    cd cosmic-settings-daemon-epoch-$pkgver
+    # sounds, GTK themes, zoneinfo and localtime under /overlayer/syshub
+    patch -p1 < ../0001-overlayer-syshub-paths.patch
+    # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
+    export LD_LIBRARY_PATH=/usr/lib:/lib
+    rustup-init -y -q --default-toolchain none --profile minimal
+    export PATH="$HOME/.cargo/bin:$PATH"
+    rustup toolchain install stable --profile minimal --target x86_64-unknown-linux-musl
+    export RUSTUP_TOOLCHAIN=stable
+    # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    # no --target: the target flags then reach the build scripts too, so bindgen's
+    # build script is dynamic and can load libclang
+    export LIBCLANG_PATH="$(dirname "$(find /usr/lib -name 'libclang.so*' | head -1)")"
+    cargo build --release
+}
+
+package() {
+    # still in the source dir build() changed into; the binary is in target/release
+    just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub install
+}
