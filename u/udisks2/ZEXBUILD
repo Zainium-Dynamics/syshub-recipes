@@ -1,0 +1,45 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=udisks2
+pkgver=2.11.2
+pkgrel=0
+source="https://github.com/storaged-project/udisks/releases/download/udisks-$pkgver/udisks-$pkgver.tar.bz2"
+sha256sums="18630a8aad806bea0bc626ce97e71e50ec82c742956ac1c834a4275f8f22207b  udisks-$pkgver.tar.bz2"
+makedepends="pkgconf glib-dev polkit-dev libgudev-dev eudev-dev kmod-dev util-linux-dev acl-dev gettext-dev libxslt linux-headers"
+needs_toolchain="systemd systemd-dev libblockdev libblockdev-dev"
+
+# Drives are mounted under /run/media/<user>, as on other desktops; SMART is off.
+# kmod-dev: libblockdev's libbd_utils links libkmod, which the linker has to find too.
+build() {
+    # the tree is udisks-<version>, not udisks2-<version>
+    cd udisks-$pkgver
+    # Zainium's libblockdev (3.4 or newer) and libsystemd for login sessions
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --sbindir=/overlayer/syshub/bin \
+        --libdir=/overlayer/syshub/lib \
+        --libexecdir=/overlayer/syshub/libexec \
+        --disable-static \
+        --with-systemdsystemunitdir=/overlayer/syshub/lib/systemd/system \
+        --with-udevdir=/overlayer/syshub/lib/udev \
+        --with-tmpfilesdir=/overlayer/syshub/lib/tmpfiles.d \
+        --with-modloaddir=/overlayer/syshub/lib/modules-load.d \
+        --with-modprobedir=/overlayer/syshub/lib/modprobe.d \
+        --disable-introspection \
+        --disable-gtk-doc \
+        --disable-man \
+        --disable-smart
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+    # runtime only: headers, pkgconfig, static archives and docs stay out of the base
+    rm -rf "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig" "$PAYLOAD_DIR/share/man" \
+        "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/gtk-doc" "$PAYLOAD_DIR/share/info"
+    find "$PAYLOAD_DIR" \( -name '*.a' -o -name '*.la' \) -delete
+}

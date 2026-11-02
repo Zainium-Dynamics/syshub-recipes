@@ -1,0 +1,30 @@
+[package]
+name             = "lvm2"
+version          = "2.03.38"
+description      = "Device-mapper library and dmsetup"
+license          = "LGPL-2.1-only AND GPL-2.0-only"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://sourceware.org/lvm2/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["eudev", "util-linux"]
+provides         = ["lvm2"]
+tags             = ["base", "system", "storage"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
