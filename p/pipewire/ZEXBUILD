@@ -10,7 +10,7 @@ sha256sums="f3f70c4af173cc93d05070a9d412efe3ef5889bdf4ac32298e2c0d9ae1350559  $p
 # CI container pull in transitively via glib-dev): "breaks:
 # gettext-dev[!musl-libintl]". gettext-dev depends on musl-libintl
 # itself, so this still gets libintl.h without the conflict.
-makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev sbc-dev bluez-dev"
+makedepends="alsa-lib-dev eudev-dev gettext-dev vulkan-headers vulkan-loader-dev sbc-dev bluez-dev glib-dev"
 needs_toolchain="systemd systemd-dev dbus dbus-dev readline readline-dev ncurses ncurses-dev mesa mesa-dev libdrm libdrm-dev"
 
 # Bluetooth audio (bluez5 plugin) with SBC; the other codecs need

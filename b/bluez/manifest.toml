@@ -15,7 +15,8 @@ ed25519_sig      = ""
 ed25519_pubkey   = ""
 
 depends          = ["musl", "glib", "dbus", "readline", "systemd"]
-provides         = ["bluez", "bluetoothd", "bluetoothctl", "btmon"]
+provides         = [
+    "libbluetooth","bluez", "bluetoothd", "bluetoothctl", "btmon"]
 tags             = ["base", "bluetooth"]
 
 [install]
