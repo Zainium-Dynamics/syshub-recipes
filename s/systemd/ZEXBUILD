@@ -121,7 +121,8 @@ package() {
 
     for f in $(grep -rIl '/var/' "$PAYLOAD_DIR" 2>/dev/null); do
         is_text_file "$f" || continue
-        sed -i 's#/var/#/overlayer/syshub/var/#g' "$f"
+        # only a bare /var/: the patch and --localstatedir already wrote /overlayer/syshub/var/
+        sed -i -E 's#(^|[^[:alnum:]_./-])/var/#\1/overlayer/syshub/var/#g' "$f"
     done
 
   
@@ -132,7 +133,7 @@ package() {
         # genuine standalone "/etc" (space/comma/end-of-line after it),
         # so a real "/etc/passwd"-shaped path or an unrelated word like
         # "/etcetera" is left alone either way.
-        sed -i -E 's#/etc([[:space:],]|$)#/overlayer/syshub/etc\1#g' "$f"
+        sed -i -E 's#(^|[^[:alnum:]_./-])/etc([[:space:],]|$)#\1/overlayer/syshub/etc\2#g' "$f"
     done
 
     sed -i -e 's#^q /var #q /overlayer/syshub/var #' -e 's#^L /overlayer/syshub/var/run - - - - \.\./run$#L+ /overlayer/syshub/var/run - - - - /run#' "$PAYLOAD_DIR/overlayer/syshub/lib/tmpfiles.d/var.conf"
