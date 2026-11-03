@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=systemd
 pkgver=261.2
-pkgrel=5
+pkgrel=6
 subpackages="$pkgname-dev"
 source="https://github.com/systemd/systemd/archive/refs/tags/v$pkgver.tar.gz
 0001-zainium-paths.patch
@@ -170,6 +170,14 @@ package() {
             sed -i -E 's#^(Exec(Start|Stop|Reload)[a-zA-Z]*=)([-+:!@]{1,3})?(systemctl|journalctl|networkctl|resolvectl|timedatectl|hostnamectl|loginctl|localectl|machinectl|coredumpctl|bootctl|portablectl|homectl|oomctl|busctl|udevadm|userdbctl|systemd-[a-zA-Z0-9_-]*)([[:space:]]|$)#\1\3/overlayer/syshub/bin/\4\5#' "$f"
         done
     done
+
+    # udev's hardware database (keyboards, touchpads, sensors), built into the
+    # read-only base: this systemd-hwdb reads the hwdb.d files under its own
+    # /overlayer/syshub paths, inside the payload (libucontext and the other build
+    # libraries are the container's, in /usr/lib)
+    LD_LIBRARY_PATH="/overlayer/syshub/lib:/usr/lib:/lib" \
+        ./builddir/systemd-hwdb update --root="$PAYLOAD_DIR" --usr --strict
+    [ -s "$PAYLOAD_DIR/overlayer/syshub/lib/udev/hwdb.bin" ] || { echo "no hwdb.bin" >&2; return 1; }
 
     # measure-only IMA policy for PID 1's loader (-Dima=true)
     install -Dm644 "$RECIPE_DIR/ima-policy" "$PAYLOAD_DIR/overlayer/syshub/etc/ima/ima-policy"
