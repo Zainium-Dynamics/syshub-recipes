@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=musl
 pkgver=1.2.6
-pkgrel=1
+pkgrel=2
 # musl.libc.org was unreachable at the time this recipe was written —
 # using the well-known kraj/musl GitHub mirror instead (same one
 # OpenEmbedded/Yocto builds against), which is also more reliably
@@ -60,4 +60,7 @@ package() {
     mkdir -p "$PAYLOAD_DIR/overlayer/syshub/x86_64-zainium-linux-musl/bin"
     ln -snf ../lib/ld-musl-x86_64.so.1 \
         "$PAYLOAD_DIR/overlayer/syshub/x86_64-zainium-linux-musl/bin/ldd"
+    # packages built in Alpine link against libc.musl-x86_64.so.1
+    ln -snf libc.so \
+        "$PAYLOAD_DIR/overlayer/syshub/x86_64-zainium-linux-musl/lib/libc.musl-x86_64.so.1"
 }
