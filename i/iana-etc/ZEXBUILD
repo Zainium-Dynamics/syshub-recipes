@@ -1,0 +1,11 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=iana-etc
+pkgver=20261027
+pkgrel=0
+source="https://github.com/Mic92/iana-etc/releases/download/$pkgver/iana-etc-$pkgver.tar.gz"
+
+# /etc/services and /etc/protocols: getservbyname() and getprotobyname() read them
+package() {
+    mkdir -p "$PAYLOAD_DIR/overlayer/syshub/etc"
+    install -m644 services protocols "$PAYLOAD_DIR/overlayer/syshub/etc/"
+}
