@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=spirv-tools
 pkgver=2026.3
-pkgrel=0
+pkgrel=1
 subpackages="spirv-tools-dev"
 _headers_commit=29981f65241605e08b0ede4cfeb999fe3b723c6a
 source="https://github.com/KhronosGroup/SPIRV-Tools/archive/refs/tags/v$pkgver.tar.gz
@@ -33,6 +33,8 @@ package() {
     mv "$PAYLOAD_DIR/overlayer/syshub/lib/cmake" "$STAGING_ROOT/_spirv-tools-dev/cmake"
 
     strip "$PAYLOAD_DIR/overlayer/syshub/lib/"*.so* "$PAYLOAD_DIR/overlayer/syshub/bin/"* 2>/dev/null || true
+    # Mesa's Vulkan drivers (built in Alpine) need libSPIRV-Tools.so
+    ln -snf libSPIRV-Tools-shared.so "$PAYLOAD_DIR/overlayer/syshub/lib/libSPIRV-Tools.so"
 }
 
 dev() {
