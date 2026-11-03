@@ -173,8 +173,10 @@ package() {
 
     # udev's hardware database (keyboards, touchpads, sensors), built into the
     # read-only base: this systemd-hwdb reads the hwdb.d files under its own
-    # /overlayer/syshub paths, inside the payload
-    ./builddir/systemd-hwdb update --root="$PAYLOAD_DIR" --usr --strict
+    # /overlayer/syshub paths, inside the payload (libucontext and the other build
+    # libraries are the container's, in /usr/lib)
+    LD_LIBRARY_PATH="/overlayer/syshub/lib:/usr/lib:/lib" \
+        ./builddir/systemd-hwdb update --root="$PAYLOAD_DIR" --usr --strict
     [ -s "$PAYLOAD_DIR/overlayer/syshub/lib/udev/hwdb.bin" ] || { echo "no hwdb.bin" >&2; return 1; }
 
     # measure-only IMA policy for PID 1's loader (-Dima=true)
