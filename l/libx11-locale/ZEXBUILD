@@ -1,0 +1,19 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libx11-locale
+pkgver=1.8.14
+pkgrel=0
+source="https://www.x.org/releases/individual/lib/libX11-$pkgver.tar.xz"
+makedepends="xorgproto xtrans libxcb-dev"
+
+build() {
+	cd libX11-$pkgver
+	# only the locale data (Compose tables): libxkbcommon reads it from
+	# /overlayer/syshub/share/X11/locale for dead keys and Compose
+	./configure --prefix=/overlayer/syshub
+	make -C nls
+}
+
+package() {
+	# still in libX11-$pkgver
+	make -C nls DESTDIR="$PAYLOAD_DIR" install
+}
