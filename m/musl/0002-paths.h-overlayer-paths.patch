@@ -1,0 +1,52 @@
+--- a/include/paths.h
++++ b/include/paths.h
+@@ -1,10 +1,10 @@
+ #ifndef _PATHS_H
+ #define _PATHS_H
+ 
+-#define	_PATH_DEFPATH "/usr/local/bin:/bin:/usr/bin"
+-#define	_PATH_STDPATH "/bin:/usr/bin:/sbin:/usr/sbin"
++#define	_PATH_DEFPATH "/overlayer/syshub/bin:/overlayer/zexlib/union/bin"
++#define	_PATH_STDPATH "/overlayer/syshub/bin:/overlayer/syshub/sbin"
+ 
+-#define	_PATH_BSHELL	"/bin/sh"
++#define	_PATH_BSHELL	"/overlayer/syshub/bin/sh"
+ #define	_PATH_CONSOLE	"/dev/console"
+ #define	_PATH_DEVNULL	"/dev/null"
+ #define	_PATH_KLOG	"/proc/kmsg"
+@@ -11,15 +11,15 @@
+-#define	_PATH_LASTLOG	"/var/log/lastlog"
+-#define	_PATH_MAILDIR	"/var/mail"
+-#define	_PATH_MAN	"/usr/share/man"
+-#define	_PATH_MNTTAB	"/etc/fstab"
+-#define	_PATH_MOUNTED	"/etc/mtab"
+-#define	_PATH_NOLOGIN	"/etc/nologin"
+-#define	_PATH_SENDMAIL	"/usr/sbin/sendmail"
+-#define	_PATH_SHADOW	"/etc/shadow"
+-#define	_PATH_SHELLS	"/etc/shells"
++#define	_PATH_LASTLOG	"/overlayer/syshub/var/log/lastlog"
++#define	_PATH_MAILDIR	"/overlayer/syshub/var/mail"
++#define	_PATH_MAN	"/overlayer/syshub/share/man"
++#define	_PATH_MNTTAB	"/overlayer/syshub/etc/fstab"
++#define	_PATH_MOUNTED	"/proc/self/mounts"
++#define	_PATH_NOLOGIN	"/overlayer/syshub/etc/nologin"
++#define	_PATH_SENDMAIL	"/overlayer/syshub/bin/sendmail"
++#define	_PATH_SHADOW	"/overlayer/syshub/etc/shadow"
++#define	_PATH_SHELLS	"/overlayer/syshub/etc/shells"
+ #define	_PATH_TTY	"/dev/tty"
+ #define _PATH_UTMP	"/dev/null/utmp"
+-#define	_PATH_VI	"/usr/bin/vi"
++#define	_PATH_VI	"/overlayer/syshub/bin/vi"
+ #define _PATH_WTMP	"/dev/null/wtmp"
+ 
+ #define	_PATH_DEV	"/dev/"
+@@ -26,6 +26,6 @@
+ #define	_PATH_TMP	"/tmp/"
+-#define	_PATH_VARDB	"/var/lib/misc/"
+-#define	_PATH_VARRUN	"/var/run/"
+-#define	_PATH_VARTMP	"/var/tmp/"
++#define	_PATH_VARDB	"/overlayer/syshub/var/lib/misc/"
++#define	_PATH_VARRUN	"/run/"
++#define	_PATH_VARTMP	"/overlayer/syshub/var/tmp/"
+ 
+ #endif

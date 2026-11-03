@@ -7,7 +7,8 @@ pkgrel=2
 # OpenEmbedded/Yocto builds against), which is also more reliably
 # reachable from GitHub Actions runners than musl.libc.org has been.
 source="https://github.com/kraj/musl/archive/refs/tags/v$pkgver.tar.gz
-0001-dynlink.c-overlayer-paths.patch"
+0001-dynlink.c-overlayer-paths.patch
+0002-paths.h-overlayer-paths.patch"
 sha256sums="e9db8b70b0cba3db43b27e84ccd8a0c0958b40029a1c36c9f13817b93787b4d6  v$pkgver.tar.gz"
 
 # musl builds itself against the plain host compiler, not the Zainium
@@ -36,6 +37,8 @@ sha256sums="e9db8b70b0cba3db43b27e84ccd8a0c0958b40029a1c36c9f13817b93787b4d6  v$
 # ci/build.sh expects), so no manual cd override needed.
 build() {
     patch -p1 < ../0001-dynlink.c-overlayer-paths.patch
+    # paths.h (_PATH_BSHELL, _PATH_SHELLS, _PATH_DEFPATH, ...) for the DHS layout
+    patch -p1 < ../0002-paths.h-overlayer-paths.patch
 
     ./configure \
         --target=x86_64-zainium-linux-musl \
