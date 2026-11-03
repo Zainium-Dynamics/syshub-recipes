@@ -1,14 +1,15 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=musl
 pkgver=1.2.6
-pkgrel=2
+pkgrel=3
 # musl.libc.org was unreachable at the time this recipe was written —
 # using the well-known kraj/musl GitHub mirror instead (same one
 # OpenEmbedded/Yocto builds against), which is also more reliably
 # reachable from GitHub Actions runners than musl.libc.org has been.
 source="https://github.com/kraj/musl/archive/refs/tags/v$pkgver.tar.gz
 0001-dynlink.c-overlayer-paths.patch
-0002-paths.h-overlayer-paths.patch"
+0002-paths.h-overlayer-paths.patch
+0003-overlayer-system-paths.patch"
 sha256sums="e9db8b70b0cba3db43b27e84ccd8a0c0958b40029a1c36c9f13817b93787b4d6  v$pkgver.tar.gz"
 
 # musl builds itself against the plain host compiler, not the Zainium
@@ -39,6 +40,9 @@ build() {
     patch -p1 < ../0001-dynlink.c-overlayer-paths.patch
     # paths.h (_PATH_BSHELL, _PATH_SHELLS, _PATH_DEFPATH, ...) for the DHS layout
     patch -p1 < ../0002-paths.h-overlayer-paths.patch
+    # users, groups, shadow, hosts, resolv.conf, services, shells, the time zone and
+    # /bin/sh under /overlayer/syshub: there is no /etc, /usr or /bin at the root
+    patch -p1 < ../0003-overlayer-system-paths.patch
 
     ./configure \
         --target=x86_64-zainium-linux-musl \

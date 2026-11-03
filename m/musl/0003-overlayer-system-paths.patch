@@ -1,0 +1,313 @@
+diff --git a/include/mntent.h b/include/mntent.h
+index 3492a1d..b60be3e 100644
+--- a/include/mntent.h
++++ b/include/mntent.h
+@@ -8,7 +8,7 @@ extern "C" {
+ #define __NEED_FILE
+ #include <bits/alltypes.h>
+ 
+-#define MOUNTED "/etc/mtab"
++#define MOUNTED "/proc/self/mounts"
+ 
+ #define MNTTYPE_IGNORE	"ignore"
+ #define MNTTYPE_NFS	"nfs"
+diff --git a/include/resolv.h b/include/resolv.h
+index 8b23ad6..fa83b0d 100644
+--- a/include/resolv.h
++++ b/include/resolv.h
+@@ -64,7 +64,7 @@ typedef struct __res_state {
+ #define	__RES	19960801
+ 
+ #ifndef _PATH_RESCONF
+-#define _PATH_RESCONF        "/etc/resolv.conf"
++#define _PATH_RESCONF        "/overlayer/syshub/etc/resolv.conf"
+ #endif
+ 
+ struct res_sym {
+diff --git a/include/shadow.h b/include/shadow.h
+index a9d6940..196d2ba 100644
+--- a/include/shadow.h
++++ b/include/shadow.h
+@@ -10,7 +10,7 @@ extern "C" {
+ 
+ #include <bits/alltypes.h>
+ 
+-#define	SHADOW "/etc/shadow"
++#define	SHADOW "/overlayer/syshub/etc/shadow"
+ 
+ struct spwd {
+ 	char *sp_namp;
+diff --git a/src/conf/confstr.c b/src/conf/confstr.c
+index 3d41728..226ffb6 100644
+--- a/src/conf/confstr.c
++++ b/src/conf/confstr.c
+@@ -6,7 +6,7 @@ size_t confstr(int name, char *buf, size_t len)
+ {
+ 	const char *s = "";
+ 	if (!name) {
+-		s = "/bin:/usr/bin";
++		s = "/overlayer/syshub/bin:/overlayer/zexlib/union/bin";
+ 	} else if ((name&~4U)!=1 && name-_CS_POSIX_V6_ILP32_OFF32_CFLAGS>35U) {
+ 		errno = EINVAL;
+ 		return 0;
+diff --git a/src/legacy/getusershell.c b/src/legacy/getusershell.c
+index 1c5d98e..659b2b9 100644
+--- a/src/legacy/getusershell.c
++++ b/src/legacy/getusershell.c
+@@ -2,7 +2,7 @@
+ #include <stdio.h>
+ #include <unistd.h>
+ 
+-static const char defshells[] = "/bin/sh\n/bin/csh\n";
++static const char defshells[] = "/overlayer/syshub/bin/sh\n/overlayer/syshub/bin/bash\n";
+ 
+ static char *line;
+ static size_t linesize;
+@@ -16,7 +16,7 @@ void endusershell(void)
+ 
+ void setusershell(void)
+ {
+-	if (!f) f = fopen("/etc/shells", "rbe");
++	if (!f) f = fopen("/overlayer/syshub/etc/shells", "rbe");
+ 	if (!f) f = fmemopen((void *)defshells, sizeof defshells - 1, "rb");
+ }
+ 
+diff --git a/src/misc/wordexp.c b/src/misc/wordexp.c
+index db83a69..2d7e70c 100644
+--- a/src/misc/wordexp.c
++++ b/src/misc/wordexp.c
+@@ -108,7 +108,7 @@ static int do_wordexp(const char *s, wordexp_t *we, int flags)
+ 	if (!pid) {
+ 		if (p[1] == 1) fcntl(1, F_SETFD, 0);
+ 		else dup2(p[1], 1);
+-		execl("/bin/sh", "sh", "-c",
++		execl("/overlayer/syshub/bin/sh", "sh", "-c",
+ 			"eval \"printf %s\\\\\\\\0 x $1 $2\"",
+ 			"sh", s, redir, (char *)0);
+ 		_exit(1);
+diff --git a/src/network/getnameinfo.c b/src/network/getnameinfo.c
+index 133c15b..844d54d 100644
+--- a/src/network/getnameinfo.c
++++ b/src/network/getnameinfo.c
+@@ -47,7 +47,7 @@ static void reverse_hosts(char *buf, const unsigned char *a, unsigned scopeid, i
+ 	char line[512], *p, *z;
+ 	unsigned char _buf[1032], atmp[16];
+ 	struct address iplit;
+-	FILE _f, *f = __fopen_rb_ca("/etc/hosts", &_f, _buf, sizeof _buf);
++	FILE _f, *f = __fopen_rb_ca("/overlayer/syshub/etc/hosts", &_f, _buf, sizeof _buf);
+ 	if (!f) return;
+ 	if (family == AF_INET) {
+ 		memcpy(atmp+12, a, 4);
+@@ -88,7 +88,7 @@ static void reverse_services(char *buf, int port, int dgram)
+ 	unsigned long svport;
+ 	char line[128], *p, *z;
+ 	unsigned char _buf[1032];
+-	FILE _f, *f = __fopen_rb_ca("/etc/services", &_f, _buf, sizeof _buf);
++	FILE _f, *f = __fopen_rb_ca("/overlayer/syshub/etc/services", &_f, _buf, sizeof _buf);
+ 	if (!f) return;
+ 	while (fgets(line, sizeof line, f)) {
+ 		if ((p=strchr(line, '#'))) *p++='\n', *p=0;
+diff --git a/src/network/lookup_name.c b/src/network/lookup_name.c
+index 3521818..9e11592 100644
+--- a/src/network/lookup_name.c
++++ b/src/network/lookup_name.c
+@@ -52,7 +52,7 @@ static int name_from_hosts(struct address buf[static MAXADDRS], char canon[stati
+ 	size_t l = strlen(name);
+ 	int cnt = 0, badfam = 0, have_canon = 0;
+ 	unsigned char _buf[1032];
+-	FILE _f, *f = __fopen_rb_ca("/etc/hosts", &_f, _buf, sizeof _buf);
++	FILE _f, *f = __fopen_rb_ca("/overlayer/syshub/etc/hosts", &_f, _buf, sizeof _buf);
+ 	if (!f) switch (errno) {
+ 	case ENOENT:
+ 	case ENOTDIR:
+diff --git a/src/network/lookup_serv.c b/src/network/lookup_serv.c
+index ae38277..2abcff3 100644
+--- a/src/network/lookup_serv.c
++++ b/src/network/lookup_serv.c
+@@ -70,7 +70,7 @@ int __lookup_serv(struct service buf[static MAXSERVS], const char *name, int pro
+ 	size_t l = strlen(name);
+ 
+ 	unsigned char _buf[1032];
+-	FILE _f, *f = __fopen_rb_ca("/etc/services", &_f, _buf, sizeof _buf);
++	FILE _f, *f = __fopen_rb_ca("/overlayer/syshub/etc/services", &_f, _buf, sizeof _buf);
+ 	if (!f) switch (errno) {
+ 	case ENOENT:
+ 	case ENOTDIR:
+diff --git a/src/network/resolvconf.c b/src/network/resolvconf.c
+index ceabf08..fb53487 100644
+--- a/src/network/resolvconf.c
++++ b/src/network/resolvconf.c
+@@ -18,7 +18,7 @@ int __get_resolv_conf(struct resolvconf *conf, char *search, size_t search_sz)
+ 	conf->attempts = 2;
+ 	if (search) *search = 0;
+ 
+-	f = __fopen_rb_ca("/etc/resolv.conf", &_f, _buf, sizeof _buf);
++	f = __fopen_rb_ca("/overlayer/syshub/etc/resolv.conf", &_f, _buf, sizeof _buf);
+ 	if (!f) switch (errno) {
+ 	case ENOENT:
+ 	case ENOTDIR:
+diff --git a/src/passwd/getgr_a.c b/src/passwd/getgr_a.c
+index 8455040..c67aad0 100644
+--- a/src/passwd/getgr_a.c
++++ b/src/passwd/getgr_a.c
+@@ -26,7 +26,7 @@ int __getgr_a(const char *name, gid_t gid, struct group *gr, char **buf, size_t
+ 	*res = 0;
+ 
+ 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
+-	f = fopen("/etc/group", "rbe");
++	f = fopen("/overlayer/syshub/etc/group", "rbe");
+ 	if (!f) {
+ 		rv = errno;
+ 		goto done;
+diff --git a/src/passwd/getgrent.c b/src/passwd/getgrent.c
+index 835b9ab..5fe5a97 100644
+--- a/src/passwd/getgrent.c
++++ b/src/passwd/getgrent.c
+@@ -16,7 +16,7 @@ struct group *getgrent()
+ {
+ 	struct group *res;
+ 	size_t size=0, nmem=0;
+-	if (!f) f = fopen("/etc/group", "rbe");
++	if (!f) f = fopen("/overlayer/syshub/etc/group", "rbe");
+ 	if (!f) return 0;
+ 	__getgrent_a(f, &gr, &line, &size, &mem, &nmem, &res);
+ 	return res;
+diff --git a/src/passwd/getgrouplist.c b/src/passwd/getgrouplist.c
+index 301824c..4391ce1 100644
+--- a/src/passwd/getgrouplist.c
++++ b/src/passwd/getgrouplist.c
+@@ -43,7 +43,7 @@ int getgrouplist(const char *user, gid_t gid, gid_t *groups, int *ngroups)
+ 	}
+ 	fclose(f);
+ 
+-	f = fopen("/etc/group", "rbe");
++	f = fopen("/overlayer/syshub/etc/group", "rbe");
+ 	if (!f && errno != ENOENT && errno != ENOTDIR)
+ 		goto cleanup;
+ 
+diff --git a/src/passwd/getpw_a.c b/src/passwd/getpw_a.c
+index 15a70c0..a5afcd8 100644
+--- a/src/passwd/getpw_a.c
++++ b/src/passwd/getpw_a.c
+@@ -27,7 +27,7 @@ int __getpw_a(const char *name, uid_t uid, struct passwd *pw, char **buf, size_t
+ 
+ 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cs);
+ 
+-	f = fopen("/etc/passwd", "rbe");
++	f = fopen("/overlayer/syshub/etc/passwd", "rbe");
+ 	if (!f) {
+ 		rv = errno;
+ 		goto done;
+diff --git a/src/passwd/getpwent.c b/src/passwd/getpwent.c
+index f2bd516..e029323 100644
+--- a/src/passwd/getpwent.c
++++ b/src/passwd/getpwent.c
+@@ -16,7 +16,7 @@ weak_alias(setpwent, endpwent);
+ struct passwd *getpwent()
+ {
+ 	struct passwd *res;
+-	if (!f) f = fopen("/etc/passwd", "rbe");
++	if (!f) f = fopen("/overlayer/syshub/etc/passwd", "rbe");
+ 	if (!f) return 0;
+ 	__getpwent_a(f, &pw, &line, &size, &res);
+ 	return res;
+diff --git a/src/passwd/getspnam_r.c b/src/passwd/getspnam_r.c
+index 541e853..a51722f 100644
+--- a/src/passwd/getspnam_r.c
++++ b/src/passwd/getspnam_r.c
+@@ -80,7 +80,7 @@ int getspnam_r(const char *name, struct spwd *sp, char *buf, size_t size, struct
+ 		return errno = ERANGE;
+ 
+ 	/* Protect against truncation */
+-	if (snprintf(path, sizeof path, "/etc/tcb/%s/shadow", name) >= sizeof path)
++	if (snprintf(path, sizeof path, "/overlayer/syshub/etc/tcb/%s/shadow", name) >= sizeof path)
+ 		return errno = EINVAL;
+ 
+ 	fd = open(path, O_RDONLY|O_NOFOLLOW|O_NONBLOCK|O_CLOEXEC);
+@@ -96,7 +96,7 @@ int getspnam_r(const char *name, struct spwd *sp, char *buf, size_t size, struct
+ 	} else {
+ 		if (errno != ENOENT && errno != ENOTDIR)
+ 			return errno;
+-		f = fopen("/etc/shadow", "rbe");
++		f = fopen("/overlayer/syshub/etc/shadow", "rbe");
+ 		if (!f) {
+ 			if (errno != ENOENT && errno != ENOTDIR)
+ 				return errno;
+diff --git a/src/passwd/nscd_query.c b/src/passwd/nscd_query.c
+index dc3406b..c41e01d 100644
+--- a/src/passwd/nscd_query.c
++++ b/src/passwd/nscd_query.c
+@@ -12,7 +12,7 @@ static const struct {
+ 	char sun_path[21];
+ } addr = {
+ 	AF_UNIX,
+-	"/var/run/nscd/socket"
++	"/run/nscd/socket"
+ };
+ 
+ FILE *__nscd_query(int32_t req, const char *key, int32_t *buf, size_t len, int *swap)
+diff --git a/src/process/execvp.c b/src/process/execvp.c
+index ef3b9dd..0da1739 100644
+--- a/src/process/execvp.c
++++ b/src/process/execvp.c
+@@ -18,7 +18,7 @@ int __execvpe(const char *file, char *const argv[], char *const envp[])
+ 	if (strchr(file, '/'))
+ 		return execve(file, argv, envp);
+ 
+-	if (!path) path = "/usr/local/bin:/bin:/usr/bin";
++	if (!path) path = "/overlayer/syshub/bin:/overlayer/zexlib/union/bin";
+ 	k = strnlen(file, NAME_MAX+1);
+ 	if (k > NAME_MAX) {
+ 		errno = ENAMETOOLONG;
+diff --git a/src/process/system.c b/src/process/system.c
+index 5af59b8..1ab5267 100644
+--- a/src/process/system.c
++++ b/src/process/system.c
+@@ -32,7 +32,7 @@ int system(const char *cmd)
+ 	posix_spawnattr_setsigmask(&attr, &old);
+ 	posix_spawnattr_setsigdefault(&attr, &reset);
+ 	posix_spawnattr_setflags(&attr, POSIX_SPAWN_SETSIGDEF|POSIX_SPAWN_SETSIGMASK);
+-	ret = posix_spawn(&pid, "/bin/sh", 0, &attr,
++	ret = posix_spawn(&pid, "/overlayer/syshub/bin/sh", 0, &attr,
+ 		(char *[]){"sh", "-c", (char *)cmd, 0}, __environ);
+ 	posix_spawnattr_destroy(&attr);
+ 
+diff --git a/src/stdio/popen.c b/src/stdio/popen.c
+index 3ec8339..b908eca 100644
+--- a/src/stdio/popen.c
++++ b/src/stdio/popen.c
+@@ -38,7 +38,7 @@ FILE *popen(const char *cmd, const char *mode)
+ 			if (l->pipe_pid && posix_spawn_file_actions_addclose(&fa, l->fd))
+ 				goto fail;
+ 		if (!posix_spawn_file_actions_adddup2(&fa, p[1-op], 1-op)) {
+-			if (!(e = posix_spawn(&pid, "/bin/sh", &fa, 0,
++			if (!(e = posix_spawn(&pid, "/overlayer/syshub/bin/sh", &fa, 0,
+ 			    (char *[]){ "sh", "-c", (char *)cmd, 0 }, __environ))) {
+ 				posix_spawn_file_actions_destroy(&fa);
+ 				f->pipe_pid = pid;
+diff --git a/src/time/__tz.c b/src/time/__tz.c
+index 54ed4cf..6b93dbd 100644
+--- a/src/time/__tz.c
++++ b/src/time/__tz.c
+@@ -129,10 +129,10 @@ static void do_tzset()
+ 	const unsigned char *map = 0;
+ 	size_t i;
+ 	static const char search[] =
+-		"/usr/share/zoneinfo/\0/share/zoneinfo/\0/etc/zoneinfo/\0";
++		"/overlayer/syshub/share/zoneinfo/\0/overlayer/syshub/etc/zoneinfo/\0";
+ 
+ 	s = getenv("TZ");
+-	if (!s) s = "/etc/localtime";
++	if (!s) s = "/overlayer/syshub/etc/localtime";
+ 	if (!*s) s = __utc;
+ 
+ 	if (old_tz && !strcmp(s, old_tz)) return;
+@@ -171,7 +171,7 @@ static void do_tzset()
+ 	if (!posix_form) {
+ 		if (*s == ':') s++;
+ 		if (*s == '/' || *s == '.') {
+-			if (!libc.secure || !strcmp(s, "/etc/localtime"))
++			if (!libc.secure || !strcmp(s, "/overlayer/syshub/etc/localtime"))
+ 				map = __map_file(s, &map_size);
+ 		} else {
+ 			size_t l = strlen(s);
