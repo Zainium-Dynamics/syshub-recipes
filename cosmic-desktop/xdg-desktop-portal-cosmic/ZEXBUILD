@@ -6,7 +6,7 @@ source="https://github.com/pop-os/xdg-desktop-portal-cosmic/archive/refs/tags/ep
 0002-overlayer-syshub-path.patch
 0003-widget-screenshot-syshub-path.patch"
 sha256sums="5befa4beda6ee231ebaa553b3db53d794500b5646de385fd1f576a7406242f16  epoch-$pkgver.tar.gz"
-makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev glib-dev dbus-dev pipewire-dev mesa-dev clang-libclang"
+makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev glib-dev dbus-dev pipewire-dev mesa-dev clang-libclang findutils"
 
 build() {
     cd xdg-desktop-portal-cosmic-epoch-$pkgver
