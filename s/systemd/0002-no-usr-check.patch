@@ -1,0 +1,17 @@
+diff --git a/src/core/main.c b/src/core/main.c
+index 274df08..9b06f03 100644
+--- a/src/core/main.c
++++ b/src/core/main.c
+@@ -2603,9 +2603,9 @@ static int initialize_runtime(
+                 install_crash_handler();
+ 
+                 if (!skip_setup) {
+-                        /* Check that /usr/ is either on the same file system as / or mounted already. */
+-                        if (dir_is_empty("/usr", /* ignore_hidden_or_backup= */ true) > 0) {
+-                                *ret_error_message = "Refusing to run in unsupported environment where /usr/ is not populated";
++                        /* Zainium OS has no /usr/: the OS lives in /overlayer/syshub, so that is what must be populated. */
++                        if (dir_is_empty("/overlayer/syshub", /* ignore_hidden_or_backup= */ true) > 0) {
++                                *ret_error_message = "Refusing to run in unsupported environment where /overlayer/syshub is not populated";
+                                 return -ENOEXEC;
+                         }
+ 
