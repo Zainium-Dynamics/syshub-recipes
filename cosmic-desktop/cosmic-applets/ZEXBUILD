@@ -1,14 +1,16 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=cosmic-applets
 pkgver=1.11.0
-pkgrel=0
-source="https://github.com/pop-os/cosmic-applets/archive/refs/tags/epoch-$pkgver.tar.gz"
+pkgrel=1
+source="https://github.com/pop-os/cosmic-applets/archive/refs/tags/epoch-$pkgver.tar.gz
+0001-default-dock-favorites.patch"
 sha256sums="d2ad09b72a2dcba2a17f12e557f0e21dc60171eefa54390e4b67bb058f9180e2  epoch-$pkgver.tar.gz"
 makedepends="rustup just pkgconf findutils util-linux-misc dbus-dev eudev-dev libinput-dev libxkbcommon-dev wayland-dev"
 
 # the justfile installs icons with GNU xargs -d and rev, which BusyBox lacks
 build() {
     cd cosmic-applets-epoch-$pkgver
+    patch -p1 < "$SRCDIR/0001-default-dock-favorites.patch"
     # Alpine's cargo has no x86_64-unknown-linux-musl std; stable wins over rust-toolchain.toml
     # (nightly hits a zbus async-drop query cycle)
     export LD_LIBRARY_PATH=/usr/lib:/lib
