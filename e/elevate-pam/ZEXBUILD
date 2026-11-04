@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=elevate-pam
 pkgver=1.0.1
-pkgrel=4
+pkgrel=5
 _nightly=nightly-2026-05-24
 _commit=9d99ab2fcf47925644290e0e4326befd94e29408
 source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz
@@ -45,8 +45,7 @@ package() {
     # systemd --user does not start without them
     for f in "$out"/libpam_*.so; do
         b="$(basename "$f")"
-        # libpam_misc is a library; pam_systemd.so belongs to systemd, which talks to logind
-        case "$b" in libpam_misc.so|libpam_systemd.so) continue ;; esac
+        [ "$b" = libpam_misc.so ] && continue
         cp "$f" "$PAYLOAD_DIR/lib/security/${b#lib}"
     done
     [ -f "$PAYLOAD_DIR/lib/security/pam_loginuid.so" ] || { echo "no pam_loginuid.so" >&2; return 1; }
