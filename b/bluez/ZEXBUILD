@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=bluez
 pkgver=5.87
-pkgrel=1
+pkgrel=2
 source="https://www.kernel.org/pub/linux/bluetooth/bluez-$pkgver.tar.xz"
 sha256sums="26bdcf2cebd7310c6f598850606b037ef0c515fe6608ebc54d22c50c4c32b35f  bluez-$pkgver.tar.xz"
 makedepends="pkgconf"
@@ -57,7 +57,9 @@ package() {
         "$root/etc/systemd/system/dbus-org.bluez.service"
 
     rm -rf "$root/share/man"
-    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+    for f in $(grep -rl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        # binaries stay out: a longer path shifts every byte after it
+        [ "$(tr -d '\000' < "$f" | wc -c)" -eq "$(wc -c < "$f")" ] || continue
         sed -i -e 's#/usr/lib/#/overlayer/syshub/lib/#g' -e 's#/usr/s\?bin/#/overlayer/syshub/bin/#g' \
             -e 's#/usr/share/#/overlayer/syshub/share/#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
     done

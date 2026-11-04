@@ -1,7 +1,7 @@
 maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
 pkgname=bash
 pkgver=5.3
-pkgrel=1
+pkgrel=2
 needs_toolchain="musl gcc-musl ncurses ncurses-dev readline readline-dev"
 source="https://ftp.gnu.org/gnu/bash/bash-$pkgver.tar.gz
 0001-zainium-paths.patch"
@@ -50,7 +50,9 @@ package() {
     rm -rf "$PAYLOAD_DIR/overlayer/syshub/share/doc/bash" "$PAYLOAD_DIR/overlayer/syshub/share/info"
     find "$PAYLOAD_DIR" -type f | while read -r f; do
         grep -q '/usr' "$f" || continue
-        tr -d '\000' < "$f" | cmp -s - "$f" || continue
+        # binaries stay out: a longer path shifts every byte after it. busybox cmp can't
+        # tell here, so compare the size with and without NUL bytes
+        [ "$(tr -d '\000' < "$f" | wc -c)" -eq "$(wc -c < "$f")" ] || continue
         sed -i -e 's#/usr/local#/overlayer/syshub#g' -e 's#/usr/#/overlayer/syshub/#g' "$f"
     done
 }
