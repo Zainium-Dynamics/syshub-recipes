@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=elevate-pam
 pkgver=1.0.1
-pkgrel=6
+pkgrel=7
 _nightly=nightly-2026-05-24
 _commit=9d99ab2fcf47925644290e0e4326befd94e29408
 source="https://github.com/Zainium-Dynamics/elevate-pam/archive/$_commit.tar.gz
