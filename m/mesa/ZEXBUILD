@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=mesa
 pkgver=26.2.1
-pkgrel=0
+pkgrel=2
 subpackages="mesa-dev"
 source="https://gitlab.freedesktop.org/mesa/mesa/-/archive/mesa-$pkgver/mesa-mesa-$pkgver.tar.gz"
 sha256sums="47d057dd1a6f226f8c48612e371c69c3c17ea1f3a97a7d674f786e0c84c8bb5a  mesa-mesa-$pkgver.tar.gz"
@@ -40,16 +40,37 @@ build() {
 }
 
 package() {
-    local inst="_zexbuild-install/overlayer/syshub"
+    local inst="mesa-mesa-$pkgver/_zexbuild-install/overlayer/syshub"
+    [ -d "$inst" ] || inst="_zexbuild-install/overlayer/syshub"
+
     mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/share"
     cp -a "$inst/lib/." "$PAYLOAD_DIR/lib/"
     rm -rf "$PAYLOAD_DIR/lib/pkgconfig"
+
+    # Ensure unversioned .so symlinks exist (e.g. libEGL.so -> libEGL.so.1)
+    cd "$PAYLOAD_DIR/lib"
+    for lib in lib*.so.[0-9]*; do
+        [ -e "$lib" ] || continue
+        base="${lib%%.so.*}.so"
+        [ -L "$base" ] || [ -e "$base" ] || ln -sf "$lib" "$base"
+    done
+    cd - >/dev/null
+
     cp -a "$inst/share/." "$PAYLOAD_DIR/share/" 2>/dev/null || true
 }
 
 dev() {
-    local inst="_zexbuild-install/overlayer/syshub"
+    local inst="mesa-mesa-$pkgver/_zexbuild-install/overlayer/syshub"
+    [ -d "$inst" ] || inst="_zexbuild-install/overlayer/syshub"
+
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+
+    # Copy unversioned .so symlinks into mesa-dev as well so linker always finds them
+    cd "$inst/lib"
+    for link in lib*.so; do
+        [ -L "$link" ] && cp -a "$link" "$PAYLOAD_DIR/lib/"
+    done
+    cd - >/dev/null
 }
