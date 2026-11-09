@@ -1,0 +1,49 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libglvnd
+pkgver=1.7.0
+pkgrel=0
+subpackages="libglvnd-dev"
+source="https://gitlab.freedesktop.org/glvnd/libglvnd/-/archive/v$pkgver/libglvnd-v$pkgver.tar.gz"
+sha256sums="2b6e15b06aafb4c0b6e2348124808cbd9b291c647299eaaba2e3202f51ff2f3d  libglvnd-v$pkgver.tar.gz"
+makedepends="meson samurai python3"
+
+# The GL vendor-neutral dispatch library: libOpenGL, libEGL, libGLESv2 and
+# libGLdispatch, which hand each call to the driver (Mesa). Desktop OpenGL
+# programs such as kitty need libOpenGL. Wayland only: no X11 in the base,
+# so GLX and libGL are left out. EGL vendor files are read from
+# /overlayer/syshub/etc/glvnd and /overlayer/syshub/share/glvnd.
+build() {
+    cd libglvnd-v$pkgver
+    meson setup builddir \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --datadir=/overlayer/syshub/share \
+        -Dx11=disabled \
+        -Dglx=disabled \
+        -Degl=true \
+        -Dgles1=false \
+        -Dgles2=true \
+        -Dheaders=true \
+        -Dbuildtype=release
+    ninja -C builddir
+    DESTDIR="$(pwd)/_zexbuild-install" ninja -C builddir install
+}
+
+package() {
+    local inst="libglvnd-v$pkgver/_zexbuild-install/overlayer/syshub"
+    [ -d "$inst" ] || inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    cp -a "$inst/lib/." "$PAYLOAD_DIR/lib/"
+    rm -rf "$PAYLOAD_DIR/lib/pkgconfig"
+    [ -d "$inst/share" ] && cp -a "$inst/share" "$PAYLOAD_DIR/" || true
+}
+
+dev() {
+    local inst="libglvnd-v$pkgver/_zexbuild-install/overlayer/syshub"
+    [ -d "$inst" ] || inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/"
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/"
+}
