@@ -12,7 +12,7 @@ blake3           = ""
 ed25519_sig      = ""
 ed25519_pubkey   = ""
 
-depends          = ["llvm", "libdrm", "wayland", "zlib", "zstd", "elfutils"]
+depends          = ["libglvnd", "llvm", "libdrm", "wayland", "zlib", "zstd", "elfutils"]
 provides         = ["mesa"]
 tags             = ["base", "graphics", "gpu", "opengl", "vulkan"]
 
