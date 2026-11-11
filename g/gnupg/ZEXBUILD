@@ -9,10 +9,30 @@ needs_toolchain="zlib zlib-dev libksba libksba-dev"
 
 # Only gpg itself: smartcards, keyservers, gpgsm, keyboxd, ldap and tofu off
 build() {
-    # configure finds libksba through Alpine's gpgrt-config, which only looks in
-    # /usr/lib/pkgconfig. Point it at Zainium's ksba.pc (its prefix is /overlayer/syshub)
-    mkdir -p /usr/lib/pkgconfig
-    ln -sf /overlayer/syshub/lib/pkgconfig/ksba.pc /usr/lib/pkgconfig/ksba.pc
+    # Other recipes in the same CI job can leave a gpgrt-config in /overlayer/syshub/bin
+    # whose #! line only works on Zainium. Turn gpgrt-config off and give configure the old
+    # *-config scripts: Alpine's for gpg-error, gcrypt and assuan, and two small ones here
+    # for Zainium's libksba and Alpine's npth, read from their .pc files
+    export GPGRT_CONFIG=no
+    cfg="$SRCDIR/config-scripts"
+    mkdir -p "$cfg"
+    for lib in ksba:/overlayer/syshub/lib/pkgconfig npth:/usr/lib/pkgconfig; do
+        name="${lib%%:*}"
+        cat > "$cfg/$name-config" <<EOF
+#!/bin/sh
+export PKG_CONFIG_PATH="${lib#*:}:/usr/lib/pkgconfig"
+case "\$1" in
+    --version) pkg-config --modversion $name ;;
+    --api-version) echo 1 ;;
+    --cflags) pkg-config --cflags $name ;;
+    --libs) pkg-config --libs $name ;;
+    --host) echo "\${CHOST:-x86_64-pc-linux-musl}" ;;
+    --prefix|--exec-prefix) pkg-config --variable=prefix $name ;;
+esac
+EOF
+        chmod +x "$cfg/$name-config"
+    done
+    export PATH="$cfg:/usr/bin:$PATH"
     export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
     export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
     ./configure \
