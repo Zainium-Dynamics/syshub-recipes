@@ -18,9 +18,9 @@ provides         = ["libostree-dev", "ostree-dev"]
 tags             = ["library", "system", "dev"]
 
 [install]
-include = "/overlayer/zexlib/union/include"
-lib     = "/overlayer/zexlib/union/lib"
-_syshub = false
+include = "/overlayer/syshub/include"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
 
 [remove]
 files    = []

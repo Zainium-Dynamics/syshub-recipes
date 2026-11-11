@@ -21,9 +21,9 @@ provides         = ["libfyaml"]
 tags             = ["library", "yaml"]
 
 [install]
-bin     = "/overlayer/zexlib/union/bin"
-lib     = "/overlayer/zexlib/union/lib"
-_syshub = false
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+_syshub = true
 
 [remove]
 files    = []

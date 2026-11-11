@@ -18,11 +18,11 @@ provides         = ["libostree", "ostree"]
 tags             = ["library", "system"]
 
 [install]
-lib     = "/overlayer/zexlib/union/lib"
-bin     = "/overlayer/zexlib/union/bin"
-share   = "/overlayer/zexlib/union/share"
-etc     = "/overlayer/zexlib/union/etc"
-_syshub = false
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+etc     = "/overlayer/syshub/etc"
+_syshub = true
 
 [remove]
 files    = []

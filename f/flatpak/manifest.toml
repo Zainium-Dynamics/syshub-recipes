@@ -24,12 +24,12 @@ provides         = ["flatpak"]
 tags             = ["desktop", "sandboxing", "apps"]
 
 [install]
-bin     = "/overlayer/zexlib/union/bin"
-lib     = "/overlayer/zexlib/union/lib"
-libexec = "/overlayer/zexlib/union/libexec"
-share   = "/overlayer/zexlib/union/share"
-etc     = "/overlayer/zexlib/union/etc"
-_syshub = false
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+libexec = "/overlayer/syshub/libexec"
+share   = "/overlayer/syshub/share"
+etc     = "/overlayer/syshub/etc"
+_syshub = true
 
 [remove]
 files    = []

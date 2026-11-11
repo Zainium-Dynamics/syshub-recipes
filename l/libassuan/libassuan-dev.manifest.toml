@@ -21,11 +21,11 @@ provides         = ["libassuan-dev"]
 tags             = ["library", "gnupg", "dev"]
 
 [install]
-bin     = "/overlayer/zexlib/union/bin"
-include = "/overlayer/zexlib/union/include"
-lib     = "/overlayer/zexlib/union/lib"
-share   = "/overlayer/zexlib/union/share"
-_syshub = false
+bin     = "/overlayer/syshub/bin"
+include = "/overlayer/syshub/include"
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
 
 [remove]
 files    = []

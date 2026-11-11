@@ -21,9 +21,9 @@ provides         = ["gtk-update-icon-cache"]
 tags             = ["utility", "gnome", "icons"]
 
 [install]
-bin     = "/overlayer/zexlib/union/bin"
-share   = "/overlayer/zexlib/union/share"
-_syshub = false
+bin     = "/overlayer/syshub/bin"
+share   = "/overlayer/syshub/share"
+_syshub = true
 
 [remove]
 files    = []

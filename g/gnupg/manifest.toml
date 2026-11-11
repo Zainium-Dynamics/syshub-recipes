@@ -21,11 +21,11 @@ provides         = ["gnupg"]
 tags             = ["gnupg", "crypto"]
 
 [install]
-bin     = "/overlayer/zexlib/union/bin"
-libexec = "/overlayer/zexlib/union/libexec"
-sbin    = "/overlayer/zexlib/union/sbin"
-share   = "/overlayer/zexlib/union/share"
-_syshub = false
+bin     = "/overlayer/syshub/bin"
+libexec = "/overlayer/syshub/libexec"
+sbin    = "/overlayer/syshub/sbin"
+share   = "/overlayer/syshub/share"
+_syshub = true
 
 [remove]
 files    = []

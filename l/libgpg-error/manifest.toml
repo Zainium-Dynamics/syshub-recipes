@@ -21,10 +21,10 @@ provides         = ["libgpg-error"]
 tags             = ["library", "gnupg"]
 
 [install]
-bin     = "/overlayer/zexlib/union/bin"
-lib     = "/overlayer/zexlib/union/lib"
-share   = "/overlayer/zexlib/union/share"
-_syshub = false
+bin     = "/overlayer/syshub/bin"
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
 
 [remove]
 files    = []

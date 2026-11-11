@@ -21,8 +21,8 @@ provides         = ["npth"]
 tags             = ["library", "gnupg"]
 
 [install]
-lib     = "/overlayer/zexlib/union/lib"
-_syshub = false
+lib     = "/overlayer/syshub/lib"
+_syshub = true
 
 [remove]
 files    = []
