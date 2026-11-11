@@ -29,7 +29,10 @@ build() {
     rustup toolchain install nightly --profile minimal --target x86_64-unknown-linux-musl
     export RUSTUP_TOOLCHAIN=nightly
     # dynamic, against the Alpine -dev libs at build time and the syshub ones at run time
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic"
+    # other recipes in the same CI job leave Zainium libraries in /overlayer/syshub; link only
+    # against Alpine's, so libflatpak's own needs (versioned libxml2) resolve from /usr/lib
+    export PKG_CONFIG_PATH=/usr/lib/pkgconfig:/usr/share/pkgconfig
+    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_RUSTFLAGS:-} -C target-feature=-crt-static -C relocation-model=dynamic-no-pic -C link-arg=-Wl,-rpath-link,/usr/lib"
     cargo build --release --target x86_64-unknown-linux-musl
 }
 
