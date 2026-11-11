@@ -1,0 +1,76 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=gnupg
+pkgver=2.4.9
+pkgrel=1
+source="https://gnupg.org/ftp/gcrypt/gnupg/gnupg-$pkgver.tar.bz2"
+sha256sums="dd17ab2e9a04fd79d39d853f599cbc852062ddb9ab52a4ddeb4176fd8b302964  gnupg-$pkgver.tar.bz2"
+makedepends="libgpg-error-dev libassuan-dev libgcrypt-dev npth-dev"
+needs_toolchain="zlib zlib-dev libksba libksba-dev"
+
+# Only gpg itself: smartcards, keyservers, gpgsm, keyboxd, ldap and tofu off
+build() {
+    # Other recipes in the same CI job can leave a gpgrt-config in /overlayer/syshub/bin
+    # whose #! line only works on Zainium. Turn gpgrt-config off and give configure the old
+    # *-config scripts: Alpine's for gpg-error, gcrypt and assuan, and two small ones here
+    # for Zainium's libksba and Alpine's npth, read from their .pc files
+    export GPGRT_CONFIG=no
+    cfg="$SRCDIR/config-scripts"
+    mkdir -p "$cfg"
+    for lib in ksba:/overlayer/syshub/lib/pkgconfig npth:/usr/lib/pkgconfig; do
+        name="${lib%%:*}"
+        cat > "$cfg/$name-config" <<EOF
+#!/bin/sh
+export PKG_CONFIG_PATH="${lib#*:}:/usr/lib/pkgconfig"
+case "\$1" in
+    --version) pkg-config --modversion $name ;;
+    --api-version) echo 1 ;;
+    --cflags) pkg-config --cflags $name ;;
+    --libs) pkg-config --libs $name ;;
+    --host) echo "\${CHOST:-x86_64-pc-linux-musl}" ;;
+    --prefix|--exec-prefix) pkg-config --variable=prefix $name ;;
+esac
+EOF
+        chmod +x "$cfg/$name-config"
+    done
+    export PATH="$cfg:/usr/bin:$PATH"
+    export CPPFLAGS="-I/overlayer/syshub/include ${CPPFLAGS:-}"
+    export LDFLAGS="-L/overlayer/syshub/lib ${LDFLAGS:-}"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --libdir=/overlayer/syshub/lib \
+        --includedir=/overlayer/syshub/include \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --disable-static \
+        --disable-gpgsm \
+        --disable-scdaemon \
+        --disable-dirmngr \
+        --disable-keyboxd \
+        --disable-tpm2d \
+        --disable-gpgtar \
+        --disable-wks-tools \
+        --disable-card-support \
+        --disable-ccid-driver \
+        --disable-photo-viewers \
+        --disable-sqlite \
+        --disable-ldap \
+        --disable-gnutls \
+        --disable-ntbtls \
+        --disable-bzip2 \
+        --without-readline \
+        --disable-doc \
+        --disable-nls
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    for d in bin libexec sbin share; do
+        if [ -d "$inst/$d" ]; then
+            mkdir -p "$PAYLOAD_DIR/$d"
+            cp -a "$inst/$d"/. "$PAYLOAD_DIR/$d/"
+        fi
+    done
+    rm -rf "$PAYLOAD_DIR/share/man" "$PAYLOAD_DIR/share/info" "$PAYLOAD_DIR/share/doc"
+}

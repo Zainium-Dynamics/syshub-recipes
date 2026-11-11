@@ -1,0 +1,35 @@
+# manifest.toml — libksba-dev
+# See substrate's USAGE.md for the full field reference.
+
+[package]
+name             = "libksba-dev"
+version          = "1.8.1"
+description      = "libksba headers, pkgconfig"
+license          = "LGPL-3.0-or-later OR GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.gnupg.org/software/libksba/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+requires_syshub  = ""
+depends          = ["libksba"]
+provides         = ["libksba-dev"]
+tags             = ["library", "gnupg", "dev"]
+
+[install]
+bin     = "/overlayer/syshub/bin"
+include = "/overlayer/syshub/include"
+lib     = "/overlayer/syshub/lib"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
+
+[hooks]
