@@ -1,15 +1,18 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=cryptsetup
 pkgver=2.8.8
-pkgrel=0
+pkgrel=1
 source="https://www.kernel.org/pub/linux/utils/cryptsetup/v${pkgver%.*}/cryptsetup-$pkgver.tar.xz"
 sha256sums="3acfa685f2dd7fcc832e0b77bc7093aa7da554a51ce8dafbb4138eaa854eee35  cryptsetup-$pkgver.tar.xz"
-makedepends="pkgconf lvm2-dev json-c-dev util-linux-dev popt-dev linux-headers gettext-dev"
+makedepends="pkgconf lvm2-dev json-c-dev util-linux-dev popt-dev popt-static linux-headers gettext-dev"
 needs_toolchain="openssl openssl-dev"
 
-# The library only: udisks and libblockdev open LUKS drives through it; the cryptsetup
-# command stays out (configure still checks for popt's headers; the library does not link it).
+# The library (udisks and libblockdev open LUKS drives through it) and the cryptsetup
+# command, which the installer uses to encrypt a disk and quantra-ramfs to open it at boot.
+# The command's option parser, popt, is not in the base, so it is linked in statically.
 build() {
+    # only Alpine's libpopt.a is left for -lpopt (build machine only, not packaged)
+    rm -f /usr/lib/libpopt.so
     # Zainium's openssl, not Alpine's: its libcrypto has another soname
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     ./configure \
@@ -24,7 +27,6 @@ build() {
         --with-crypto_backend=openssl \
         --disable-asciidoc \
         --disable-ssh-token \
-        --disable-cryptsetup \
         --disable-veritysetup \
         --disable-integritysetup \
         --disable-selinux
