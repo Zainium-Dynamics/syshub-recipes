@@ -1,0 +1,19 @@
+--- a/libdm/ioctl/libdm-iface.c
++++ b/libdm/ioctl/libdm-iface.c
+@@ -155,8 +155,14 @@
+ 		return 0;
+ 	}
+ 
+-	parts = sscanf(_uts.release, "%u.%u.%u",
+-		       &_kernel_major, &_kernel_minor, &_kernel_release);
++	/* Zainium OS: the release is linux-zainium-7.3; read from the first digit */
++	{
++		const char *r = _uts.release;
++		while (*r && (*r < '0' || *r > '9'))
++			r++;
++		parts = sscanf(r, "%u.%u.%u",
++			       &_kernel_major, &_kernel_minor, &_kernel_release);
++	}
+ 
+ 	/* Kernels with a major number of 2 always had 3 parts. */
+ 	if (parts < 1 || (_kernel_major < 3 && parts < 3)) {
