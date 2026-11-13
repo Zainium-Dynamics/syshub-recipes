@@ -1,8 +1,9 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=lvm2
 pkgver=2.03.38
-pkgrel=0
-source="https://sourceware.org/pub/lvm2/LVM2.$pkgver.tgz"
+pkgrel=1
+source="https://sourceware.org/pub/lvm2/LVM2.$pkgver.tgz
+0001-kernel-release-name.patch"
 sha256sums="322d44bf40de318e6e6b52c56999aaeb86b16c8267187ac2e01a44d4dc526960  LVM2.$pkgver.tgz"
 makedepends="pkgconf eudev-dev util-linux-dev linux-headers"
 
@@ -11,6 +12,9 @@ build() {
     # ci/build.sh unpacks *.tar.* only, and the tree is LVM2.<version>, not lvm2-<version>
     tar xzf LVM2.$pkgver.tgz
     cd LVM2.$pkgver
+    # libdevmapper reads the kernel version from uname -r as X.Y.Z and refuses to open
+    # device-mapper otherwise; Zainium's kernel is linux-zainium-7.3
+    patch -p1 < "$SRCDIR/0001-kernel-release-name.patch"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
