@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=cosmic-session
 pkgver=1.11.0
-pkgrel=0
+pkgrel=1
 source="https://github.com/pop-os/cosmic-session/archive/refs/tags/epoch-$pkgver.tar.gz
 0003-overlayer-syshub-path.patch
 0004-desktop-file-path.patch
@@ -11,7 +11,8 @@ source="https://github.com/pop-os/cosmic-session/archive/refs/tags/epoch-$pkgver
 0008-start-cosmic-shebang-syshub-path.patch
 0009-start-cosmic-bg-first.patch
 0010-start-cosmic-import-set-variables-only.patch
-0011-dconf-profile-syshub-path.patch"
+0011-dconf-profile-syshub-path.patch
+zainium-mimeapps.list"
 sha256sums="0c3d3e1f0ef534a063621932cdcc15c8af258df5c12ce6023615dc33222ebca5  epoch-$pkgver.tar.gz"
 makedepends="rustup just pkgconf eudev-dev libinput-dev libxkbcommon-dev wayland-dev"
 
@@ -58,4 +59,6 @@ build() {
 package() {
     just rootdir="$PAYLOAD_DIR" prefix=/overlayer/syshub \
         cargo-target-dir=target/x86_64-unknown-linux-musl install
+    # the default browser is the Firefox Flatpak (see zainium-mimeapps.list)
+    install -Dm644 "$SRCDIR/zainium-mimeapps.list" "$PAYLOAD_DIR/etc/xdg/mimeapps.list"
 }

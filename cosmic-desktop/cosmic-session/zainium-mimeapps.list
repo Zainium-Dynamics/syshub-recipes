@@ -1,0 +1,8 @@
+# Zainium OS defaults, read before COSMIC's cosmic-mimeapps.list (XDG_CONFIG_DIRS comes first).
+# Firefox comes with Zainium as a Flatpak, so its desktop ID is org.mozilla.firefox.desktop,
+# which COSMIC's list (firefox-esr.desktop;firefox.desktop) does not name.
+[Default Applications]
+x-scheme-handler/http=org.mozilla.firefox.desktop;
+x-scheme-handler/https=org.mozilla.firefox.desktop;
+text/html=org.mozilla.firefox.desktop;
+application/xhtml+xml=org.mozilla.firefox.desktop;
