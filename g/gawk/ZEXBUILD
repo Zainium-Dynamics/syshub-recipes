@@ -1,0 +1,48 @@
+maintainer="Ali Zain <alizain@zainiumdynamics.tech>"
+pkgname=gawk
+pkgver=5.4.1
+pkgrel=0
+needs_toolchain="musl gcc-musl"
+source="https://ftp.gnu.org/gnu/gawk/gawk-$pkgver.tar.xz"
+sha256sums="07f6f7342b7febe4313fc2c2542ad93d64fe20ad8717200109f105a826f5fd37  gawk-$pkgver.tar.xz"
+
+# GNU awk, also installed as awk: the base had no awk, and POSIX scripts such as xdg-open
+# need one. Cross build like xz. The persistent memory allocator is off so gawk keeps musl's
+# malloc; readline (debugger only) and MPFR (-M) are left out.
+build() {
+    local sysroot="/overlayer/syshub"
+    local musl_sysroot="${sysroot}/x86_64-zainium-linux-musl"
+    local runtime_ldso="${musl_sysroot}/lib/ld-musl-x86_64.so.1"
+
+    export CC="${sysroot}/bin/x86_64-zainium-linux-musl-gcc"
+    export CFLAGS="-O2 -pipe -I${musl_sysroot}/include -I${sysroot}/include"
+    export CPPFLAGS="-I${musl_sysroot}/include -I${sysroot}/include"
+    export LDFLAGS="-L${musl_sysroot}/lib -L${sysroot}/lib -Wl,-dynamic-linker=${runtime_ldso} -Wl,-rpath=${sysroot}/lib"
+
+    ./configure \
+        --host=x86_64-zainium-linux-musl \
+        --prefix="$sysroot" \
+        --sysconfdir="$sysroot/etc" \
+        --mandir="$sysroot/share/man" \
+        --infodir="$sysroot/share/info" \
+        --localstatedir="$sysroot/var" \
+        --disable-nls \
+        --disable-pma \
+        --disable-mpfr \
+        --without-readline
+    make -j"$(nproc)"
+    make install DESTDIR="$(pwd)/_zexbuild-install"
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    # gawk-$pkgver is a hard link of gawk; gawkbug mails through /usr/lib/sendmail; no info reader
+    rm -rf "$inst/bin/gawk-$pkgver" "$inst/bin/gawkbug" "$inst/share/man/man1/gawkbug.1" "$inst/share/info"
+    # AWKPATH, extension and libexec paths for this prefix instead of upstream's /usr/local
+    sed -i -e 's#/usr/local/libexec/awk#/overlayer/syshub/libexec/awk#g' \
+        -e 's#/usr/local/share/awk#/overlayer/syshub/share/awk#g' \
+        -e 's#/usr/local/lib/gawk#/overlayer/syshub/lib/gawk#g' \
+        "$inst/share/awk/ns_passwd.awk" "$inst/share/man/man1/gawk.1"
+    rm -rf "$inst/include"
+    cp -a "$inst"/. "$PAYLOAD_DIR/"
+}
