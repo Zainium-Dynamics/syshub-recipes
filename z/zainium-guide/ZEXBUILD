@@ -1,0 +1,27 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=zainium-guide
+pkgver=1.0.0
+pkgrel=0
+source="https://github.com/Zainium-Dynamics/zainium-guide/archive/refs/tags/v$pkgver.tar.gz"
+sha256sums="094d4c3a43bb710f741af7c87deaf42066fc535ce0cb42faee5a0da06f484c98  v$pkgver.tar.gz"
+makedepends="go pkgconf mesa-dev wayland-dev libxkbcommon-dev vulkan-headers"
+
+# The Zainium Guide: a small book on using Zainium OS (Go, Gio, Wayland). Dynamic against
+# Alpine's -dev libraries at build time and the syshub's at run time.
+build() {
+    export GOTOOLCHAIN=auto GOFLAGS="-trimpath -mod=readonly"
+    # external link with ci/build.sh's LDFLAGS: Zainium's musl loader and the syshub rpath
+    CGO_ENABLED=1 go build -tags nox11 \
+        -ldflags="-s -w -linkmode external -extldflags '$LDFLAGS'" \
+        -o zainium-guide ./cmd/zainium-guide
+}
+
+package() {
+    install -Dm755 zainium-guide "$PAYLOAD_DIR/bin/zainium-guide"
+    install -Dm644 data/tech.zainiumdynamics.Guide.desktop \
+        "$PAYLOAD_DIR/share/applications/tech.zainiumdynamics.Guide.desktop"
+    install -Dm644 data/tech.zainiumdynamics.Guide.svg \
+        "$PAYLOAD_DIR/share/icons/hicolor/scalable/apps/tech.zainiumdynamics.Guide.svg"
+    install -Dm644 data/tech.zainiumdynamics.Guide.metainfo.xml \
+        "$PAYLOAD_DIR/share/metainfo/tech.zainiumdynamics.Guide.metainfo.xml"
+}
