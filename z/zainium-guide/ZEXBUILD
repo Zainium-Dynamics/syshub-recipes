@@ -10,7 +10,10 @@ makedepends="go pkgconf mesa-dev wayland-dev libxkbcommon-dev vulkan-headers"
 # Alpine's -dev libraries at build time and the syshub's at run time.
 build() {
     export GOTOOLCHAIN=auto GOFLAGS="-trimpath -mod=readonly"
-    CGO_ENABLED=1 go build -tags nox11 -ldflags='-s -w' -o zainium-guide ./cmd/zainium-guide
+    # external link with ci/build.sh's LDFLAGS: Zainium's musl loader and the syshub rpath
+    CGO_ENABLED=1 go build -tags nox11 \
+        -ldflags="-s -w -linkmode external -extldflags '$LDFLAGS'" \
+        -o zainium-guide ./cmd/zainium-guide
 }
 
 package() {
