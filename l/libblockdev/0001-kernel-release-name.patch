@@ -1,0 +1,15 @@
+--- a/src/utils/module.c
++++ b/src/utils/module.c
+@@ -305,7 +305,11 @@
+         return NULL;
+       }
+ 
+-    if (sscanf (buf.release, "%d.%d.%d",
++    /* Zainium OS: the release is linux-zainium-7.3; read from the first digit */
++    const char *release = buf.release;
++    while (*release && (*release < '0' || *release > '9'))
++        release++;
++    if (sscanf (release, "%d.%d.%d",
+                 &detected_linux_ver.major,
+                 &detected_linux_ver.minor,
+                 &detected_linux_ver.micro) < 1) {
