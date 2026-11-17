@@ -9,13 +9,11 @@ makedepends="go pkgconf mesa-dev wayland-dev libxkbcommon-dev vulkan-headers"
 # The Zainium Guide: a small book on using Zainium OS (Go, Gio, Wayland). Dynamic against
 # Alpine's -dev libraries at build time and the syshub's at run time.
 build() {
-    cd "zainium-guide-$pkgver"
     export GOTOOLCHAIN=auto GOFLAGS="-trimpath -mod=readonly"
     CGO_ENABLED=1 go build -tags nox11 -ldflags='-s -w' -o zainium-guide ./cmd/zainium-guide
 }
 
 package() {
-    cd "zainium-guide-$pkgver"
     install -Dm755 zainium-guide "$PAYLOAD_DIR/bin/zainium-guide"
     install -Dm644 data/tech.zainiumdynamics.Guide.desktop \
         "$PAYLOAD_DIR/share/applications/tech.zainiumdynamics.Guide.desktop"
