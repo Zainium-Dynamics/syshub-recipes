@@ -1,14 +1,17 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=libblockdev
 pkgver=3.5.0
-pkgrel=0
+pkgrel=1
 subpackages="libblockdev-dev"
-source="https://github.com/storaged-project/libblockdev/releases/download/$pkgver/libblockdev-$pkgver.tar.gz"
+source="https://github.com/storaged-project/libblockdev/releases/download/$pkgver/libblockdev-$pkgver.tar.gz
+0001-kernel-release-name.patch"
 sha256sums="bccd30e6b5d11504de60d9889ff6a2a25b07a4ec8f04070f2387e168301b3e3a  libblockdev-$pkgver.tar.gz"
 makedepends="pkgconf python3 glib-dev eudev-dev kmod-dev cryptsetup-dev keyutils-dev util-linux-dev e2fsprogs-dev libbytesize-dev libnvme-dev linux-headers"
 
 # The plugins udisks loads: crypto, fs, loop, mdraid, nvme, part and swap.
 build() {
+    # uname -r is linux-zainium-7.3: read the version from the first digit, as in lvm2
+    patch -p1 < "$SRCDIR/0001-kernel-release-name.patch"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
