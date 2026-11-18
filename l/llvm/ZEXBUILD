@@ -19,11 +19,11 @@ build() {
     patch -p2 < "$RECIPE_DIR/llvm-stack-size.patch"
     cd ..
 
+    # LLVM_DEFAULT_TARGET_TRIPLE: clang builds for Zainium's musl when no --target is given
     cmake -B build -G Ninja -S llvm \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
         -DLLVM_ENABLE_PROJECTS=clang \
-        # clang builds for Zainium's musl when no --target is given
         -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-zainium-linux-musl \
         -DLLVM_APPEND_VC_REV=OFF \
         -DLLVM_BUILD_DOCS=OFF \
@@ -121,6 +121,12 @@ clang() {
         mkdir -p "$PAYLOAD_DIR/share"
         cp -a "$inst/share/clang" "$PAYLOAD_DIR/share/"
     fi
+    # --target=x86_64-zainium-linux-gnu: clang reads this file next to its binary. glibc lives
+    # in its own triplet directory, so without it clang took the musl crt files and libc.so
+    # from the FHS paths and the program failed with "libc.so: invalid ELF header"
+    local gnu=/overlayer/zexlib/union/x86_64-zainium-linux-gnu
+    printf '%s\n' "--sysroot=$gnu" "--gcc-toolchain=/overlayer/syshub" \
+        "-Wl,--dynamic-linker=$gnu/lib/ld-linux-x86-64.so.2" > "$PAYLOAD_DIR/bin/x86_64-zainium-linux-gnu.cfg"
     strip_usr "$PAYLOAD_DIR"
     [ -e "$PAYLOAD_DIR/bin/clang" ] && [ -d "$PAYLOAD_DIR/lib/clang" ]
 }
