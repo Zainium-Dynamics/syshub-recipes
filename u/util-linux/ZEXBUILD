@@ -16,7 +16,8 @@ makedepends="ncurses-dev linux-headers python3-dev"
 # cross toolchain. Only the final interpreter/rpath gets pinned to
 # Zainium's real musl so the binaries actually run there.
 build() {
-    # 0001-zainium-paths.patch is made by replant, without include/pt-gpt-partnames.h:
+    # 0001-zainium-paths.patch is made by replant, without tools/ (build-time scripts that
+    # run on the CI host) and include/pt-gpt-partnames.h:
     # "Linux /usr (x86-64)" there is the name of a partition type, not a path
     patch -p1 < "$SRCDIR/0001-zainium-paths.patch"
 
