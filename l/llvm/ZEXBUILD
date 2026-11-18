@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=llvm
 pkgver=22.1.8
-pkgrel=1
+pkgrel=2
 subpackages="llvm-dev clang"
 source="https://github.com/llvm/llvm-project/archive/refs/tags/llvmorg-$pkgver.tar.gz"
 sha256sums="ad18b70e287954c3d62bc7e0b86e7b7af2adf87bcfce21c15fe717f101d7aace  llvmorg-$pkgver.tar.gz"
@@ -23,6 +23,8 @@ build() {
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
         -DLLVM_ENABLE_PROJECTS=clang \
+        # clang builds for Zainium's musl when no --target is given
+        -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-zainium-linux-musl \
         -DLLVM_APPEND_VC_REV=OFF \
         -DLLVM_BUILD_DOCS=OFF \
         -DLLVM_BUILD_EXAMPLES=OFF \
