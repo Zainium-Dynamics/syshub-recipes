@@ -5,8 +5,9 @@ pkgrel=0
 subpackages="curl-dev"
 source="https://github.com/curl/curl/releases/download/curl-8_23_0/curl-$pkgver.tar.gz"
 sha256sums="e3de77cfa6367083c776a26647fc9f633b538c06c3baa73d931a252ac8f72b49  curl-$pkgver.tar.gz"
-# cmake is Zainium's own; it needs curl, libarchive, xz, zlib and gcc-musl's libstdc++ to run
-needs_toolchain="cmake curl libarchive xz gcc-musl nghttp2 nghttp2-dev openssl openssl-dev zlib zlib-dev zstd zstd-dev"
+# cmake is Zainium's own; it needs curl, libarchive (with acl, lz4, bzip2), xz, zlib and
+# gcc-musl's libstdc++ to run
+needs_toolchain="cmake curl libarchive acl lz4 bzip2 xz gcc-musl nghttp2 nghttp2-dev openssl openssl-dev zlib zlib-dev zstd zstd-dev"
 
 build() {
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
