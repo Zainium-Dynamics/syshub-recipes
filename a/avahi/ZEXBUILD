@@ -12,6 +12,10 @@ makedepends="pkgconf intltool gettext"
 # to discover driverless (IPP Everywhere) printers. All language/GUI bindings off.
 build() {
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # dbus-1.pc pulls libsystemd (no .pc shipped), so pkg-config for dbus fails;
+    # feed the flags directly as configure suggests, bypassing pkg-config.
+    export DBUS_CFLAGS="-I/overlayer/syshub/include/dbus-1.0 -I/overlayer/syshub/lib/dbus-1.0/include"
+    export DBUS_LIBS="-L/overlayer/syshub/lib -ldbus-1"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
