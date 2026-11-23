@@ -6,7 +6,7 @@ subpackages="cups-dev"
 source="https://github.com/OpenPrinting/cups/releases/download/v$pkgver/cups-$pkgver-source.tar.gz"
 sha256sums="9a88fe1da3a29a917c3fc67ce6eb3178399d68e1a548c6d86c70d9b13651fd71  cups-$pkgver-source.tar.gz"
 # All toolchain libs are Zainium's own; PAM is elevate-pam (our Rust PAM).
-needs_toolchain="gcc-musl zlib zlib-dev gnutls gnutls-dev dbus dbus-dev libusb libusb-dev avahi avahi-dev elevate-pam elevate-pam-dev"
+needs_toolchain="gcc-musl zlib zlib-dev gnutls gnutls-dev dbus dbus-dev systemd libusb libusb-dev avahi avahi-dev elevate-pam elevate-pam-dev"
 makedepends="pkgconf"
 
 # CUPS print server + libcups. Driverless (IPP Everywhere) over Avahi, USB
