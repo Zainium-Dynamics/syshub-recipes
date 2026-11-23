@@ -16,6 +16,10 @@ build() {
     # feed the flags directly as configure suggests, bypassing pkg-config.
     export DBUS_CFLAGS="-I/overlayer/syshub/include/dbus-1.0 -I/overlayer/syshub/lib/dbus-1.0/include"
     export DBUS_LIBS="-L/overlayer/syshub/lib -ldbus-1"
+    # avahi 0.8 still calls dbus_connection_disconnect(), removed from dbus
+    # long ago (now dbus_connection_close); GCC 15 makes the implicit decl a
+    # hard error. Map the old name to the current one at preprocess time.
+    export CFLAGS="${CFLAGS:-} -Ddbus_connection_disconnect=dbus_connection_close"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
