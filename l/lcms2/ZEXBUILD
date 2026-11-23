@@ -1,0 +1,31 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=lcms2
+pkgver=2.16
+pkgrel=0
+subpackages="lcms2-dev"
+source="https://github.com/mm2/Little-CMS/releases/download/lcms$pkgver/lcms2-$pkgver.tar.gz"
+sha256sums="d873d34ad8b9b4cea010631f1a6228d2087475e4dc5e763eb81acc23d9d45a51  lcms2-$pkgver.tar.gz"
+makedepends="pkgconf"
+
+# Little CMS colour management; needed by poppler and the cups-filters stack.
+# Only the library is built/packaged (the jpgicc/tifficc utilities are skipped).
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --disable-static
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'liblcms2.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}

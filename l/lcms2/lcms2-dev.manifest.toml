@@ -1,0 +1,27 @@
+[package]
+name             = "lcms2-dev"
+version          = "2.16"
+description      = "lcms2 headers and pkgconfig"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://littlecms.com"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["lcms2"]
+provides         = ["lcms2-dev"]
+tags             = ["base", "library", "color", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
