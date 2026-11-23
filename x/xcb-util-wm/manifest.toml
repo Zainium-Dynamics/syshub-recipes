@@ -1,0 +1,26 @@
+[package]
+name             = "xcb-util-wm"
+version          = "0.4.2"
+description      = "X11 client library xcb-util-wm"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.x.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libxcb"]
+provides         = ["xcb-util-wm"]
+tags             = ["x11", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
