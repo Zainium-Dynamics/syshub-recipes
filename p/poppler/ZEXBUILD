@@ -6,7 +6,7 @@ subpackages="poppler-dev"
 source="https://poppler.freedesktop.org/poppler-$pkgver.tar.xz"
 sha256sums="ebd857987e2395608c69fdc44009692d5906f13b612c5280beff65a0b75dc255  poppler-$pkgver.tar.xz"
 # cmake is Zainium's own (with the libraries it needs); ninja from Alpine.
-needs_toolchain="cmake gcc-musl fontconfig fontconfig-dev freetype freetype-dev libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev libtiff libtiff-dev zlib zlib-dev"
+needs_toolchain="cmake gcc-musl acl bzip2 curl expat libarchive lz4 nghttp2 openssl xz zstd fontconfig fontconfig-dev freetype freetype-dev libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev libtiff libtiff-dev zlib zlib-dev"
 makedepends="samurai pkgconf"
 
 # PDF rendering library. cups-filters' pdftoraster/pdftopdf link libpoppler and
