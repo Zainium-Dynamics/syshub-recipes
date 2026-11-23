@@ -1,0 +1,29 @@
+[package]
+name             = "avahi"
+version          = "0.8"
+description      = "mDNS/DNS-SD service discovery (Zeroconf) for driverless printing"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.avahi.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libdaemon", "dbus", "expat"]
+provides         = ["avahi"]
+tags             = ["base", "network", "mdns", "printing"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
