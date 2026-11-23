@@ -13,8 +13,11 @@ makedepends="samurai pkgconf"
 # only, so no gnutls/openssl detection; just the library, no CLI or docs.
 build() {
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    # GCC 15 needs an explicit <cstdint>; force-include it into every TU so the
+    # bundled libtests (built even with BUILD_TESTING=OFF) compile.
     /overlayer/syshub/bin/cmake -S . -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_CXX_FLAGS="-include cstdint" \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=ON \
         -DBUILD_STATIC_LIBS=OFF \
