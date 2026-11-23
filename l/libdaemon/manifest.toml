@@ -1,0 +1,26 @@
+[package]
+name             = "libdaemon"
+version          = "0.14"
+description      = "Lightweight C library for writing UNIX daemons"
+license          = "LGPL-2.1-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://0pointer.de/lennart/projects/libdaemon/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["musl"]
+provides         = ["libdaemon"]
+tags             = ["base", "library", "daemon"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
