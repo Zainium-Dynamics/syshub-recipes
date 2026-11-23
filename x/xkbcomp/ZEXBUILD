@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=xkbcomp
+pkgver=1.4.7
+pkgrel=0
+subpackages="xkbcomp-dev"
+source="https://xorg.freedesktop.org/archive/individual/app/xkbcomp-1.4.7.tar.xz"
+sha256sums="0a288114e5f44e31987042c79aecff1ffad53a8154b8ec971c24a69a80f81f77  xkbcomp-$pkgver.tar.xz"
+# X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
+needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libxkbfile libxkbfile-dev"
+makedepends="pkgconf"
+
+build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/zexlib/union/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --disable-static
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin"
+    find "$inst/bin" -maxdepth 1 -type f -exec cp -P {} "$PAYLOAD_DIR/bin/" \;
+    :
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}
