@@ -21,6 +21,7 @@ build() {
         -DUSE_IMPLICIT_CRYPTO=OFF \
         -DREQUIRE_CRYPTO_NATIVE=ON \
         -DBUILD_DOC=OFF \
+        -DBUILD_TESTING=OFF \
         -DBUILD_DOC_DIST=OFF
     /overlayer/syshub/bin/cmake --build build -j"$(nproc)"
     DESTDIR="$(pwd)/_zexbuild-install" /overlayer/syshub/bin/cmake --install build
