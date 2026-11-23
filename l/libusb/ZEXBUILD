@@ -1,0 +1,32 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=libusb
+pkgver=1.0.27
+pkgrel=0
+subpackages="libusb-dev"
+source="https://github.com/libusb/libusb/releases/download/v$pkgver/libusb-$pkgver.tar.bz2"
+sha256sums="ffaa41d741a8a3bee244ac8e54a72ea05bf2879663c098c82fc5757853441575  libusb-$pkgver.tar.bz2"
+makedepends="pkgconf"
+
+# USB device access (CUPS usb backend). udev disabled: device enumeration works
+# through sysfs, which keeps this off the eudev build-time headers.
+build() {
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --disable-static \
+        --disable-udev
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'libusb-1.0.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}
