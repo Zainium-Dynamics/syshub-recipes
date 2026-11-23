@@ -49,6 +49,16 @@ package() {
     # drop static archives, docs, man, locale and build-time cups-config stays in bin
     find "$PAYLOAD_DIR/lib" -name '*.a' -delete 2>/dev/null || true
     rm -rf "$PAYLOAD_DIR/share/man" "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/locale"
+    # cups-config hardcodes /usr defaults; layout policy forbids /usr in payload.
+    for f in $(grep -rIl "/usr/" "$PAYLOAD_DIR" 2>/dev/null); do
+        sed -i -e "s#/usr/include#/overlayer/syshub/include#g" \
+               -e "s#/usr/lib64#/overlayer/syshub/lib#g" \
+               -e "s#/usr/lib32#/overlayer/syshub/lib#g" \
+               -e "s#/usr/lib#/overlayer/syshub/lib#g" \
+               -e "s#/usr/bin#/overlayer/syshub/bin#g" \
+               -e "s#/usr/share#/overlayer/syshub/share#g" \
+               -e "s#/usr/#/overlayer/syshub/#g" "$f"
+    done
     rm -rf "$PAYLOAD_DIR/include"
     :
 }
