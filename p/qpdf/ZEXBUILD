@@ -17,6 +17,7 @@ build() {
     # bundled libtests (built even with BUILD_TESTING=OFF) compile.
     /overlayer/syshub/bin/cmake -S . -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_PREFIX_PATH=/overlayer/syshub \
         -DCMAKE_C_COMPILER=/overlayer/syshub/bin/gcc \
         -DCMAKE_CXX_COMPILER=/overlayer/syshub/bin/g++ \
         -DCMAKE_CXX_FLAGS="-include cstdint" \
