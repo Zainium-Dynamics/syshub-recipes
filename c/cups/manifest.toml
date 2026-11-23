@@ -1,0 +1,29 @@
+[package]
+name             = "cups"
+version          = "2.4.11"
+description      = "CUPS print server and libcups (driverless IPP + USB printing)"
+license          = "Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://openprinting.github.io/cups"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["zlib", "gnutls", "dbus", "libusb", "avahi", "elevate-pam"]
+provides         = ["cups"]
+tags             = ["base", "printing", "server"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

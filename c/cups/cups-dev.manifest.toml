@@ -1,0 +1,27 @@
+[package]
+name             = "cups-dev"
+version          = "2.4.11"
+description      = "CUPS headers and pkgconfig (libcups)"
+license          = "Apache-2.0"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://openprinting.github.io/cups"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cups"]
+provides         = ["cups-dev"]
+tags             = ["base", "printing", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
