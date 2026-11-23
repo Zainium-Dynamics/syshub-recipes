@@ -1,7 +1,7 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=dbus
 pkgver=1.16.0
-pkgrel=0
+pkgrel=1
 subpackages="$pkgname-dev"
 source="https://gitlab.freedesktop.org/dbus/dbus/-/archive/dbus-$pkgver/dbus-dbus-$pkgver.tar.gz"
 sha256sums="d2ca9d958c830e762ba70aea8e6b5c29fa7b58d0fee8ddd9bb5a00f35106ab57  dbus-dbus-$pkgver.tar.gz"
@@ -114,4 +114,30 @@ dev() {
     mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
     cp -a "$STAGING_ROOT/_dbus-dev/include/." "$PAYLOAD_DIR/include/"
     cp -a "$STAGING_ROOT/_dbus-dev/pkgconfig/." "$PAYLOAD_DIR/lib/pkgconfig/"
+
+    # meson's -Dsystemd=enabled makes dbus-1.pc carry
+    # "Requires.private: libsystemd" and "-lsystemd" in Libs.private.
+    # libdbus-1.so already has libsystemd.so in its own DT_NEEDED, so
+    # dynamic consumers never need it -- but pkg-config resolves the
+    # whole graph and hard-fails when no libsystemd.pc is installed in
+    # the consumer's build (avahi, cups, ...). systemd support stays
+    # fully intact at runtime; we only stop advertising libsystemd to
+    # downstream pkg-config, which is a static-link-only concern nothing
+    # in the base needs.
+    pc="$PAYLOAD_DIR/lib/pkgconfig/dbus-1.pc"
+    if [ -f "$pc" ]; then
+        python3 -I - "$pc" <<'PYEOF'
+import re,sys
+p=sys.argv[1]; out=[]
+for ln in open(p):
+    if ln.startswith("Requires.private:") or ln.startswith("Requires:"):
+        k,_,v=ln.partition(":")
+        toks=[t for t in v.split() if t!="libsystemd"]
+        ln=k+":"+((" "+" ".join(toks)) if toks else "")+"\n"
+    elif ln.startswith("Libs.private:"):
+        ln=re.sub(r"\s*-lsystemd\b","",ln)
+    out.append(ln)
+open(p,"w").writelines(out)
+PYEOF
+    fi
 }
