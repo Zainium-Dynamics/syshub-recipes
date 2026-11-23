@@ -1,0 +1,27 @@
+[package]
+name             = "libtiff-dev"
+version          = "4.7.0"
+description      = "libtiff headers and pkgconfig"
+license          = "libtiff"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "http://www.simplesystems.org/libtiff/"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libtiff"]
+provides         = ["libtiff-dev"]
+tags             = ["base", "library", "image", "dev"]
+
+[install]
+include = "/overlayer/zexlib/union/include"
+lib     = "/overlayer/zexlib/union/lib"
+_syshub = false
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
