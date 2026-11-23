@@ -16,6 +16,8 @@ build() {
     export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
     /overlayer/syshub/bin/cmake -S . -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
+        -DCMAKE_C_COMPILER=/overlayer/syshub/bin/gcc \
+        -DCMAKE_CXX_COMPILER=/overlayer/syshub/bin/g++ \
         -DCMAKE_INSTALL_LIBDIR=lib \
         -DCMAKE_BUILD_TYPE=Release \
         -DBUILD_SHARED_LIBS=ON \
