@@ -6,7 +6,7 @@ subpackages="libXcomposite-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXcomposite-0.4.6.tar.xz"
 sha256sums="fe40bcf0ae1a09070eba24088a5eb9810efe57453779ec1e20a55080c6dc2c87  libXcomposite-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libXfixes libXfixes-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXfixes libXfixes-dev"
 makedepends="pkgconf"
 
 build() {
