@@ -6,7 +6,7 @@ subpackages="libXrender-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXrender-0.9.11.tar.xz"
 sha256sums="bc53759a3a83d1ff702fb59641b3d2f7c56e05051fa0cfa93501166fa782dc24  libXrender-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev"
 makedepends="pkgconf"
 
 build() {
