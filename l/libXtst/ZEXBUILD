@@ -6,7 +6,7 @@ subpackages="libXtst-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXtst-1.2.5.tar.xz"
 sha256sums="b50d4c25b97009a744706c1039c598f4d8e64910c9fde381994e1cae235d9242  libXtst-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libXext libXext-dev libXi libXi-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXext libXext-dev libXi libXi-dev"
 makedepends="pkgconf"
 
 build() {
