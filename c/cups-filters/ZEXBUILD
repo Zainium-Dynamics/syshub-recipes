@@ -26,6 +26,7 @@ build() {
         --localstatedir=/overlayer/syshub/var \
         --sbindir=/overlayer/syshub/bin \
         --disable-static \
+        --disable-ghostscript \
         --disable-mutool \
         --without-php \
         --enable-imagefilters \
