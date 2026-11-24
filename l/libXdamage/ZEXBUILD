@@ -6,7 +6,7 @@ subpackages="libXdamage-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXdamage-1.1.6.tar.xz"
 sha256sums="52733c1f5262fca35f64e7d5060c6fcd81a880ba8e1e65c9621cf0727afb5d11  libXdamage-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libXfixes libXfixes-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXfixes libXfixes-dev"
 makedepends="pkgconf"
 
 build() {
