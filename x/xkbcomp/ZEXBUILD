@@ -6,7 +6,7 @@ subpackages="xkbcomp-dev"
 source="https://xorg.freedesktop.org/archive/individual/app/xkbcomp-1.4.7.tar.xz"
 sha256sums="0a288114e5f44e31987042c79aecff1ffad53a8154b8ec971c24a69a80f81f77  xkbcomp-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libxkbfile libxkbfile-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libxkbfile libxkbfile-dev"
 makedepends="pkgconf"
 
 build() {
