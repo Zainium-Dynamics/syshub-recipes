@@ -5,7 +5,7 @@ pkgrel=1
 subpackages="avahi-dev"
 source="https://github.com/avahi/avahi/releases/download/v$pkgver/avahi-$pkgver.tar.gz"
 sha256sums="060309d7a333d38d951bc27598c677af1796934dbd98e1024e7ad8de798fedda  avahi-$pkgver.tar.gz"
-needs_toolchain="libdaemon libdaemon-dev dbus dbus-dev expat expat-dev systemd glib glib-dev pcre2 pcre2-dev libffi libffi-dev"
+needs_toolchain="libdaemon libdaemon-dev dbus dbus-dev expat expat-dev systemd glib glib-dev pcre2 pcre2-dev libffi libffi-dev gettext gettext-dev"
 makedepends="pkgconf intltool gettext"
 
 # mDNS/DNS-SD stack: avahi-daemon + libavahi-common/core/client, which CUPS uses
