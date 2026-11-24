@@ -6,7 +6,7 @@ subpackages="libXrandr-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXrandr-1.5.4.tar.xz"
 sha256sums="1ad5b065375f4a85915aa60611cc6407c060492a214d7f9daf214be752c3b4d3  libXrandr-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libXext libXext-dev libXrender libXrender-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXext libXext-dev libXrender libXrender-dev"
 makedepends="pkgconf"
 
 build() {
