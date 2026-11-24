@@ -1,0 +1,26 @@
+[package]
+name             = "xcb-util-renderutil"
+version          = "0.3.10"
+description      = "X11 client library xcb-util-renderutil"
+license          = "MIT"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://www.x.org"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["libxcb"]
+provides         = ["xcb-util-renderutil"]
+tags             = ["x11", "library"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []
