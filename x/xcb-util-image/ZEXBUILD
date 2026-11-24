@@ -1,0 +1,35 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=xcb-util-image
+pkgver=0.4.1
+pkgrel=0
+subpackages="xcb-util-image-dev"
+source="https://xorg.freedesktop.org/archive/individual/lib/xcb-util-image-0.4.1.tar.xz"
+sha256sums="ccad8ee5dadb1271fd4727ad14d9bd77a64e505608766c4e98267d9aede40d3d  xcb-util-image-$pkgver.tar.xz"
+# X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev xcb-util xcb-util-dev"
+makedepends="pkgconf"
+
+build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig:/overlayer/syshub/share/pkgconfig:/overlayer/zexlib/union/lib/pkgconfig:/overlayer/zexlib/union/share/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --disable-static
+    make
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib"
+    find "$inst/lib" -maxdepth 1 -name 'lib*.so*' -exec cp -P {} "$PAYLOAD_DIR/lib/" \;
+    :
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include" "$PAYLOAD_DIR/lib/pkgconfig"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+}
