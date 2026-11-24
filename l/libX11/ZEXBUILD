@@ -6,7 +6,7 @@ subpackages="libX11-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libX11-1.8.10.tar.xz"
 sha256sums="2b3b3dad9347db41dca56beb7db5878f283bde1142f04d9f8e478af435dfdc53  libX11-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev xtrans"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev xtrans"
 makedepends="pkgconf"
 
 build() {
