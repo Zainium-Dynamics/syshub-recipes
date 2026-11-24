@@ -6,7 +6,7 @@ subpackages="xcb-util-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/xcb-util-0.4.1.tar.xz"
 sha256sums="5abe3bbbd8e54f0fa3ec945291b7e8fa8cfd3cccc43718f8758430f94126e512  xcb-util-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl libxcb libxcb-dev"
+needs_toolchain="gcc-musl libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev"
 makedepends="pkgconf"
 
 build() {
