@@ -6,7 +6,7 @@ subpackages="libXScrnSaver-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXScrnSaver-1.2.4.tar.xz"
 sha256sums="75cd2859f38e207a090cac980d76bc71e9da99d48d09703584e00585abc920fe  libXScrnSaver-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl xorgproto libX11 libX11-dev libXext libXext-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXext libXext-dev"
 makedepends="pkgconf"
 
 build() {
