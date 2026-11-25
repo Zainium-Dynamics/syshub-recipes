@@ -59,6 +59,7 @@ build() {
         --disable-ghostscript \
         --disable-mutool \
         --without-php \
+        --with-pdftops=pdftops \
         --enable-imagefilters \
         --without-rcdir \
         --with-test-font-path=/overlayer/syshub/share/fonts/TTF/DejaVuSans.ttf
