@@ -7,7 +7,7 @@ source="https://github.com/OpenPrinting/cups-filters/releases/download/$pkgver/c
 sha256sums="270a3752a960368aa99d431fb5d34f4039b2ac943c576d840612d1d8185c9bb9  cups-filters-$pkgver.tar.xz"
 # All libs are Zainium's own. 1.28.x keeps libcupsfilters+libppd+filters in one
 # package (vs the 2.x split), which is enough for cups 2.4.x driverless printing.
-needs_toolchain="gcc-musl cups cups-dev poppler poppler-dev qpdf qpdf-dev lcms2 lcms2-dev libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev libtiff libtiff-dev libexif libexif-dev fontconfig fontconfig-dev freetype freetype-dev dbus dbus-dev avahi avahi-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev"
+needs_toolchain="gcc-musl cups cups-dev poppler poppler-dev poppler-utils qpdf qpdf-dev lcms2 lcms2-dev libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev libtiff libtiff-dev libexif libexif-dev fontconfig fontconfig-dev freetype freetype-dev dbus dbus-dev avahi avahi-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev"
 makedepends="pkgconf"
 
 # The filter chain CUPS runs to turn PDF/images into printer raster: pdftopdf
