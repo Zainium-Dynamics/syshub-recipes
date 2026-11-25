@@ -46,6 +46,11 @@ build() {
         [ -d "/usr/include/$d" ] && cp -r "/usr/include/$d" "$PWD/_uapi/" || true
     done
     export CPPFLAGS="${CPPFLAGS:-} -idirafter $PWD/_uapi"
+    # texttopdf gates its `int UTF8 = 1;` global (and other modern code paths)
+    # behind #ifdef CUPS_1_4, but nothing in this tree defines CUPS_1_4, so the
+    # global is dropped while the uses remain -> undefined reference to UTF8 at
+    # link. Our CUPS is 2.x, so define it to enable the (correct) UTF-8 path.
+    export CPPFLAGS="${CPPFLAGS} -DCUPS_1_4"
     # pdftopdf includes qpdf 11's headers, which use std::string_view (C++17);
     # cups-filters 1.28 still compiles C++ at an older standard, so force gnu++17
     # (user CXXFLAGS is placed after the package's own -std, so it wins).
