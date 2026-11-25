@@ -1,8 +1,8 @@
 maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
 pkgname=poppler
 pkgver=24.09.0
-pkgrel=0
-subpackages="poppler-dev"
+pkgrel=1
+subpackages="poppler-dev poppler-utils"
 source="https://poppler.freedesktop.org/poppler-$pkgver.tar.xz"
 sha256sums="ebd857987e2395608c69fdc44009692d5906f13b612c5280beff65a0b75dc255  poppler-$pkgver.tar.xz"
 # cmake is Zainium's own (with the libraries it needs); ninja from Alpine.
@@ -17,6 +17,7 @@ build() {
     /overlayer/syshub/bin/cmake -S . -B build -G Ninja \
         -DCMAKE_INSTALL_PREFIX=/overlayer/syshub \
         -DCMAKE_PREFIX_PATH=/overlayer/syshub \
+        -DCMAKE_EXE_LINKER_FLAGS="-L/overlayer/syshub/lib -Wl,--copy-dt-needed-entries -lfreetype -lfontconfig -ljpeg -lpng16 -ltiff -lz" \
         -DCMAKE_C_COMPILER=/overlayer/syshub/bin/gcc \
         -DCMAKE_CXX_COMPILER=/overlayer/syshub/bin/g++ \
         -DCMAKE_INSTALL_LIBDIR=lib \
@@ -27,7 +28,7 @@ build() {
         -DENABLE_QT5=OFF \
         -DENABLE_QT6=OFF \
         -DENABLE_GOBJECT_INTROSPECTION=OFF \
-        -DENABLE_UTILS=OFF \
+        -DENABLE_UTILS=ON \
         -DENABLE_BOOST=OFF \
         -DENABLE_NSS3=OFF \
         -DENABLE_GPGME=OFF \
@@ -60,4 +61,17 @@ dev() {
     cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
     cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
     cp -a "$inst"/lib/cmake/. "$PAYLOAD_DIR/lib/cmake/" 2>/dev/null || true
+}
+
+# Command-line tools (pdftops etc.); cups-filters' pdftops filter needs them.
+utils() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/bin"
+    for b in pdftops pdftoppm pdfinfo pdfimages pdftotext pdfunite \
+             pdfseparate pdfdetach pdfattach pdftohtml pdftocairo; do
+        if [ -f "$inst/bin/$b" ]; then
+            cp -a "$inst/bin/$b" "$PAYLOAD_DIR/bin/"
+        fi
+    done
+    :
 }
