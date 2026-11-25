@@ -11,7 +11,7 @@ needs_toolchain="gcc-musl cups cups-dev poppler poppler-dev poppler-utils qpdf q
 # gdbus-codegen (glib) generates cups-notifier.c at build time — a pure codegen
 # helper (like intltool), taken from Alpine; the glib it LINKS is still Zainium's
 # (needs_toolchain), kept first via PKG_CONFIG_PATH. python3 runs gdbus-codegen.
-makedepends="pkgconf glib-dev python3"
+makedepends="pkgconf glib-dev python3 linux-headers"
 
 # The filter chain CUPS runs to turn PDF/images into printer raster: pdftopdf
 # (libqpdf), pdftoraster/imagetoraster (libpoppler), colour via lcms2. No
@@ -36,6 +36,16 @@ build() {
     printf '#!/bin/sh\nexec python3 %s "$@"\n' "$gdbus_real" > "$PWD/_tools/gdbus-codegen"
     chmod +x "$PWD/_tools/gdbus-codegen"
     export PATH="$PWD/_tools:$PATH"
+    # The parallel/USB printer backends need kernel UAPI headers (linux/lp.h); the
+    # musl sysroot ships only a partial set. Stage the kernel UAPI headers (libc-
+    # agnostic — the kernel's, from Alpine linux-headers) and add them with
+    # -idirafter so they are searched LAST: Zainium's own headers always win, only
+    # the genuinely missing linux/* get filled. No shadowing of the sysroot.
+    mkdir -p "$PWD/_uapi"
+    for d in linux asm asm-generic; do
+        [ -d "/usr/include/$d" ] && cp -r "/usr/include/$d" "$PWD/_uapi/" || true
+    done
+    export CPPFLAGS="${CPPFLAGS:-} -idirafter $PWD/_uapi"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
