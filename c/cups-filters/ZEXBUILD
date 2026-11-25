@@ -62,9 +62,16 @@ build() {
     # link only $(CUPS_LIBS) = `cups-config --image --libs`, which here omits -lcups,
     # so their libcups calls (cupsGetOption, httpAssembleURIf) are unresolved (the
     # filters link only because libcupsfilters pulls -lcups transitively). Override
-    # CUPS_LIBS at make time — not via LDFLAGS, which breaks configure's own
-    # "C compiler works" test by forcing every trivial link to pull libcups.
-    make CUPS_LIBS="$(/overlayer/syshub/bin/cups-config --image --libs) -lcups"
+    # CUPS_LIBS at make time to add -lcups.
+    #
+    # libcups.so in turn pulls gnutls/libusb/etc. (cups' own runtime deps), present
+    # on the installed system but not all staged in this build sysroot, so linking an
+    # executable against it trips --no-allow-shlib-undefined. --allow-shlib-undefined
+    # lets libcups.so's own deps resolve at runtime (where they exist) instead of
+    # re-listing them all here. Set at make time only — in configure it would break
+    # the "C compiler works" test. (make-var overrides win over the Makefile's.)
+    make LDFLAGS="-Wl,--allow-shlib-undefined" \
+         CUPS_LIBS="$(/overlayer/syshub/bin/cups-config --image --libs) -lcups"
     DESTDIR="$(pwd)/_zexbuild-install" make install
 }
 
