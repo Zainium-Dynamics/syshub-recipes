@@ -6,7 +6,7 @@ subpackages="libXft-dev"
 source="https://xorg.freedesktop.org/archive/individual/lib/libXft-2.3.8.tar.xz"
 sha256sums="5e8c3c4bc2d4c0a40aef6b4b38ed2fb74301640da29f6528154b5009b1c6dd49  libXft-$pkgver.tar.xz"
 # X.Org release tarball ships a generated configure, so no util-macros/autoreconf.
-needs_toolchain="gcc-musl libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXrender libXrender-dev freetype freetype-dev fontconfig fontconfig-dev"
+needs_toolchain="gcc-musl xorgproto libxcb libxcb-dev libXau libXau-dev libXdmcp libXdmcp-dev libX11 libX11-dev libXrender libXrender-dev freetype freetype-dev fontconfig fontconfig-dev"
 makedepends="pkgconf"
 
 build() {
