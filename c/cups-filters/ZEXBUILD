@@ -81,7 +81,16 @@ build() {
     # lets libcups.so's own deps resolve at runtime (where they exist) instead of
     # re-listing them all here. Set at make time only — in configure it would break
     # the "C compiler works" test. (make-var overrides win over the Makefile's.)
-    make LDFLAGS="-Wl,--allow-shlib-undefined" \
+    #
+    # glib-2.0.pc drags -lintl into cups-browsed's link (glib's own gettext), even
+    # with --disable-nls. musl keeps gettext in libc and the only libintl here is
+    # Alpine's runtime libintl.so.8 (no .so dev symlink), so -lintl can't resolve.
+    # Point a libintl.so at that runtime lib; it records NEEDED=libintl.so.8, which
+    # glib already pulls at runtime, so nothing new is added to the system.
+    mkdir -p "$PWD/_intl"
+    _i8="$(ls /usr/lib/libintl.so.8* /overlayer/syshub/lib/libintl.so.8* /lib/libintl.so.8* 2>/dev/null | head -1)"
+    [ -n "$_i8" ] && ln -sf "$_i8" "$PWD/_intl/libintl.so"
+    make LDFLAGS="-Wl,--allow-shlib-undefined -L$PWD/_intl" \
          CUPS_LIBS="$(/overlayer/syshub/bin/cups-config --image --libs) -lcups"
     DESTDIR="$(pwd)/_zexbuild-install" make install
 }
