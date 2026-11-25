@@ -1,0 +1,29 @@
+[package]
+name             = "cups-filters"
+version          = "1.28.17"
+description      = "CUPS filter chain for driverless printing (pdftopdf, pdftoraster)"
+license          = "GPL-2.0-or-later"
+maintainer       = "Zainium Dynamics <alizain@zainiumdynamics.tech>"
+homepage         = "https://openprinting.github.io/cups-filters"
+build_type       = "dynamic"
+libc_target      = "musl"
+
+blake3           = ""
+ed25519_sig      = ""
+ed25519_pubkey   = ""
+
+depends          = ["cups", "poppler", "poppler-utils", "qpdf", "lcms2", "libjpeg-turbo", "libpng", "libtiff", "fontconfig", "freetype"]
+provides         = ["cups-filters"]
+tags             = ["base", "printing", "filters"]
+
+[install]
+lib     = "/overlayer/syshub/lib"
+bin     = "/overlayer/syshub/bin"
+etc     = "/overlayer/syshub/etc"
+share   = "/overlayer/syshub/share"
+_syshub = true
+
+[remove]
+files    = []
+dirs     = []
+symlinks = []

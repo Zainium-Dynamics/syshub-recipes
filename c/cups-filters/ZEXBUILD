@@ -1,0 +1,119 @@
+maintainer="Zainium Dynamics <alizain@zainiumdynamics.tech>"
+pkgname=cups-filters
+pkgver=1.28.17
+pkgrel=0
+subpackages="cups-filters-dev"
+source="https://github.com/OpenPrinting/cups-filters/releases/download/$pkgver/cups-filters-$pkgver.tar.xz"
+sha256sums="270a3752a960368aa99d431fb5d34f4039b2ac943c576d840612d1d8185c9bb9  cups-filters-$pkgver.tar.xz"
+# All libs are Zainium's own. 1.28.x keeps libcupsfilters+libppd+filters in one
+# package (vs the 2.x split), which is enough for cups 2.4.x driverless printing.
+needs_toolchain="gcc-musl cups cups-dev poppler poppler-dev poppler-utils qpdf qpdf-dev lcms2 lcms2-dev libjpeg-turbo libjpeg-turbo-dev libpng libpng-dev libtiff libtiff-dev libexif libexif-dev fontconfig fontconfig-dev freetype freetype-dev dbus dbus-dev avahi avahi-dev glib glib-dev pcre2 pcre2-dev libffi libffi-dev zlib zlib-dev"
+# gdbus-codegen (glib) generates cups-notifier.c at build time — a pure codegen
+# helper (like intltool), taken from Alpine; the glib it LINKS is still Zainium's
+# (needs_toolchain), kept first via PKG_CONFIG_PATH. python3 runs gdbus-codegen.
+makedepends="pkgconf glib-dev python3 linux-headers"
+
+# The filter chain CUPS runs to turn PDF/images into printer raster: pdftopdf
+# (libqpdf), pdftoraster/imagetoraster (libpoppler), colour via lcms2. No
+# ghostscript (bloat; only old PostScript/PCL), no mutool, no php.
+build() {
+    export PKG_CONFIG_PATH="/overlayer/syshub/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+    export PATH="/overlayer/syshub/bin:$PATH"
+    # dbus-1.pc carries a systemd version constraint that pkg-config can't
+    # resolve (no systemd.pc shipped), so feed dbus flags directly as avahi does.
+    export DBUS_CFLAGS="-I/overlayer/syshub/include/dbus-1.0 -I/overlayer/syshub/lib/dbus-1.0/include"
+    export DBUS_LIBS="-L/overlayer/syshub/lib -ldbus-1"
+    # cups-filters generates cups-notifier.c with gdbus-codegen, a glib Python
+    # script (Alpine glib-dev). Its shebang interpreter is not resolvable in the
+    # build env (make fails exit 127 "No such file"), so wrap it to run under
+    # python3 explicitly and put the wrapper first on PATH; configure then finds
+    # it and bakes this path into the Makefile.
+    gdbus_real=""
+    for p in /usr/bin/gdbus-codegen /overlayer/syshub/bin/gdbus-codegen; do
+        [ -f "$p" ] && { gdbus_real="$p"; break; }
+    done
+    mkdir -p "$PWD/_tools"
+    printf '#!/bin/sh\nexec python3 %s "$@"\n' "$gdbus_real" > "$PWD/_tools/gdbus-codegen"
+    chmod +x "$PWD/_tools/gdbus-codegen"
+    export PATH="$PWD/_tools:$PATH"
+    # The parallel/USB printer backends need kernel UAPI headers (linux/lp.h); the
+    # musl sysroot ships only a partial set. Stage the kernel UAPI headers (libc-
+    # agnostic — the kernel's, from Alpine linux-headers) and add them with
+    # -idirafter so they are searched LAST: Zainium's own headers always win, only
+    # the genuinely missing linux/* get filled. No shadowing of the sysroot.
+    mkdir -p "$PWD/_uapi"
+    for d in linux asm asm-generic; do
+        [ -d "/usr/include/$d" ] && cp -r "/usr/include/$d" "$PWD/_uapi/" || true
+    done
+    export CPPFLAGS="${CPPFLAGS:-} -idirafter $PWD/_uapi"
+    # texttopdf gates its `int UTF8 = 1;` global (and other modern code paths)
+    # behind #ifdef CUPS_1_4, but nothing in this tree defines CUPS_1_4, so the
+    # global is dropped while the uses remain -> undefined reference to UTF8 at
+    # link. Our CUPS is 2.x, so define it to enable the (correct) UTF-8 path.
+    export CPPFLAGS="${CPPFLAGS} -DCUPS_1_4"
+    # pdftopdf includes qpdf 11's headers, which use std::string_view (C++17);
+    # cups-filters 1.28 still compiles C++ at an older standard, so force gnu++17
+    # (user CXXFLAGS is placed after the package's own -std, so it wins).
+    export CXXFLAGS="${CXXFLAGS:-} -O2 -std=gnu++17"
+    ./configure \
+        --prefix=/overlayer/syshub \
+        --sysconfdir=/overlayer/syshub/etc \
+        --localstatedir=/overlayer/syshub/var \
+        --sbindir=/overlayer/syshub/bin \
+        --disable-static \
+        --disable-nls \
+        --disable-ghostscript \
+        --disable-mutool \
+        --without-php \
+        --with-pdftops=pdftops \
+        --enable-imagefilters \
+        --without-rcdir \
+        --with-test-font-path=/overlayer/syshub/share/fonts/TTF/DejaVuSans.ttf
+    # The backends (beh/implicitclass for driverless, plus legacy parallel/serial)
+    # link only $(CUPS_LIBS) = `cups-config --image --libs`, which here omits -lcups,
+    # so their libcups calls (cupsGetOption, httpAssembleURIf) are unresolved (the
+    # filters link only because libcupsfilters pulls -lcups transitively). Override
+    # CUPS_LIBS at make time to add -lcups.
+    #
+    # libcups.so in turn pulls gnutls/libusb/etc. (cups' own runtime deps), present
+    # on the installed system but not all staged in this build sysroot, so linking an
+    # executable against it trips --no-allow-shlib-undefined. --allow-shlib-undefined
+    # lets libcups.so's own deps resolve at runtime (where they exist) instead of
+    # re-listing them all here. Set at make time only — in configure it would break
+    # the "C compiler works" test. (make-var overrides win over the Makefile's.)
+    #
+    # glib-2.0.pc drags -lintl into cups-browsed's link (glib's own gettext), even
+    # with --disable-nls. musl keeps gettext in libc and the only libintl here is
+    # Alpine's runtime libintl.so.8 (no .so dev symlink), so -lintl can't resolve.
+    # Point a libintl.so at that runtime lib; it records NEEDED=libintl.so.8, which
+    # glib already pulls at runtime, so nothing new is added to the system.
+    mkdir -p "$PWD/_intl"
+    _i8="$(ls /usr/lib/libintl.so.8* /overlayer/syshub/lib/libintl.so.8* /lib/libintl.so.8* 2>/dev/null | head -1)"
+    [ -n "$_i8" ] && ln -sf "$_i8" "$PWD/_intl/libintl.so"
+    make LDFLAGS="-Wl,--allow-shlib-undefined -L$PWD/_intl" \
+         CUPS_LIBS="$(/overlayer/syshub/bin/cups-config --image --libs) -lcups"
+    DESTDIR="$(pwd)/_zexbuild-install" make install
+}
+
+package() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/lib" "$PAYLOAD_DIR/bin" "$PAYLOAD_DIR/etc" "$PAYLOAD_DIR/share"
+    cp -a "$inst/lib/." "$PAYLOAD_DIR/lib/" 2>/dev/null || true
+    cp -a "$inst/bin/." "$PAYLOAD_DIR/bin/" 2>/dev/null || true
+    cp -a "$inst/etc/." "$PAYLOAD_DIR/etc/" 2>/dev/null || true
+    cp -a "$inst/share/." "$PAYLOAD_DIR/share/" 2>/dev/null || true
+    find "$PAYLOAD_DIR/lib" -name '*.a' -delete 2>/dev/null || true
+    rm -rf "$PAYLOAD_DIR/share/man" "$PAYLOAD_DIR/share/doc" "$PAYLOAD_DIR/share/locale"
+    rm -rf "$PAYLOAD_DIR/include"
+    :
+}
+
+dev() {
+    local inst="_zexbuild-install/overlayer/syshub"
+    mkdir -p "$PAYLOAD_DIR/include"
+    cp -a "$inst"/include/. "$PAYLOAD_DIR/include/" 2>/dev/null || true
+    if [ -d "$inst/lib/pkgconfig" ]; then
+        mkdir -p "$PAYLOAD_DIR/lib/pkgconfig"
+        cp -a "$inst"/lib/pkgconfig/. "$PAYLOAD_DIR/lib/pkgconfig/" 2>/dev/null || true
+    fi
+}
