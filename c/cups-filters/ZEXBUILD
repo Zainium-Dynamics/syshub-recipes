@@ -23,6 +23,19 @@ build() {
     # resolve (no systemd.pc shipped), so feed dbus flags directly as avahi does.
     export DBUS_CFLAGS="-I/overlayer/syshub/include/dbus-1.0 -I/overlayer/syshub/lib/dbus-1.0/include"
     export DBUS_LIBS="-L/overlayer/syshub/lib -ldbus-1"
+    # cups-filters generates cups-notifier.c with gdbus-codegen, a glib Python
+    # script (Alpine glib-dev). Its shebang interpreter is not resolvable in the
+    # build env (make fails exit 127 "No such file"), so wrap it to run under
+    # python3 explicitly and put the wrapper first on PATH; configure then finds
+    # it and bakes this path into the Makefile.
+    gdbus_real=""
+    for p in /usr/bin/gdbus-codegen /overlayer/syshub/bin/gdbus-codegen; do
+        [ -f "$p" ] && { gdbus_real="$p"; break; }
+    done
+    mkdir -p "$PWD/_tools"
+    printf '#!/bin/sh\nexec python3 %s "$@"\n' "$gdbus_real" > "$PWD/_tools/gdbus-codegen"
+    chmod +x "$PWD/_tools/gdbus-codegen"
+    export PATH="$PWD/_tools:$PATH"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
