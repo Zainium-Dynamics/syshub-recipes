@@ -46,6 +46,11 @@ build() {
         [ -d "/usr/include/$d" ] && cp -r "/usr/include/$d" "$PWD/_uapi/" || true
     done
     export CPPFLAGS="${CPPFLAGS:-} -idirafter $PWD/_uapi"
+    # The backends (beh/implicitclass for driverless, plus legacy parallel/serial)
+    # link only $(CUPS_LIBS) = `cups-config --image --libs`, which here omits -lcups,
+    # so their libcups calls (cupsGetOption, httpAssembleURIf) stay unresolved — the
+    # filters only link because libcupsfilters pulls -lcups transitively. Add -lcups.
+    export LDFLAGS="${LDFLAGS:-} -L/overlayer/syshub/lib -lcups"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
