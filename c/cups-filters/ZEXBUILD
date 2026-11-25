@@ -46,11 +46,6 @@ build() {
         [ -d "/usr/include/$d" ] && cp -r "/usr/include/$d" "$PWD/_uapi/" || true
     done
     export CPPFLAGS="${CPPFLAGS:-} -idirafter $PWD/_uapi"
-    # The backends (beh/implicitclass for driverless, plus legacy parallel/serial)
-    # link only $(CUPS_LIBS) = `cups-config --image --libs`, which here omits -lcups,
-    # so their libcups calls (cupsGetOption, httpAssembleURIf) stay unresolved — the
-    # filters only link because libcupsfilters pulls -lcups transitively. Add -lcups.
-    export LDFLAGS="${LDFLAGS:-} -L/overlayer/syshub/lib -lcups"
     ./configure \
         --prefix=/overlayer/syshub \
         --sysconfdir=/overlayer/syshub/etc \
@@ -63,7 +58,13 @@ build() {
         --enable-imagefilters \
         --without-rcdir \
         --with-test-font-path=/overlayer/syshub/share/fonts/TTF/DejaVuSans.ttf
-    make
+    # The backends (beh/implicitclass for driverless, plus legacy parallel/serial)
+    # link only $(CUPS_LIBS) = `cups-config --image --libs`, which here omits -lcups,
+    # so their libcups calls (cupsGetOption, httpAssembleURIf) are unresolved (the
+    # filters link only because libcupsfilters pulls -lcups transitively). Override
+    # CUPS_LIBS at make time — not via LDFLAGS, which breaks configure's own
+    # "C compiler works" test by forcing every trivial link to pull libcups.
+    make CUPS_LIBS="$(/overlayer/syshub/bin/cups-config --image --libs) -lcups"
     DESTDIR="$(pwd)/_zexbuild-install" make install
 }
 
